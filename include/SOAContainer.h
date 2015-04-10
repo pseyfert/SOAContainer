@@ -46,7 +46,7 @@
  * SOAContainer<std::vector, point_x, point_y> points;
  * // insert some elements
  * // access an element
- * points[0].get<point_x> *= 2.0;
+ * points[0].get<point_x>() *= 2.0;
  * @endcode
  * 
  * The code is very similar to the AOS layout example above, but the memory
