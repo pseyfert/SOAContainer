@@ -10,27 +10,28 @@
 #include <cstdint>
 #include <type_traits>
 
+/// namespace for typelist type used by SOAContainer and related utilities
 namespace SOATypelist {
     /// type equivalent to the null pointer (tag to indicate missing type)
     struct null_type {};
 
     /// typelist data type
     template<typename HEAD = null_type, typename... TAIL>
-	struct typelist {
-	    /// head of the typelist
-	    typedef HEAD head_type;
-	    /// tail is another typelist
-	    typedef typelist<TAIL...> tail_types;
+    struct typelist {
+	/// head of the typelist
+	typedef HEAD head_type;
+	/// tail is another typelist
+	typedef typelist<TAIL...> tail_types;
 
-	    /// return size of the typelist
-	    static constexpr std::size_t size()
-	    { return 1 + tail_types::size(); }
-	};
+	/// return size of the typelist
+	static constexpr std::size_t size()
+	{ return 1 + tail_types::size(); }
+    };
 
     /// specialisation for empty typelist
     template <>
-	constexpr std::size_t typelist<null_type>::size()
-	{ return 0; }
+    constexpr std::size_t typelist<null_type>::size()
+    { return 0; }
 
     // compile-time test typelist instantiation and size operations
     static_assert(0 == typelist<>::size(),
@@ -44,15 +45,15 @@ namespace SOATypelist {
 
     /// return type at index idx in typelist TL
     template <typename TL, std::size_t idx>
-	struct at {
-	    typedef typename at<typename TL::tail_types, idx - 1>::type type;
-	};
+    struct at {
+	typedef typename at<typename TL::tail_types, idx - 1>::type type;
+    };
 
     /// return type at index idx in typelist TL (specialisation 1st type)
     template <typename TL>
-	struct at<TL, 0> {
-	    typedef typename TL::head_type type;
-	};
+    struct at<TL, 0> {
+	typedef typename TL::head_type type;
+    };
 
     // compile-time test at<typelist<...>, index> implementation
     static_assert(std::is_same<int,

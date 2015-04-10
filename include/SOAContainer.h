@@ -1,43 +1,9 @@
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
 #include "SOAIterator.h"
-
-template <std::size_t N>
-struct recursive_apply_tuple
-{
-    template <typename OBJ, typename F, typename C, typename I>
-    auto operator()(OBJ& obj, const F& functor,
-	    const C& combiner, I initial) const -> decltype(
-		combiner(
-		    recursive_apply_tuple<N - 2>()(obj, functor, combiner, initial),
-		    functor(std::get<N - 1>(obj))))
-    {
-	return combiner(
-		recursive_apply_tuple<N - 2>()(obj, functor, combiner, initial),
-		functor(std::get<N - 1>(obj)));
-    }
-};
-
-template <>
-struct recursive_apply_tuple<1>
-{
-    template <typename OBJ, typename F, typename C, typename I>
-    auto operator()(OBJ& obj, const F& functor,
-	    const C& combiner, I initial) const -> decltype(
-		combiner(initial, functor(std::get<0>(obj))))
-    { return combiner(initial, functor(std::get<0>(obj))); }
-};
-
-template <>
-struct recursive_apply_tuple<0>
-{
-    template <typename OBJ, typename F, typename C, typename I>
-    void operator()(OBJ&, const F&, const C&, I initial) const
-    { return initial; }
-};
+#include "SOAUtils.h"
 
 #include <stdexcept>
-#include <array>
 #include <algorithm>
 
 /** @brief container class for objects with given fields (SOA storage)
@@ -107,6 +73,7 @@ struct recursive_apply_tuple<0>
 template <template <typename...> class CONTAINER, typename... FIELDS>
 class SOAContainer {
     public:
+	// storing objects without state doesn't make sense
 	static_assert(1 <= sizeof...(FIELDS),
 		"need to supply at least on field");
 
@@ -116,6 +83,9 @@ class SOAContainer {
 	typedef std::ptrdiff_t difference_type;
 
     private:
+	using namespace SOATypelist;
+	using namespace SOAUtils;
+
 	/// type of the storage backend
 	typedef typename typelist_to_tuple_of_containers<
 	    typelist<FIELDS...>, containerify<CONTAINER> >::type SOAStorage;
@@ -123,24 +93,6 @@ class SOAContainer {
 	/// storage backend
 	SOAStorage m_storage;
 
-#if 1	// C++14 Compile-time integer sequences -- this can go once we use C++14...
-	// #include <utility> // defines (in C++14) std::make_index_sequence and std::index_sequence
-	template<size_type... indexes> struct index_sequence {
-	    static size_type size() { return sizeof...(indexes); }
-	};
-
-	template<size_type currentIndex, size_type...indexes> struct make_index_sequence_helper;
-
-	template<size_type...indexes> struct make_index_sequence_helper<0, indexes...> {
-	    typedef index_sequence<indexes...> type;
-	};
-
-	template<size_type currentIndex, size_type...indexes> struct make_index_sequence_helper {
-	    typedef typename make_index_sequence_helper<currentIndex - 1, currentIndex - 1, indexes...>::type type;
-	};
-
-	template<size_type N> struct make_index_sequence : public make_index_sequence_helper<N>::type { };
-#endif
 	/// little helper for indexing to implement clear()
 	struct clearHelper {
 	    template <typename T>
