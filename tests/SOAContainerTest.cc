@@ -1,8 +1,17 @@
+/** @file SOAContainerTest.cc
+ *
+ * @author Manuel Schiller <Manuel.Schiller@cern.ch>
+ * @date 2015-04-11
+ *
+ * unit test for SOAContainer class
+ */
+
 #include <cassert>
 #include <cstdio>
 
 #include "SOAContainer.h"
 
+/// unit test SOAContainer class
 static void test()
 {
     SOAContainer<std::vector, double, int, int> c;
@@ -50,6 +59,7 @@ static void test()
     }
 }
 
+/// main program of unit test
 int main()
 {
     test();
