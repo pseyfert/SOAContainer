@@ -1,10 +1,19 @@
+/** @file SOAContainer.h
+ *
+ * @author Manuel Schiller <Manuel.Schiller@cern.ch>
+ * @date 2015-04-10
+ */
+
+#ifndef SOACONTAINER_H
+#define SOACONTAINER_H
+
+#include <stdexcept>
+#include <algorithm>
+
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
 #include "SOAIterator.h"
 #include "SOAUtils.h"
-
-#include <stdexcept>
-#include <algorithm>
 
 /** @brief container class for objects with given fields (SOA storage)
  *
@@ -83,12 +92,10 @@ class SOAContainer {
 	typedef std::ptrdiff_t difference_type;
 
     private:
-	using namespace SOATypelist;
-	using namespace SOAUtils;
-
 	/// type of the storage backend
-	typedef typename typelist_to_tuple_of_containers<
-	    typelist<FIELDS...>, containerify<CONTAINER> >::type SOAStorage;
+	typedef typename SOATypelist::typelist_to_tuple_of_containers<
+	    SOATypelist::typelist<FIELDS...>,
+	    SOATypelist::containerify<CONTAINER> >::type SOAStorage;
 
 	/// storage backend
 	SOAStorage m_storage;
@@ -156,8 +163,12 @@ class SOAContainer {
 	 */
 	class SOAObjectProxy {
 	    public:
-		typedef typename typelist_to_tuple<typelist<FIELDS...> >::type value_type;
+		/// type to which SOAObjectProxy converts and can be assigned from
+		typedef typename SOATypelist::typelist_to_tuple<
+		    SOATypelist::typelist<FIELDS...> >::type value_type;
+		/// type to hold the distance between two iterators
 		typedef difference_type difference_type;
+
 	    private:
 		SOAStorage* m_storage;	///< underlying SOA storage of members
 		size_type m_index;	///< index into underlying SOA storage
@@ -172,7 +183,8 @@ class SOAContainer {
 	        { }
 
 		/// typedef for tuple of references to members
-		typedef typename typelist_to_reftuple<typelist<FIELDS...> >::type reference_type;
+		typedef typename SOATypelist::typelist_to_reftuple<
+		    SOATypelist::typelist<FIELDS...> >::type reference_type;
 
 		/// little helper to implement conversion to tuple
 		template <size_type... Indexes>
@@ -190,12 +202,13 @@ class SOAContainer {
 		{ return std::get<MEMBERNO>(*m_storage)[m_index]; }
 		/// access to member by "member tag"
 		template <typename MEMBER>
-		auto get() -> decltype(std::get<find<
-			typelist<FIELDS...>, MEMBER>::index>(*m_storage)[m_index])
+		auto get() -> decltype(std::get<SOATypelist::find<
+			SOATypelist::typelist<FIELDS...>,
+			MEMBER>::index>(*m_storage)[m_index])
 		{
 		    return std::get<
-			find<typelist<FIELDS...>, MEMBER>::index>(
-				*m_storage)[m_index];
+			SOATypelist::find<SOATypelist::typelist<FIELDS...>,
+		    MEMBER>::index>(*m_storage)[m_index];
 		}
 		/// access to member by number (read-only)
 		template <size_type MEMBERNO>
@@ -204,17 +217,21 @@ class SOAContainer {
 		{ return std::get<MEMBERNO>(*m_storage)[m_index]; }
 		/// access to member by "member tag" (read-only)
 		template <typename MEMBER>
-		auto get() const -> decltype(std::get<find<
-			typelist<FIELDS...>, MEMBER>::index>(*m_storage)[m_index])
+		auto get() const -> decltype(std::get<SOATypelist::find<
+			SOATypelist::typelist<FIELDS...>,
+			MEMBER>::index>(*m_storage)[m_index])
 		{
 		    return std::get<
-			find<typelist<FIELDS...>, MEMBER>::index>(
-				*m_storage)[m_index];
+			SOATypelist::find<SOATypelist::typelist<FIELDS...>,
+		    MEMBER>::index>(*m_storage)[m_index];
 		}
 
 		/// convert to tuple of member contents
 		operator value_type() const
-		{ return to_value<make_index_sequence<sizeof...(FIELDS)> >(); }
+		{
+		    return to_value<SOAUtils::make_index_sequence<
+			sizeof...(FIELDS)> >();
+		}
 		/// assign from tuple of member contents
 		SOAObjectProxy& operator=(const value_type& other)
 		{ to_reference<sizeof...(FIELDS)>() = other; return *this; }
@@ -343,44 +360,47 @@ class SOAContainer {
 	/// clear the container
 	void clear()
 	{
-	    recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
 		    clearHelper(), [] (bool, bool) { return true; }, true);
        	}
 
 	/// pop the last element off the container
 	void pop_back()
 	{
-	    recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
 		    pop_backHelper(), [] (bool, bool) { return true; }, true);
        	}
 
 	/// shrink the underlying storage of the container to fit its size
 	void shrink_to_fit()
 	{
-	    recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    shrink_to_fitHelper(), [] (bool, bool) { return true; }, true);
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+		    shrink_to_fitHelper(), [] (bool, bool) {
+		    return true; }, true);
        	}
 
 	/// reserve space for at least sz elements
 	void reserve(size_type sz)
 	{
-	    recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
 		    reserveHelper(sz), [] (bool, bool) { return true; }, true);
        	}
 
 	/// return capacity of container
 	size_type capacity() const
 	{
-	    return recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    capacityHelper(), [] (size_type s1, size_type s2) {
+	    return SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+		    m_storage, capacityHelper(), [] (
+			size_type s1, size_type s2) {
 		    return std::min(s1, s2); }, size_type(-1));
        	}
 
 	/// return maximal size of container
 	size_type max_size() const
 	{
-	    return recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    max_sizeHelper(), [] (size_type s1, size_type s2) {
+	    return SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+		    m_storage, max_sizeHelper(), [] (
+			size_type s1, size_type s2) {
 		    return std::min(s1, s2); }, size_type(-1));
        	}
 
@@ -447,40 +467,7 @@ class SOAContainer {
 	}
 };
 
-#include <cassert>
-static void test()
-{
-    SOAContainer<std::vector, double, int, int> c;
-    const SOAContainer<std::vector, double, int, int>& cc = c;
-    // check basic properties
-    assert(c.empty());
-    assert(0 == c.size());
-    c.clear();
-    assert(1 <= c.max_size());
-    assert(0 <= c.capacity());
-    // reserve space
-    c.reserve(64);
-    assert(64 <= c.capacity());
-    assert(c.capacity() <= c.max_size());
-    // check iterators
-    assert(!c.begin());
-    assert(c.begin() == c.end());
-    assert(cc.begin() == cc.end());
-    assert(c.begin() == cc.begin());
-    assert(c.begin() <= c.end());
-    assert(cc.begin() <= cc.end());
-    assert(c.begin() <= cc.begin());
-    assert(c.begin() >= c.end());
-    assert(cc.begin() >= cc.end());
-    // check reverse iterators
-    assert(c.rbegin() >= cc.rbegin());
-    assert(c.rbegin() == c.rend());
-    assert(cc.rbegin() == cc.rend());
-    assert(c.rbegin() == cc.rbegin());
-    assert(c.rbegin() <= c.rend());
-    assert(cc.rbegin() <= cc.rend());
-    assert(c.rbegin() <= cc.rbegin());
-    assert(c.rbegin() >= c.rend());
-    assert(cc.rbegin() >= cc.rend());
-    assert(c.rbegin() >= cc.rbegin());
-}
+
+#endif // SOACONTAINER_H
+
+// vim: sw=4:tw=78:ft=cpp

@@ -54,23 +54,22 @@ namespace SOAUtils {
     // #include <utility> // defines (in C++14) std::make_index_sequence and std::index_sequence
 	
     /// C++14-like index sequence
-    template<size_type... indexes> struct index_sequence {
-	static size_type size() { return sizeof...(indexes); }
+    template<std::size_t... indexes> struct index_sequence {
+	static std::size_t size() { return sizeof...(indexes); }
     };
 
-    template<size_type currentIndex, size_type...indexes> struct make_index_sequence_helper;
+    template<std::size_t currentIndex, std::size_t...indexes> struct make_index_sequence_helper;
 
-    template<size_type...indexes> struct make_index_sequence_helper<0, indexes...> {
+    template<std::size_t...indexes> struct make_index_sequence_helper<0, indexes...> {
 	typedef index_sequence<indexes...> type;
     };
 
-    template<size_type currentIndex, size_type...indexes> struct make_index_sequence_helper {
+    template<std::size_t currentIndex, std::size_t...indexes> struct make_index_sequence_helper {
 	typedef typename make_index_sequence_helper<currentIndex - 1, currentIndex - 1, indexes...>::type type;
     };
 
-    template<size_type N> struct make_index_sequence : public make_index_sequence_helper<N>::type { };
+    template<std::size_t N> struct make_index_sequence : public make_index_sequence_helper<N>::type { };
 #endif
-
 }
 
 #endif // SOAUTILS_H

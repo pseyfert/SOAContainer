@@ -17,24 +17,24 @@ namespace SOATypelist {
     template <typename TL, typename NEEDLE>
     struct find {
     /// imlpementation: find first occurrence of type NEEDLE in typelist
-        template <std::size_t N, typename TL, typename NEEDLE, typename HEAD>
+        template <std::size_t N, typename TL2, typename HEAD>
         struct find_impl {
-            enum { index = find_impl<N + 1, typename TL::tail_types,
-        	NEEDLE, typename TL::head_type>::index };
+            enum { index = find_impl<N + 1, typename TL2::tail_types,
+        	typename TL2::head_type>::index };
         };
         /// specialisation (NEEDLE found): find NEEDLE in typelist
-        template <std::size_t N, typename TL, typename NEEDLE>
-        struct find_impl<N, TL, NEEDLE, NEEDLE> {
+        template <std::size_t N, typename TL2>
+        struct find_impl<N, TL2, NEEDLE> {
             enum { index = N };
         };
         /// specialisation (NEEDLE not found): find NEEDLE in typelist
-        template <std::size_t N, typename TL, typename NEEDLE>
-        struct find_impl<N, TL, NEEDLE, null_type> {
+        template <std::size_t N, typename TL2>
+        struct find_impl<N, TL2, null_type> {
             enum { index = -1 };
         };
 
         enum { index = find_impl<0, typename TL::tail_types,
-	    NEEDLE, typename TL::head_type>::index };
+	    typename TL::head_type>::index };
     };
 
     // compile-time test find
@@ -73,8 +73,8 @@ namespace SOATypelist {
 	    typename wrap_type<wrap_type<int> >::type>::value,
 	    "wrap_type is not idempotent");
 
-    // FIXME: test wrapping and interaction with typelists
-    namespace {
+    // compile-time test wrapping and interaction with typelists
+    namespace __impl_compile_time_tests {
 	typedef struct : public wrap_type<double> {} xAtYEq0;
 	typedef struct : public wrap_type<double> {} zAtYEq0;
 	typedef struct : public wrap_type<double> {} y;
@@ -141,14 +141,18 @@ namespace SOATypelist {
 	typedef std::tuple<typename unwrap<H>::type> type;
     };
 
-    // FIXME
-    namespace {
-	// test typelist_to_tuple on typelists with (un) wrapped types
-	constexpr static typename typelist_to_tuple<
-	    typelist<int, int, float> >::type dummy(42, 17, 3.141592f);
+    // compile-time test typelist_to_tuple
+    namespace __impl_compile_time_tests {
+	// test typelist_to_tuple on typelists with unwrapped types
+	static_assert(std::is_same<std::tuple<int, int, float>,
+		typename typelist_to_tuple<
+		typelist<int, int, float> >::type>::value,
+		"typelist_to_tuple broken for simple typelists");
 	// test typelist_to_tuple on typelists with wrapped types
-	constexpr static typename typelist_to_tuple<
-	    hitfields>::type dummy2(0., 1., 2., 3., 4.);
+	static_assert(std::is_same<
+		std::tuple<double, double, double, double, double>,
+		typename typelist_to_tuple<hitfields>::type>::value,
+		"typelist_to_tuple broken for wrapped typelists");
     }
 
     /// tuple type holding references to the types contained in the typelist
@@ -166,6 +170,20 @@ namespace SOATypelist {
 	typedef std::tuple<typename unwrap<H>::type&> type;
     };
 
+    // compile-time test typelist_to_reftuple
+    namespace __impl_compile_time_tests {
+	// test typelist_to_tuple on typelists with unwrapped types
+	static_assert(std::is_same<std::tuple<int&, int&, float&>,
+		typename typelist_to_reftuple<
+		typelist<int, int, float> >::type>::value,
+		"typelist_to_reftuple broken for simple typelists");
+	// test typelist_to_tuple on typelists with wrapped types
+	static_assert(std::is_same<
+		std::tuple<double&, double&, double&, double&, double&>,
+		typename typelist_to_reftuple<hitfields>::type>::value,
+		"typelist_to_reftuple broken for wrapped typelists");
+    }
+
     /// tuple type holding references to the types contained in the typelist
     template <typename TL>
     struct typelist_to_creftuple : public typelist_helpers {
@@ -180,6 +198,21 @@ namespace SOATypelist {
     struct typelist_to_creftuple<typelist<H> > : public typelist_helpers {
 	typedef std::tuple<const typename unwrap<H>::type&> type;
     };
+
+    // compile-time test typelist_to_creftuple
+    namespace __impl_compile_time_tests {
+	// test typelist_to_tuple on typelists with unwrapped types
+	static_assert(std::is_same<std::tuple<
+		const int&, const int&, const float&>,
+		typename typelist_to_creftuple<
+		typelist<int, int, float> >::type>::value,
+		"typelist_to_creftuple broken for simple typelists");
+	// test typelist_to_tuple on typelists with wrapped types
+	static_assert(std::is_same<std::tuple<const double&, const double&,
+		const double&, const double&, const double&>,
+		typename typelist_to_creftuple<hitfields>::type>::value,
+		"typelist_to_creftuple broken for wrapped typelists");
+    }
 
     /// helper to turn a type T into CONTAINER<T>
     template <template <typename...> class CONTAINER = std::vector>
@@ -209,17 +242,21 @@ namespace SOATypelist {
 	    typename unwrap<H>::type>::type> type;
     };
 
-    // FIXME
-    namespace {
-	static typename typelist_to_tuple_of_containers<
-	    hitfields>::type dummy3(
-		    {  0.,  1.,  2.,  3.,  4.,  5.,  6.,  7.,  8.,  9. },
-		    { 10., 11., 12., 13., 14., 15., 16., 17., 18., 19. },
-		    { 20., 21., 22., 23., 24., 25., 26., 27., 28., 29. },
-		    { 30., 31., 32., 33., 34., 35., 36., 37., 38., 39. },
-		    { 40., 41., 42., 43., 44., 45., 46., 47., 48., 49. });
+    // compile-time test typelist_to_tuple_of_containers
+    namespace __impl_compile_time_tests {
+	// test typelist_to_tuple on typelists with unwrapped types
+	static_assert(std::is_same<std::tuple<
+		std::vector<int>, std::vector<int>, std::vector<float> >,
+		typename typelist_to_tuple_of_containers<
+		typelist<int, int, float> >::type>::value,
+		"typelist_to_tuple_of_containers broken for simple typelists");
+	// test typelist_to_tuple on typelists with wrapped types
+	static_assert(std::is_same<std::tuple<std::vector<double>,
+		std::vector<double>, std::vector<double>, std::vector<double>,
+		std::vector<double> >, typename
+		typelist_to_tuple_of_containers<hitfields>::type>::value,
+		"typelist_to_tuple_of_containers broken for wrapped typelists");
     }
-
 }
 
 #endif // SOATYPELISTUTILS_H
