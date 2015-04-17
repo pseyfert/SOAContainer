@@ -90,6 +90,8 @@ class SOAContainer {
 	typedef std::size_t size_type;
 	/// type to represent differences of indices
 	typedef std::ptrdiff_t difference_type;
+	/// type to represent container itself
+	typedef SOAContainer<CONTAINER, FIELDS...> self_type;
 
     private:
 	/// type of the storage backend
@@ -172,6 +174,8 @@ class SOAContainer {
 		    SOATypelist::typelist<FIELDS...> >::type value_type;
 		/// type to hold the distance between two iterators
 		typedef difference_type difference_type;
+		/// type of parent container
+		typedef self_type parent_type;
 
 	    private:
 		size_type m_index;	///< index into underlying SOA storage
@@ -332,46 +336,66 @@ class SOAContainer {
 		    return nullptr != m_storage &&
 			m_index < std::get<0>(*m_storage).size();
 		}
-		/// check for equality
+		/// check for equality (pointer aspect)
 		bool operator==(const SOAObjectProxy& other) const noexcept
 		{
 		    return m_storage == other.m_storage &&
 			m_index == other.m_index;
 		}
-		/// check for inequality
+		/// check for inequality (pointer aspect)
 		bool operator!=(const SOAObjectProxy& other) const noexcept
 		{
 		    return m_storage != other.m_storage ||
 			m_index != other.m_index;
 		}
-		/// ordering comparison: <
+		/// ordering comparison: < (pointer aspect)
 		bool operator<(const SOAObjectProxy& other) const noexcept
 		{
 		    return (m_storage < other.m_storage) ? true :
 			(other.m_storage < m_storage) ? false :
 			m_index < other.m_index;
 		}
-		/// ordering comparison: <=
+		/// ordering comparison: <= (pointer aspect)
 		bool operator<=(const SOAObjectProxy& other) const noexcept
 		{
 		    return (m_storage < other.m_storage) ? true :
 			(other.m_storage < m_storage) ? false :
 			m_index <= other.m_index;
 		}
-		/// ordering comparison: >
+		/// ordering comparison: > (pointer aspect)
 		bool operator>(const SOAObjectProxy& other) const noexcept
 		{
 		    return (m_storage < other.m_storage) ? false :
 			(other.m_storage < m_storage) ? true :
 			other.m_index < m_index;
 		}
-		/// ordering comparison: >=
+		/// ordering comparison: >= (pointer aspect)
 		bool operator>=(const SOAObjectProxy& other) const noexcept
 		{
 		    return (m_storage < other.m_storage) ? false :
 			(other.m_storage < m_storage) ? true :
 			other.m_index <= m_index;
 		}
+
+		/// check for equality (value aspect)
+		bool operator==(const value_type& other) const noexcept
+		{ return value_type(*this) == other; }
+		/// check for inequality (value aspect)
+		bool operator!=(const value_type& other) const noexcept
+		{ return value_type(*this) != other; }
+		/// ordering comparison: < (value aspect)
+		bool operator<(const value_type& other) const noexcept
+		{ return value_type(*this) < other; }
+		/// ordering comparison: <= (value aspect)
+		bool operator<=(const value_type& other) const noexcept
+		{ return value_type(*this) <= other; }
+		/// ordering comparison: > (value aspect)
+		bool operator>(const value_type& other) const noexcept
+		{ return value_type(*this) > other; }
+		/// ordering comparison: >= (value aspect)
+		bool operator>=(const value_type& other) const noexcept
+		{ return value_type(*this) >= other; }
+
 	}; 
 
 	/// (notion of) type of the contained objects
@@ -622,6 +646,48 @@ class SOAContainer {
 	}
 
 };
+
+/// comparison between a SOAObjectProxy::value_type and the proxy
+template <typename PROXY>
+typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
+    typename PROXY::parent_type::reference_type>::value , bool>::type
+operator==(const typename PROXY::value_type& a, const PROXY b) noexcept
+{ return b == a; }
+
+/// comparison between a SOAObjectProxy::value_type and the proxy
+template <typename PROXY>
+typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
+    typename PROXY::parent_type::reference_type>::value , bool>::type
+operator!=(const typename PROXY::value_type& a, const PROXY b) noexcept
+{ return b != a; }
+
+/// comparison between a SOAObjectProxy::value_type and the proxy
+template <typename PROXY>
+typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
+    typename PROXY::parent_type::reference_type>::value , bool>::type
+operator<(const typename PROXY::value_type& a, const PROXY b) noexcept
+{ return b > a; }
+
+/// comparison between a SOAObjectProxy::value_type and the proxy
+template <typename PROXY>
+typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
+    typename PROXY::parent_type::reference_type>::value , bool>::type
+operator<=(const typename PROXY::value_type& a, const PROXY b) noexcept
+{ return b >= a; }
+
+/// comparison between a SOAObjectProxy::value_type and the proxy
+template <typename PROXY>
+typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
+    typename PROXY::parent_type::reference_type>::value , bool>::type
+operator>(const typename PROXY::value_type& a, const PROXY b) noexcept
+{ return b < a; }
+
+/// comparison between a SOAObjectProxy::value_type and the proxy
+template <typename PROXY>
+typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
+    typename PROXY::parent_type::reference_type>::value , bool>::type
+operator>=(const typename PROXY::value_type& a, const PROXY b) noexcept
+{ return b <= a; }
 
 #endif // SOACONTAINER_H
 

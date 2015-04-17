@@ -100,7 +100,13 @@ static void test()
 	assert(oldcap = c.capacity());
 	c.insert(c.begin(), oldcap, std::make_tuple(3.14, 42, 17));
 	assert(oldcap == c.size());
-	//assert(oldcap == std::count(std::begin(c), std::end(c), std::make_tuple(3.14, 42, 17)));
+	assert(oldcap == static_cast<decltype(oldcap)>(
+		    std::count(std::begin(c), std::end(c),
+			std::make_tuple(3.14, 42, 17))));
+	assert(oldcap == static_cast<decltype(oldcap)>(
+		    std::count_if(std::begin(c), std::end(c),
+			[] (decltype(c)::const_reference_type obj) {
+			return (std::make_tuple(3.14, 42, 17) == obj); })));
     }
 }
 
