@@ -57,6 +57,16 @@ static void test()
 	}
 	assert(exception);
     }
+    {
+	std::tuple<double, int, int> val(3.14, 17, 42);
+        auto it = c.insert(c.begin(), val);
+	assert(!c.empty());
+	assert(1 == c.size());
+	assert((1 + c.begin()) == it);
+	assert(c.front() == c.back());
+	const decltype(val) val2(c.front());
+	assert(val == val2);
+    }
 }
 
 /// main program of unit test

@@ -102,40 +102,44 @@ class SOAContainer {
 
 	/// little helper for indexing to implement clear()
 	struct clearHelper {
-	    template <typename T>
-	    bool operator()(T& obj) const { obj.clear(); return true; }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    { obj.clear(); return true; }
 	};
 
 	/// little helper for indexing to implement pop_back()
 	struct pop_backHelper {
-	    template <typename T>
-	    bool operator()(T& obj) const { obj.pop_back(); return true; }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    { obj.pop_back(); return true; }
 	};
 
 	/// little helper for indexing to implement shrink_to_fit()
 	struct shrink_to_fitHelper {
-	    template <typename T>
-	    bool operator()(T& obj) const { obj.shrink_to_fit(); return true; }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    { obj.shrink_to_fit(); return true; }
 	};
 
 	/// little helper for indexing to implement reserve()
 	struct reserveHelper {
 	    size_type m_sz;
 	    reserveHelper(size_type sz) : m_sz(sz) { }
-	    template <typename T>
-	    bool operator()(T& obj) const { obj.reserve(m_sz); return true; }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    { obj.reserve(m_sz); return true; }
 	};
 
 	/// little helper for indexing to implement capacity()
 	struct capacityHelper {
-	    template <typename T>
-	    size_type operator()(T& obj) const { return obj.capacity(); }
+	    template <typename T, typename IDX>
+	    size_type operator()(T& obj, IDX) const { return obj.capacity(); }
 	};
 
 	/// little helper for indexing to implement max_size()
 	struct max_sizeHelper {
-	    template <typename T>
-	    size_type operator()(T& obj) const { return obj.max_size(); }
+	    template <typename T, typename IDX>
+	    size_type operator()(T& obj, IDX) const { return obj.max_size(); }
 	};
 
     public:
@@ -170,8 +174,8 @@ class SOAContainer {
 		typedef difference_type difference_type;
 
 	    private:
-		SOAStorage* m_storage;	///< underlying SOA storage of members
 		size_type m_index;	///< index into underlying SOA storage
+		SOAStorage* m_storage;	///< underlying SOA storage of members
 
 		// SOAContainer is allowed to invoke the private constructor
 		friend class SOAContainer<CONTAINER, FIELDS...>;
@@ -179,7 +183,7 @@ class SOAContainer {
 		SOAObjectProxy(
 			SOAStorage* storage = nullptr,
 			size_type index = 0) noexcept :
-		    m_storage(storage), m_index(index)
+		    m_index(index), m_storage(storage)
 	        { }
 
 		/// typedef for tuple of references to members
@@ -187,13 +191,30 @@ class SOAContainer {
 		    SOATypelist::typelist<FIELDS...> >::type reference_type;
 
 		/// little helper to implement conversion to tuple
-		template <size_type... Indexes>
-		value_type to_value() const
-		{ return std::tie(std::get<Indexes...>(m_storage)[m_index]); }
-		/// little helper to implement operator=
-		template <size_type... Indexes>
-		reference_type to_reference()
-		{ return std::tie(std::get<Indexes...>(m_storage)[m_index]); }
+		struct to_valueHelper {
+		    size_type m_idx;
+		    template <typename T, typename Idx>
+		    std::tuple<typename T::value_type>
+		    operator()(const T& obj, Idx) const
+		    { return std::tuple<typename T::value_type>(obj[m_idx]); }
+		};
+
+		/// little helper to implement conversion to tuple of references
+		struct to_referenceHelper {
+		    size_type m_idx;
+		    template <typename T, typename Idx>
+		    std::tuple<typename T::value_type&>
+		    operator()(const T& obj, Idx) const
+		    { return std::tuple<typename T::value_type&>(obj[m_idx]); }
+		};
+
+		/// little helper to implement concatenation of tuples
+		struct tuplecatHelper {
+		    template <typename... S, typename T>
+		    auto operator()(std::tuple<S...>&& t1, std::tuple<T>&& t2) const ->
+			decltype(std::tuple_cat(std::move(t1), std::move(t2)))
+		    { return std::tuple_cat(std::move(t1), std::move(t2)); }
+		};
 
 	    public:
 		/// access to member by number
@@ -229,16 +250,36 @@ class SOAContainer {
 		/// convert to tuple of member contents
 		operator value_type() const
 		{
-		    return to_value<SOAUtils::make_index_sequence<
-			sizeof...(FIELDS)> >();
+		    return SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+			    *m_storage, to_valueHelper({ m_index }),
+			    tuplecatHelper(), std::tuple<>());
 		}
+		
+		/// convert to tuple of references member contents
+		operator reference_type() const
+		{
+		    return SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+			    *m_storage, to_referenceHelper({ m_index }),
+			    tuplecatHelper(), std::tuple<>());
+		}
+
 		/// assign from tuple of member contents
 		SOAObjectProxy& operator=(const value_type& other)
-		{ to_reference<sizeof...(FIELDS)>() = other; return *this; }
+		{
+		    reference_type(*this) = other;
+		    return *this;
+		}
+
+		/// assign from tuple of member contents
+		SOAObjectProxy& operator=(const reference_type& other)
+		{
+		    reference_type(*this) = other;
+		    return *this;
+		}
 
 		/// "deep"-swap the contents of two SOAObjectProxy instances
 		void swap(SOAObjectProxy& other)
-		{ std::swap(to_reference<sizeof...(FIELDS)>(), other.to_reference<sizeof...(FIELDS)>()); }
+		{ std::swap(reference_type(*this), reference_type(other)); }
 
 		/// dereference
 		SOAObjectProxy& operator*() noexcept
@@ -460,10 +501,25 @@ class SOAContainer {
 	/// const iterator pointing one element behind the last element in reverse order
 	const_reverse_iterator crend() const { return const_reverse_iterator(begin()); }
 
+    private:
+	/// little helper for insert
+	struct push_backHelper {
+	    const value_type& m_val;
+	    push_backHelper(const value_type& val) : m_val(val) { }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    { obj.push_back(std::get<IDX::value>(m_val)); return true; }
+	};
+
+    public:
+
+	/// insert val at position pointed to by pos
 	iterator insert(const_iterator pos, const value_type& val)
 	{
-	    insert_helper(pos.m_index, val);
-	    return iterator(*pos + 1);
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+		    push_backHelper(val), [] (bool, bool) {
+		    return true; }, true);
+	    return ++iterator(*pos);
 	}
 };
 

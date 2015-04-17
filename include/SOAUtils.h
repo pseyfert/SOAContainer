@@ -13,39 +13,31 @@
 
 /// various other utilities used by SOAContainer
 namespace SOAUtils {
+    /// apply some functor to each element of a tuple, and gather return value
     template <std::size_t N>
     struct recursive_apply_tuple
     {
+	struct IndexWrapper { enum { value = N - 1 }; };
         template <typename OBJ, typename F, typename C, typename I>
         auto operator()(OBJ& obj, const F& functor,
 		const C& combiner, I initial) const -> decltype(
 		    combiner(
-			recursive_apply_tuple<N - 2>()(obj, functor,
+			recursive_apply_tuple<N - 1>()(obj, functor,
 			    combiner, initial),
-			functor(std::get<N - 1>(obj))))
+			functor(std::get<N - 1>(obj), IndexWrapper())))
         {
-    	return combiner(
-    		recursive_apply_tuple<N - 2>()(obj, functor,
+	    return combiner(
+    		recursive_apply_tuple<N - 1>()(obj, functor,
 		    combiner, initial),
-    		functor(std::get<N - 1>(obj)));
+    		functor(std::get<N - 1>(obj), IndexWrapper()));
         }
-    };
-    
-    template <>
-    struct recursive_apply_tuple<1>
-    {
-        template <typename OBJ, typename F, typename C, typename I>
-        auto operator()(OBJ& obj, const F& functor,
-    	    const C& combiner, I initial) const -> decltype(
-    		combiner(initial, functor(std::get<0>(obj))))
-        { return combiner(initial, functor(std::get<0>(obj))); }
     };
     
     template <>
     struct recursive_apply_tuple<0>
     {
         template <typename OBJ, typename F, typename C, typename I>
-        void operator()(OBJ&, const F&, const C&, I initial) const
+        I operator()(OBJ&, const F&, const C&, I initial) const
         { return initial; }
     };
 
@@ -74,4 +66,4 @@ namespace SOAUtils {
 
 #endif // SOAUTILS_H
 
-// vim: sw=4:tw=78:ft=cppp
+// vim: sw=4:tw=78:ft=cpp
