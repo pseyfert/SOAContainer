@@ -100,13 +100,56 @@ static void test()
 	assert(oldcap = c.capacity());
 	c.insert(c.begin(), oldcap, std::make_tuple(3.14, 42, 17));
 	assert(oldcap == c.size());
+	// check if they're all the same
 	assert(oldcap == static_cast<decltype(oldcap)>(
-		    std::count(std::begin(c), std::end(c),
-			std::make_tuple(3.14, 42, 17))));
+		    std::count_if(std::begin(c), std::end(c),
+			[] (decltype(c)::const_reference_type obj) {
+			return (obj == std::make_tuple(3.14, 42, 17)); })));
+	// check the other variants of comparison operators
 	assert(oldcap == static_cast<decltype(oldcap)>(
 		    std::count_if(std::begin(c), std::end(c),
 			[] (decltype(c)::const_reference_type obj) {
 			return (std::make_tuple(3.14, 42, 17) == obj); })));
+	// check if they're all >=
+	assert(oldcap == static_cast<decltype(oldcap)>(
+		    std::count_if(std::begin(c), std::end(c),
+			[] (decltype(c)::const_reference_type obj) {
+			return (obj >= std::make_tuple(3.14, 42, 17)); })));
+	// check the other variants of comparison operators
+	assert(oldcap == static_cast<decltype(oldcap)>(
+		    std::count_if(std::begin(c), std::end(c),
+			[] (decltype(c)::const_reference_type obj) {
+			return (std::make_tuple(3.14, 42, 17) >= obj); })));
+	// check if they're all <=
+	assert(oldcap == static_cast<decltype(oldcap)>(
+		    std::count_if(std::begin(c), std::end(c),
+			[] (decltype(c)::const_reference_type obj) {
+			return (obj <= std::make_tuple(3.14, 42, 17)); })));
+	// check the other variants of comparison operators
+	assert(oldcap == static_cast<decltype(oldcap)>(
+		    std::count_if(std::begin(c), std::end(c),
+			[] (decltype(c)::const_reference_type obj) {
+			return (std::make_tuple(3.14, 42, 17) <= obj); })));
+	// check if none are <
+	assert(0 == static_cast<decltype(oldcap)>(
+		    std::count_if(std::begin(c), std::end(c),
+			[] (decltype(c)::const_reference_type obj) {
+			return (obj < std::make_tuple(3.14, 42, 17)); })));
+	// check the other variants of comparison operators
+	assert(0 == static_cast<decltype(oldcap)>(
+		    std::count_if(std::begin(c), std::end(c),
+			[] (decltype(c)::const_reference_type obj) {
+			return (std::make_tuple(3.14, 42, 17) < obj); })));
+	// check if none are >
+	assert(0 == static_cast<decltype(oldcap)>(
+		    std::count_if(std::begin(c), std::end(c),
+			[] (decltype(c)::const_reference_type obj) {
+			return (obj > std::make_tuple(3.14, 42, 17)); })));
+	// check the other variants of comparison operators
+	assert(0 == static_cast<decltype(oldcap)>(
+		    std::count_if(std::begin(c), std::end(c),
+			[] (decltype(c)::const_reference_type obj) {
+			return (std::make_tuple(3.14, 42, 17) > obj); })));
     }
 }
 
