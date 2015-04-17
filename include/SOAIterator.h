@@ -105,7 +105,7 @@ template <typename I, typename T>
 SOAIterator<T> operator+(I dist, const SOAIterator<T>& other) noexcept
 {
     static_assert(std::is_integral<I>::value, "dist must be integer type");
-    return SOAIterator<T>(other) += dist;
+    return SOAIterator<typename std::remove_const<T>::type>(*other) += dist;
 }
 
 /// distance between iterators, i.e. it - jt

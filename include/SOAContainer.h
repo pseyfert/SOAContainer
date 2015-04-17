@@ -502,7 +502,7 @@ class SOAContainer {
 	const_reverse_iterator crend() const { return const_reverse_iterator(begin()); }
 
     private:
-	/// little helper for insert
+	/// little helper for push_back
 	struct push_backHelper {
 	    const value_type& m_val;
 	    push_backHelper(const value_type& val) : m_val(val) { }
@@ -511,16 +511,116 @@ class SOAContainer {
 	    { obj.push_back(std::get<IDX::value>(m_val)); return true; }
 	};
 
+	/// little helper for push_back (move variant)
+	struct push_backHelper_move {
+	    value_type&& m_val;
+	    push_backHelper_move(value_type&& val) : m_val(std::move(val)) { }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    {
+		obj.push_back(std::move(std::get<IDX::value>(m_val)));
+		return true;
+	    }
+	};
+
+	/// little helper for insert(it, val)
+	struct insertHelper {
+	    const value_type& m_val;
+	    size_type m_idx;
+	    insertHelper(const value_type& val, size_type idx) :
+		m_val(val), m_idx(idx) { }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    {
+		obj.insert(obj.begin() + m_idx, std::get<IDX::value>(m_val));
+		return true;
+	    }
+	};
+
+	/// little helper for insert(it, val) - move variant
+	struct insertHelper_move {
+	    value_type&& m_val;
+	    size_type m_idx;
+	    insertHelper_move(value_type&& val, size_type idx) :
+		m_val(std::move(val)), m_idx(idx) { }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    {
+		obj.insert(obj.begin() + m_idx,
+			std::move(std::get<IDX::value>(m_val)));
+		return true;
+	    }
+	};
+
+	/// little helper for insert(it, count, val)
+	struct insertHelper_count {
+	    const value_type& m_val;
+	    size_type m_idx;
+	    size_type m_cnt;
+	    insertHelper_count(
+		    const value_type& val, size_type idx, size_type cnt) :
+		m_val(val), m_idx(idx), m_cnt(cnt) { }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    {
+		obj.insert(obj.begin() + m_idx, m_cnt,
+			std::get<IDX::value>(m_val));
+		return true;
+	    }
+	};
+
     public:
 
-	/// insert val at position pointed to by pos
-	iterator insert(const_iterator pos, const value_type& val)
+	/// push an element at the back of the array
+	void push_back(const value_type& val)
 	{
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
 		    push_backHelper(val), [] (bool, bool) {
 		    return true; }, true);
-	    return ++iterator(*pos);
 	}
+
+	/// push an element at the back of the array (move variant)
+	void push_back(value_type&& val)
+	{
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+		    push_backHelper_move(std::move(val)), [] (bool, bool) {
+		    return true; }, true);
+	}
+
+	/// insert a value at the given position
+	iterator insert(const_iterator pos, const value_type& val)
+	{
+	    assert((*pos).m_storage == &m_storage);
+	    const size_type idx = pos - cbegin();
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+		    insertHelper(val, idx), [] (bool, bool) {
+		    return true; }, true);
+	    return ++(iterator(*pos));
+	}
+
+	/// insert a value at the given position (move variant)
+	iterator insert(const_iterator pos, value_type&& val)
+	{
+	    assert((*pos).m_storage == &m_storage);
+	    const size_type idx = pos - cbegin();
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+		    insertHelper_move(std::move(val), idx), [] (bool, bool) {
+		    return true; }, true);
+	    return ++(iterator(*pos));
+	}
+
+	/// insert count copies of value at the given position
+	iterator insert(
+		const_iterator pos, size_type count, const value_type& val)
+	{
+	    assert((*pos).m_storage == &m_storage);
+	    const size_type idx = pos - cbegin();
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+		    insertHelper_count(val, idx, count), [] (bool, bool) {
+		    return true; }, true);
+	    return (iterator(*pos)) += count;
+	}
+
 };
 
 #endif // SOACONTAINER_H

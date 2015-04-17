@@ -59,13 +59,48 @@ static void test()
     }
     {
 	std::tuple<double, int, int> val(3.14, 17, 42);
-        auto it = c.insert(c.begin(), val);
+	// standard push_back by const reference
+	c.push_back(val);
 	assert(!c.empty());
 	assert(1 == c.size());
-	assert((1 + c.begin()) == it);
 	assert(c.front() == c.back());
+	assert(c.end() == 1 + c.begin());
+	assert(c.rend() == 1 + c.rbegin());
 	const decltype(val) val2(c.front());
 	assert(val == val2);
+	// trigger the move-variant of push_back
+	c.push_back(std::make_tuple(2.79, 42, 17));
+	assert(2 == c.size());
+	assert(c.front() != c.back());
+	assert(c.end() == 2 + c.begin());
+	assert(c.rend() == 2 + c.rbegin());
+	// test pop_back
+	c.pop_back();
+	assert(1 == c.size());
+	// start testing plain and simple insert
+	std::tuple<double, int, int> val3(2.79, 42, 17);
+	auto it = c.insert(c.begin(), val3);
+	assert(2 == c.size());
+	assert(it == 1 + c.begin());
+	const decltype(val) val4(c.front()), val5(c.back());
+	assert(val3 == val4);
+	assert(val == val5);
+	c.insert(1 + c.cbegin(), std::make_tuple(2.79, 42, 17));
+	assert(3 == c.size());
+	const decltype(val) val6(c[0]), val7(c[1]);
+	assert(val3 == val6);
+	assert(val3 == val7);
+    }
+    {
+	assert(!c.empty());
+	auto oldcap = c.capacity();
+	assert(oldcap > 0);
+	c.clear();
+	assert(c.empty());
+	assert(oldcap = c.capacity());
+	c.insert(c.begin(), oldcap, std::make_tuple(3.14, 42, 17));
+	assert(oldcap == c.size());
+	//assert(oldcap == std::count(std::begin(c), std::end(c), std::make_tuple(3.14, 42, 17)));
     }
 }
 
