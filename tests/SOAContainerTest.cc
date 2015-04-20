@@ -203,6 +203,12 @@ static void test()
 	// assign(first, last) is just a frontend for clear(); insert(front,
 	// end); - therefore, no test here
     }
+    {
+	c.clear();
+	c.emplace_back(2.79, 42, 17);
+	assert(1 == c.size());
+	assert(c.front() == std::make_tuple(2.79, 42, 17));
+    }
 }
 
 /// main program of unit test

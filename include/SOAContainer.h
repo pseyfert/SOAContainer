@@ -761,6 +761,37 @@ class SOAContainer {
 	    insert(begin(), first, last);
 	}
 
+    private:
+	/// helper for emplace_back
+	template <size_type IDX>
+	struct emplace_backHelper {
+	    SOAStorage& m_storage;
+	    emplace_backHelper(SOAStorage& storage) : m_storage(storage) { }
+	    template <typename HEAD, typename... TAIL>
+	    void doIt(HEAD&& head, TAIL&&... tail) const
+	    {
+		std::get<IDX>(m_storage).emplace_back(std::forward<HEAD>(head));
+		emplace_backHelper<IDX + 1>(m_storage).doIt(
+			std::forward<TAIL>(tail)...);
+	    }
+	    template <typename HEAD>
+	    void doIt(HEAD&& head) const
+	    {
+		std::get<IDX>(m_storage).emplace_back(std::forward<HEAD>(head));
+	    }
+	};
+
+    public:
+	/// construct new element at end of container (in-place) from args
+	template <typename... ARGS>
+	void emplace_back(ARGS&&... args)
+	{
+	    static_assert(sizeof...(ARGS) == sizeof...(FIELDS),
+		    "Wrong number of arguments to emplace_back.");
+	    emplace_backHelper<0>(m_storage).doIt(
+		    std::forward<ARGS>(args)...);
+	}
+
 };
 
 /// comparison between a SOAObjectProxy::value_type and the proxy
