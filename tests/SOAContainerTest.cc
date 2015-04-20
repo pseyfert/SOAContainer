@@ -194,6 +194,15 @@ static void test()
 		    [] (const decltype(val)& a, const decltype(val)& b) {
 		        return size_type(a == b); }));
     }
+    {
+	// test assign(count, val)
+	c.assign(42, std::make_tuple(3.14, 0, -1));
+	assert(42u == c.size());
+	assert(c.size() == std::size_t(std::count(std::begin(c), std::end(c),
+			std::make_tuple(3.14, 0, -1))));
+	// assign(first, last) is just a frontend for clear(); insert(front,
+	// end); - therefore, no test here
+    }
 }
 
 /// main program of unit test

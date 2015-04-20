@@ -643,6 +643,21 @@ class SOAContainer {
 	    }
 	};
 
+	/// little helper for assign(count, val)
+	struct assignHelper {
+	    const value_type& m_val;
+	    size_type m_cnt;
+	    assignHelper(
+		    const value_type& val, size_type cnt) :
+		m_val(val), m_cnt(cnt) { }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    {
+		obj.assign(m_cnt, std::get<IDX::value>(m_val));
+		return true;
+	    }
+	};
+
     public:
 
 	/// push an element at the back of the array
@@ -725,6 +740,25 @@ class SOAContainer {
 		    eraseHelper_N(idx, sz), [] (bool, bool) {
 		    return true; }, true);
 	    return iterator(*first);
+	}
+
+	/// assign the vector to contain count copies of val
+	void assign(size_type count, const value_type& val)
+	{
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+		    assignHelper(val, count), [] (bool, bool) { return true; }, true);
+	}
+
+	/// assign the vector from a range of elements in another container
+	template <typename IT>
+	void assign(IT first, IT last)
+	{
+	    if (!empty()) clear();
+	    // naively, one would use a reserve(distance(first, last)) here,
+	    // but I'm not sure how this will work for various kinds of
+	    // special iterators - callers are expected to reserve beforehand
+	    // if the required size is known
+	    insert(begin(), first, last);
 	}
 
 };
