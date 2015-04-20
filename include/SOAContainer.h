@@ -585,7 +585,7 @@ class SOAContainer {
 	const_reverse_iterator crend() const { return const_reverse_iterator(begin()); }
 
     private:
-	/// little helper for resize
+	/// little helper for resize(sz)
 	struct resizeHelper {
 	    size_type m_sz;
 	    resizeHelper(size_type sz) : m_sz(sz) { }
@@ -594,7 +594,7 @@ class SOAContainer {
 	    { obj.resize(m_sz); return true; }
 	};
 
-	/// little helper for resize
+	/// little helper for resize(sz, val)
 	struct resizeHelper_val {
 	    size_type m_sz;
 	    const value_type& m_val;
