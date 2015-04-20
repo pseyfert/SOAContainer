@@ -84,7 +84,7 @@ class SOAContainer {
     public:
 	// storing objects without state doesn't make sense
 	static_assert(1 <= sizeof...(FIELDS),
-		"need to supply at least on field");
+		"need to supply at least one field");
 
 	/// type to represent sizes and indices
 	typedef std::size_t size_type;
