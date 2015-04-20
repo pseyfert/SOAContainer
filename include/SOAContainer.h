@@ -130,10 +130,10 @@ class SOAContainer {
 		/// type to which SOAObjectProxy converts and can be assigned from
 		typedef typename SOATypelist::typelist_to_tuple<
 		    SOATypelist::typelist<FIELDS...> >::type value_type;
-		/// type to hold the distance between two iterators
-		typedef difference_type difference_type;
 		/// type of parent container
 		typedef self_type parent_type;
+		/// type to hold the distance between two iterators
+		typedef typename parent_type::difference_type difference_type;
 
 	    private:
 		size_type m_index;	///< index into underlying SOA storage
@@ -585,6 +585,26 @@ class SOAContainer {
 	const_reverse_iterator crend() const { return const_reverse_iterator(begin()); }
 
     private:
+	/// little helper for resize
+	struct resizeHelper {
+	    size_type m_sz;
+	    resizeHelper(size_type sz) : m_sz(sz) { }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    { obj.resize(m_sz); return true; }
+	};
+
+	/// little helper for resize
+	struct resizeHelper_val {
+	    size_type m_sz;
+	    const value_type& m_val;
+	    resizeHelper_val(size_type sz, const value_type& val) :
+		m_sz(sz), m_val(val) { }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    { obj.resize(m_sz, std::get<IDX::value>(m_val)); return true; }
+	};
+
 	/// little helper for push_back
 	struct push_backHelper {
 	    const value_type& m_val;
@@ -695,6 +715,21 @@ class SOAContainer {
 	};
 
     public:
+	/// resize container (use default-constructed values if container grows)
+	void resize(size_type sz)
+	{
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+		    resizeHelper(sz), [] (bool, bool) {
+		    return true; }, true);
+	}
+
+	/// resize the container (append val if the container grows)
+	void resize(size_type sz, const value_type& val)
+	{
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+		    resizeHelper_val(sz, val), [] (bool, bool) {
+		    return true; }, true);
+	}
 
 	/// push an element at the back of the array
 	void push_back(const value_type& val)

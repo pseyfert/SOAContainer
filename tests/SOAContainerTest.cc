@@ -204,7 +204,7 @@ static void test()
 	// end); - therefore, no test here
     }
     {
-	// test emplace and emplace_back
+	// test emplace, emplace_back, resize
 	c.clear();
 	c.emplace_back(2.79, 42, 17);
 	assert(1 == c.size());
@@ -214,6 +214,15 @@ static void test()
 	assert(c.begin() == it);
 	assert(c.front() == std::make_tuple(2.79, 17, 42));
 	assert(c.back() == std::make_tuple(2.79, 42, 17));
+	c.resize(64, std::make_tuple(3.14, 78, 17));
+	assert(64 == c.size());
+	assert(c.back() == std::make_tuple(3.14, 78, 17));
+	c.resize(0);
+	assert(c.empty());
+	c.resize(32);
+	assert(32 == c.size());
+	const std::tuple<double, int, int> defaultval;
+	assert(c.back() == defaultval);
     }
 }
 
