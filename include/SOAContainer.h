@@ -102,48 +102,6 @@ class SOAContainer {
 	/// storage backend
 	SOAStorage m_storage;
 
-	/// little helper for indexing to implement clear()
-	struct clearHelper {
-	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    { obj.clear(); return true; }
-	};
-
-	/// little helper for indexing to implement pop_back()
-	struct pop_backHelper {
-	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    { obj.pop_back(); return true; }
-	};
-
-	/// little helper for indexing to implement shrink_to_fit()
-	struct shrink_to_fitHelper {
-	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    { obj.shrink_to_fit(); return true; }
-	};
-
-	/// little helper for indexing to implement reserve()
-	struct reserveHelper {
-	    size_type m_sz;
-	    reserveHelper(size_type sz) : m_sz(sz) { }
-	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    { obj.reserve(m_sz); return true; }
-	};
-
-	/// little helper for indexing to implement capacity()
-	struct capacityHelper {
-	    template <typename T, typename IDX>
-	    size_type operator()(T& obj, IDX) const { return obj.capacity(); }
-	};
-
-	/// little helper for indexing to implement max_size()
-	struct max_sizeHelper {
-	    template <typename T, typename IDX>
-	    size_type operator()(T& obj, IDX) const { return obj.max_size(); }
-	};
-
     public:
 	/** @brief proxy object for the elements stored in the container.
 	 *
@@ -445,6 +403,84 @@ class SOAContainer {
 	/// return the size of the container
 	size_type size() const { return std::get<0>(m_storage).size(); }
 
+    public:
+	/// default constructor
+	SOAContainer() { }
+	/// fill container with count copies of val
+	SOAContainer(size_type count, const value_type& val)
+	{
+	    reserve(count);
+	    assign(count, val);
+	}
+	/// fill container with count (default constructed) elements
+	SOAContainer(size_type count) : SOAContainer(count, value_type()) { }
+	/// fill container with elements from other container
+	template <typename IT>
+	SOAContainer(IT first, IT last)
+	{ assign(first, last); }
+	/// copy constructor
+	SOAContainer(const self_type& other) : m_storage(other.m_storage) { }
+	/// move constructor
+	SOAContainer(self_type&& other) :
+	    m_storage(std::move(other.m_storage)) { }
+
+	/// assignment from other SOAContainer
+	self_type& operator=(const self_type& other)
+	{
+	    if (&other != this) m_storage = other.m_storage;
+	    return *this;
+	}
+	/// move-assignment from other SOAContainer
+	self_type& operator=(self_type&& other)
+	{
+	    if (&other != this) m_storage = std::move(other.m_storage);
+	    return *this;
+	}
+
+    private:
+	/// little helper for indexing to implement clear()
+	struct clearHelper {
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    { obj.clear(); return true; }
+	};
+
+	/// little helper for indexing to implement pop_back()
+	struct pop_backHelper {
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    { obj.pop_back(); return true; }
+	};
+
+	/// little helper for indexing to implement shrink_to_fit()
+	struct shrink_to_fitHelper {
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    { obj.shrink_to_fit(); return true; }
+	};
+
+	/// little helper for indexing to implement reserve()
+	struct reserveHelper {
+	    size_type m_sz;
+	    reserveHelper(size_type sz) : m_sz(sz) { }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    { obj.reserve(m_sz); return true; }
+	};
+
+	/// little helper for indexing to implement capacity()
+	struct capacityHelper {
+	    template <typename T, typename IDX>
+	    size_type operator()(T& obj, IDX) const { return obj.capacity(); }
+	};
+
+	/// little helper for indexing to implement max_size()
+	struct max_sizeHelper {
+	    template <typename T, typename IDX>
+	    size_type operator()(T& obj, IDX) const { return obj.max_size(); }
+	};
+
+    public:
 	/// clear the container
 	void clear()
 	{
@@ -502,13 +538,13 @@ class SOAContainer {
 	reference_type at(size_type idx)
 	{
 	    if (idx < size()) return operator[](idx);
-	    throw std::out_of_range("out of bounds");
+	    else throw std::out_of_range("out of bounds");
 	}
 	/// access specified element with out of bounds checking (read-only)
 	const_reference_type at(size_type idx) const
 	{
 	    if (idx < size()) return operator[](idx);
-	    throw std::out_of_range("out of bounds");
+	    else throw std::out_of_range("out of bounds");
 	}
 
 	/// access first element (non-empty container)
@@ -684,7 +720,7 @@ class SOAContainer {
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
 		    insertHelper(val, idx), [] (bool, bool) {
 		    return true; }, true);
-	    return ++(iterator(*pos));
+	    return iterator(*pos);
 	}
 
 	/// insert a value at the given position (move variant)
@@ -695,7 +731,7 @@ class SOAContainer {
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
 		    insertHelper_move(std::move(val), idx), [] (bool, bool) {
 		    return true; }, true);
-	    return ++(iterator(*pos));
+	    return iterator(*pos);
 	}
 
 	/// insert count copies of value at the given position
@@ -707,7 +743,7 @@ class SOAContainer {
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
 		    insertHelper_count(val, idx, count), [] (bool, bool) {
 		    return true; }, true);
-	    return (iterator(*pos)) += count;
+	    return iterator(*pos);
 	}
 
 	/// insert elements between first and last at position pos
@@ -715,7 +751,7 @@ class SOAContainer {
 	iterator insert(const_iterator pos, IT first, IT last)
 	{
 	    iterator retVal(*pos);
-	    while (first != last) { retVal = insert(retVal, *first); ++first; }
+	    while (first != last) { insert(pos, *first); ++first; ++pos; }
 	    return retVal;
 	}
 
@@ -780,6 +816,30 @@ class SOAContainer {
 		std::get<IDX>(m_storage).emplace_back(std::forward<HEAD>(head));
 	    }
 	};
+	/// helper for emplace
+	template <size_type IDX>
+	struct emplaceHelper {
+	    SOAStorage& m_storage;
+	    size_type m_idx;
+	    emplaceHelper(SOAStorage& storage, size_type idx) :
+		m_storage(storage), m_idx(idx) { }
+	    template <typename HEAD, typename... TAIL>
+	    void doIt(HEAD&& head, TAIL&&... tail) const
+	    {
+		std::get<IDX>(m_storage).emplace(
+			std::get<IDX>(m_storage).begin() + m_idx,
+			std::forward<HEAD>(head));
+		emplaceHelper<IDX + 1>(m_storage, m_idx).doIt(
+			std::forward<TAIL>(tail)...);
+	    }
+	    template <typename HEAD>
+	    void doIt(HEAD&& head) const
+	    {
+		std::get<IDX>(m_storage).emplace(
+			std::get<IDX>(m_storage).begin() + m_idx,
+			std::forward<HEAD>(head));
+	    }
+	};
 
     public:
 	/// construct new element at end of container (in-place) from args
@@ -790,6 +850,17 @@ class SOAContainer {
 		    "Wrong number of arguments to emplace_back.");
 	    emplace_backHelper<0>(m_storage).doIt(
 		    std::forward<ARGS>(args)...);
+	}
+	/// construct new element at position pos (in-place) from args
+	template <typename... ARGS>
+	iterator emplace(const_iterator pos, ARGS&&... args)
+	{
+	    static_assert(sizeof...(ARGS) == sizeof...(FIELDS),
+		    "Wrong number of arguments to emplace_back.");
+	    assert(&m_storage == (*pos).m_storage);
+	    emplaceHelper<0>(m_storage, pos - cbegin()).doIt(
+		    std::forward<ARGS>(args)...);
+	    return iterator(*pos);
 	}
 
 };

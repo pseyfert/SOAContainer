@@ -26,7 +26,9 @@ class SOAIterator : public std::iterator<
 		    T, T>
 {
     private:
-	T m_base; ///< proxy for underlying object
+	// I need to remove it's constness so I can "move" the iterator, all
+	// accesses to it will re-add the constness
+	typename std::remove_const<T>::type m_base; ///< proxy for underlying object
 
 	friend class SOAIterator<typename std::remove_const<T>::type>;
 	friend class SOAIterator<const T>;
@@ -67,10 +69,10 @@ class SOAIterator : public std::iterator<
 
 	/// assignment from T
 	self_type& operator=(const T& ptr) noexcept
-	{ m_base = ptr; return *this; }
+	{ reinterpret_cast<T>(m_base) = ptr; return *this; }
 	/// assignment from T (move semantics)
 	self_type& operator=(T&& ptr) noexcept
-	{ m_base = ptr; return *this; }
+	{ reinterpret_cast<T>(m_base) = std::move(ptr); return *this; }
 
 	/// assignment from SOAIterator<S>
 	template <typename S>
@@ -101,11 +103,13 @@ class SOAIterator : public std::iterator<
 	operator self_type_c() const { return self_type_c(m_base); }
 
 	/// dereference (but do not leak non-const handle to m_base)
-	T operator*() { return m_base; }
+	typename std::conditional<std::is_const<T>::value, const T&, T>::type
+	operator*() { return m_base; }
 	/// deference (read-only version)
 	const T& operator*() const { return m_base; }
 	/// dereference (but do not leak non-const handle to m_base)
-	T operator->() { return m_base; }
+	typename std::conditional<std::is_const<T>::value, const T&, T>::type
+	operator->() { return m_base; }
 	/// deference (read-only version)
 	const T& operator->() const { return m_base; }
 

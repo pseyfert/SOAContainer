@@ -81,7 +81,7 @@ static void test()
 	std::tuple<double, int, int> val3(2.79, 42, 17);
 	auto it = c.insert(c.begin(), val3);
 	assert(2 == c.size());
-	assert(it == 1 + c.begin());
+	assert(it == c.begin());
 	const decltype(val) val4(c.front()), val5(c.back());
 	assert(val3 == val4);
 	assert(val == val5);
@@ -166,7 +166,7 @@ static void test()
 	    temp.push_back(val);
 	}
 	auto it = c.insert(c.begin(), temp.cbegin(), temp.cend());
-	assert(c.end() == it);
+	assert(c.begin() == it);
 	assert(64 == c.size());
 	assert(temp.size() == std::inner_product(
 		    c.begin(), c.end(), temp.begin(), size_type(0),
@@ -204,10 +204,16 @@ static void test()
 	// end); - therefore, no test here
     }
     {
+	// test emplace and emplace_back
 	c.clear();
 	c.emplace_back(2.79, 42, 17);
 	assert(1 == c.size());
 	assert(c.front() == std::make_tuple(2.79, 42, 17));
+	auto it = c.emplace(c.begin(), 2.79, 17, 42);
+	assert(2 == c.size());
+	assert(c.begin() == it);
+	assert(c.front() == std::make_tuple(2.79, 17, 42));
+	assert(c.back() == std::make_tuple(2.79, 42, 17));
     }
 }
 
