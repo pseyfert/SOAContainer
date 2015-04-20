@@ -151,6 +151,49 @@ static void test()
 			[] (decltype(c)::const_reference_type obj) {
 			return (std::make_tuple(3.14, 42, 17) > obj); })));
     }
+    {
+	// test insert(pos, first, last), erase(pos) and erase(first, last)
+	// by comparing to an array-of-structures in a std::vector
+	typedef std::size_t size_type;
+	c.clear();
+	assert(c.empty());
+	std::tuple<double, int, int> val(3.14, 0, 63);
+	std::vector<std::tuple<double, int, int> > temp;
+	temp.reserve(64);
+	for (int i = 0; i < 64; ++i) {
+	    std::get<1>(val) = i;
+	    std::get<2>(val) = 63 - i;
+	    temp.push_back(val);
+	}
+	auto it = c.insert(c.begin(), temp.cbegin(), temp.cend());
+	assert(c.end() == it);
+	assert(64 == c.size());
+	assert(temp.size() == std::inner_product(
+		    c.begin(), c.end(), temp.begin(), size_type(0),
+		    [] (size_type a, size_type b) { return a + b; },
+		    [] (const decltype(val)& a, const decltype(val)& b) {
+		        return size_type(a == b); }));
+	// erase(pos)
+	auto jt = temp.erase(temp.begin() + 3);
+	assert(temp.begin() + 3 == jt);
+	auto kt = c.erase(c.begin() + 3);
+	assert(c.begin() + 3 == kt);
+	assert(temp.size() == std::inner_product(
+		    c.begin(), c.end(), temp.begin(), size_type(0),
+		    [] (size_type a, size_type b) { return a + b; },
+		    [] (const decltype(val)& a, const decltype(val)& b) {
+		        return size_type(a == b); }));
+	// erase(first, last)
+	auto lt = temp.erase(temp.begin() + 5, temp.begin() + 10);
+	assert(temp.begin() + 5 == lt);
+	auto mt = c.erase(c.begin() + 5, c.begin() + 10);
+	assert(c.begin() + 5 == mt);
+	assert(temp.size() == std::inner_product(
+		    c.begin(), c.end(), temp.begin(), size_type(0),
+		    [] (size_type a, size_type b) { return a + b; },
+		    [] (const decltype(val)& a, const decltype(val)& b) {
+		        return size_type(a == b); }));
+    }
 }
 
 /// main program of unit test

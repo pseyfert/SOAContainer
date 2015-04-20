@@ -221,6 +221,29 @@ class SOAContainer {
 		};
 
 	    public:
+		/// copy constructor
+		SOAObjectProxy(const SOAObjectProxy& other) :
+		    m_index(other.m_index), m_storage(other.m_storage) { }
+		/// move constructor
+		SOAObjectProxy(SOAObjectProxy&& other) :
+		    m_index(std::move(other.m_index)),
+		    m_storage(std::move(other.m_storage)) { }
+		/// assignment operator
+		SOAObjectProxy& operator=(const SOAObjectProxy& other)
+		{
+		    if (&other != this)
+		       	m_index = other.m_index, m_storage = other.m_storage;
+		    return *this;
+		}
+		/// move assignment operator
+		SOAObjectProxy& operator=(SOAObjectProxy&& other)
+		{
+		    if (&other != this)
+		       	m_index = std::move(other.m_index),
+				m_storage = std::move(other.m_storage);
+		    return *this;
+		}
+
 		/// access to member by number
 		template <size_type MEMBERNO>
 		auto get() -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
@@ -593,6 +616,33 @@ class SOAContainer {
 	    }
 	};
 
+	/// little helper for erase(it)
+	struct eraseHelper {
+	    size_type m_idx;
+	    eraseHelper(size_type idx) : m_idx(idx) { }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    {
+		obj.erase(obj.begin() + m_idx);
+		return true;
+	    }
+	};
+
+	/// little helper for erase(first, last)
+	struct eraseHelper_N {
+	    size_type m_idx;
+	    size_type m_sz;
+	    eraseHelper_N(size_type idx, size_type sz) :
+		m_idx(idx), m_sz(sz) { }
+	    template <typename T, typename IDX>
+	    bool operator()(T& obj, IDX) const
+	    {
+		const auto it = obj.begin() + m_idx;
+		obj.erase(it, it + m_sz);
+		return true;
+	    }
+	};
+
     public:
 
 	/// push an element at the back of the array
@@ -643,6 +693,38 @@ class SOAContainer {
 		    insertHelper_count(val, idx, count), [] (bool, bool) {
 		    return true; }, true);
 	    return (iterator(*pos)) += count;
+	}
+
+	/// insert elements between first and last at position pos
+	template <typename IT>
+	iterator insert(const_iterator pos, IT first, IT last)
+	{
+	    iterator retVal(*pos);
+	    while (first != last) { retVal = insert(retVal, *first); ++first; }
+	    return retVal;
+	}
+
+	/// erase an element at the given position
+	iterator erase(const_iterator pos)
+	{
+	    assert((*pos).m_storage == &m_storage);
+	    const size_type idx = pos - cbegin();
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+		    eraseHelper(idx), [] (bool, bool) { return true; }, true);
+	    return iterator(*pos);
+	}
+
+	/// erase elements from first to last
+	iterator erase(const_iterator first, const_iterator last)
+	{
+	    assert((*first).m_storage == &m_storage);
+	    assert((*last).m_storage == &m_storage);
+	    const size_type idx = first - cbegin();
+	    const size_type sz = last - first;
+	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+		    eraseHelper_N(idx, sz), [] (bool, bool) {
+		    return true; }, true);
+	    return iterator(*first);
 	}
 
 };
