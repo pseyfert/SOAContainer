@@ -81,10 +81,37 @@
  */
 template <template <typename...> class CONTAINER, typename... FIELDS>
 class SOAContainer {
+    private:
+	/// little helper to verify the FIELDS template parameter
+	template <typename... ARGS>
+	struct verify_fields;
+	/// specialisation for more than one field
+	template <typename HEAD, typename... TAIL>
+	struct verify_fields<HEAD, TAIL...>
+	{
+	    enum {
+		value = (std::is_pod<HEAD>::value ||
+			SOATypelist::typelist_helpers::is_wrapped<
+			HEAD>::value) && verify_fields<TAIL...>::value
+	    };
+	};
+	/// specialisation for one field
+	template <typename HEAD>
+	struct verify_fields<HEAD>
+	{
+	    enum {
+		value = std::is_pod<HEAD>::value ||
+		    SOATypelist::typelist_helpers::is_wrapped<HEAD>::value
+	    };
+	};
     public:
 	// storing objects without state doesn't make sense
 	static_assert(1 <= sizeof...(FIELDS),
 		"need to supply at least one field");
+	// make sure fields are either POD or wrapped types
+	static_assert(verify_fields<FIELDS...>::value,
+		"Fields should be either plain old data (POD) or "
+		"wrapped types.");
 
 	/// type to represent sizes and indices
 	typedef std::size_t size_type;
