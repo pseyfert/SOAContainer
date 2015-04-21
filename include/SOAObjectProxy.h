@@ -111,7 +111,7 @@ class SOAObjectProxy {
 	    return *this;
 	}
 	/// move assignment operator
-	self_type operator=(self_type&& other)
+	self_type& operator=(self_type&& other)
 	{
 	    if (&other != this)
 		m_index = std::move(other.m_index),
