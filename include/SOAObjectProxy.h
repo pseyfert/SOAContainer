@@ -233,67 +233,116 @@ class SOAObjectProxy {
 	    return nullptr != m_storage &&
 		m_index < std::get<0>(*m_storage).size();
 	}
-	/// check for equality (pointer aspect)
-	bool operator==(const self_type& other) const noexcept
-	{
-	    return m_storage == other.m_storage &&
-		m_index == other.m_index;
-	}
-	/// check for inequality (pointer aspect)
-	bool operator!=(const self_type& other) const noexcept
-	{
-	    return m_storage != other.m_storage ||
-		m_index != other.m_index;
-	}
-	/// ordering comparison: < (pointer aspect)
-	bool operator<(const self_type& other) const noexcept
-	{
-	    return (m_storage < other.m_storage) ? true :
-		(other.m_storage < m_storage) ? false :
-		m_index < other.m_index;
-	}
-	/// ordering comparison: <= (pointer aspect)
-	bool operator<=(const self_type& other) const noexcept
-	{
-	    return (m_storage < other.m_storage) ? true :
-		(other.m_storage < m_storage) ? false :
-		m_index <= other.m_index;
-	}
-	/// ordering comparison: > (pointer aspect)
-	bool operator>(const self_type& other) const noexcept
-	{
-	    return (m_storage < other.m_storage) ? false :
-		(other.m_storage < m_storage) ? true :
-		other.m_index < m_index;
-	}
-	/// ordering comparison: >= (pointer aspect)
-	bool operator>=(const self_type& other) const noexcept
-	{
-	    return (m_storage < other.m_storage) ? false :
-		(other.m_storage < m_storage) ? true :
-		other.m_index <= m_index;
-	}
 
-	/// check for equality (value aspect)
-	bool operator==(const value_type& other) const noexcept
-	{ return value_type(*this) == other; }
-	/// check for inequality (value aspect)
-	bool operator!=(const value_type& other) const noexcept
-	{ return value_type(*this) != other; }
-	/// ordering comparison: < (value aspect)
-	bool operator<(const value_type& other) const noexcept
-	{ return value_type(*this) < other; }
-	/// ordering comparison: <= (value aspect)
-	bool operator<=(const value_type& other) const noexcept
-	{ return value_type(*this) <= other; }
-	/// ordering comparison: > (value aspect)
-	bool operator>(const value_type& other) const noexcept
-	{ return value_type(*this) > other; }
-	/// ordering comparison: >= (value aspect)
-	bool operator>=(const value_type& other) const noexcept
-	{ return value_type(*this) >= other; }
-
+	template <typename T>
+	friend bool operator==(const SOAObjectProxy<T>&, const SOAObjectProxy<T>&) noexcept;
+	template <typename T>
+	friend bool operator!=(const SOAObjectProxy<T>&, const SOAObjectProxy<T>&) noexcept;
+	template <typename T>
+	friend bool operator<(const SOAObjectProxy<T>&, const SOAObjectProxy<T>&) noexcept;
+	template <typename T>
+	friend bool operator<=(const SOAObjectProxy<T>&, const SOAObjectProxy<T>&) noexcept;
+	template <typename T>
+	friend bool operator>(const SOAObjectProxy<T>&, const SOAObjectProxy<T>&) noexcept;
+	template <typename T>
+	friend bool operator>=(const SOAObjectProxy<T>&, const SOAObjectProxy<T>&) noexcept;
 }; 
+
+/// check for equality (pointer aspect)
+template <typename T>
+bool operator==(const SOAObjectProxy<T>& a, const SOAObjectProxy<T>& b) noexcept
+{ return a.m_storage == b.m_storage && a.m_index == b.m_index; }
+
+/// check for inequality (pointer aspect)
+template <typename T>
+bool operator!=(const SOAObjectProxy<T>& a, const SOAObjectProxy<T>& b) noexcept
+{ return a.m_storage != b.m_storage || a.m_index != b.m_index; }
+
+/// ordering comparison: < (pointer aspect)
+template <typename T>
+bool operator<(const SOAObjectProxy<T>& a, const SOAObjectProxy<T>& b) noexcept
+{
+    return (a.m_storage < b.m_storage) ? true :
+	(b.m_storage < a.m_storage) ? false :
+	a.m_index < b.m_index;
+}
+
+/// ordering comparison: <= (pointer aspect)
+template <typename T>
+bool operator<=(const SOAObjectProxy<T>& a, const SOAObjectProxy<T>& b) noexcept
+{
+    return (a.m_storage < b.m_storage) ? true :
+	(b.m_storage < a.m_storage) ? false :
+	a.m_index <= b.m_index;
+}
+
+/// ordering comparison: > (pointer aspect)
+template <typename T>
+bool operator>(const SOAObjectProxy<T>& a, const SOAObjectProxy<T>& b) noexcept
+{
+    return (a.m_storage < b.m_storage) ? false :
+	(b.m_storage < a.m_storage) ? true :
+	b.m_index < a.m_index;
+}
+
+/// ordering comparison: >= (pointer aspect)
+template <typename T>
+bool operator>=(const SOAObjectProxy<T>& a, const SOAObjectProxy<T>& b) noexcept
+{
+    return (a.m_storage < b.m_storage) ? false :
+	(b.m_storage < a.m_storage) ? true :
+	b.m_index <= a.m_index;
+}
+
+/// compare proxy and value (by value)
+template <typename T>
+bool operator==(const SOAObjectProxy<T>& a, const typename SOAObjectProxy<T>::value_type& b) noexcept
+{ return static_cast<typename SOAObjectProxy<T>::value_type>(a) == b; }
+/// compare proxy and value (by value)
+template <typename T>
+bool operator!=(const SOAObjectProxy<T>& a, const typename SOAObjectProxy<T>::value_type& b) noexcept
+{ return static_cast<typename SOAObjectProxy<T>::value_type>(a) != b; }
+/// compare proxy and value (by value)
+template <typename T>
+bool operator<(const SOAObjectProxy<T>& a, const typename SOAObjectProxy<T>::value_type& b) noexcept
+{ return static_cast<typename SOAObjectProxy<T>::value_type>(a) < b; }
+/// compare proxy and value (by value)
+template <typename T>
+bool operator<=(const SOAObjectProxy<T>& a, const typename SOAObjectProxy<T>::value_type& b) noexcept
+{ return static_cast<typename SOAObjectProxy<T>::value_type>(a) <= b; }
+/// compare proxy and value (by value)
+template <typename T>
+bool operator>(const SOAObjectProxy<T>& a, const typename SOAObjectProxy<T>::value_type& b) noexcept
+{ return static_cast<typename SOAObjectProxy<T>::value_type>(a) > b; }
+/// compare proxy and value (by value)
+template <typename T>
+bool operator>=(const SOAObjectProxy<T>& a, const typename SOAObjectProxy<T>::value_type& b) noexcept
+{ return static_cast<typename SOAObjectProxy<T>::value_type>(a) >= b; }
+
+/// compare proxy and value (by value)
+template <typename T>
+bool operator==(const typename SOAObjectProxy<T>::value_type& a, const SOAObjectProxy<T>& b) noexcept
+{ return a == static_cast<typename SOAObjectProxy<T>::value_type>(b); }
+/// compare proxy and value (by value)
+template <typename T>
+bool operator!=(const typename SOAObjectProxy<T>::value_type& a, const SOAObjectProxy<T>& b) noexcept
+{ return a != static_cast<typename SOAObjectProxy<T>::value_type>(b); }
+/// compare proxy and value (by value)
+template <typename T>
+bool operator<(const typename SOAObjectProxy<T>::value_type& a, const SOAObjectProxy<T>& b) noexcept
+{ return a < static_cast<typename SOAObjectProxy<T>::value_type>(b); }
+/// compare proxy and value (by value)
+template <typename T>
+bool operator<=(const typename SOAObjectProxy<T>::value_type& a, const SOAObjectProxy<T>& b) noexcept
+{ return a <= static_cast<typename SOAObjectProxy<T>::value_type>(b); }
+/// compare proxy and value (by value)
+template <typename T>
+bool operator>(const typename SOAObjectProxy<T>::value_type& a, const SOAObjectProxy<T>& b) noexcept
+{ return a > static_cast<typename SOAObjectProxy<T>::value_type>(b); }
+/// compare proxy and value (by value)
+template <typename T>
+bool operator>=(const typename SOAObjectProxy<T>::value_type& a, const SOAObjectProxy<T>& b) noexcept
+{ return a >= static_cast<typename SOAObjectProxy<T>::value_type>(b); }
 
 #endif // SOAOBJECTPROXY_H
 

@@ -146,8 +146,8 @@ class SOAContainer {
 	typedef typename SOATypelist::typelist_to_reftuple<
 	    fields_typelist>::type reference_tuple_type;
     public:
+	friend class SOAObjectProxy<self_type>;
 	typedef SOAObjectProxy<self_type> SOAObjectProxy;
-	friend SOAObjectProxy;
 
 	/// (notion of) type of the contained objects
 	typedef typename SOAObjectProxy::value_type value_type;
