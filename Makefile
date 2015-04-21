@@ -15,8 +15,8 @@ doxy:
 	doxygen
 
 SOAContainerTest.o: tests/SOAContainerTest.cc include/SOAContainer.h \
-    include/SOAIterator.h include/SOATypelist.h include/SOATypelistUtils.h \
-    include/SOAUtils.h
+    include/SOAObjectProxy.h include/SOAIterator.h include/SOATypelist.h \
+    include/SOATypelistUtils.h include/SOAUtils.h
 
 SOAContainerTest: SOAContainerTest.o
 

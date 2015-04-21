@@ -14,8 +14,8 @@
 /// unit test SOAContainer class
 static void test()
 {
-    SOAContainer<std::vector, double, int, int> c;
-    const SOAContainer<std::vector, double, int, int>& cc = c;
+    SOAContainer<std::vector, NullSkin, double, int, int> c;
+    const SOAContainer<std::vector, NullSkin, double, int, int>& cc = c;
     // check basic properties
     assert(c.empty());
     assert(0 == c.size());

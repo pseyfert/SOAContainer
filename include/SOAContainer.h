@@ -12,8 +12,17 @@
 
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
+#include "SOAObjectProxy.h"
 #include "SOAIterator.h"
 #include "SOAUtils.h"
+
+template <typename NAKEDPROXY>
+class NullSkin : public NAKEDPROXY
+{
+    public:
+	template <typename... ARGS>
+	NullSkin(ARGS&&... args) : NAKEDPROXY(std::forward<ARGS>(args)...) { }
+};
 
 /** @brief container class for objects with given fields (SOA storage)
  *
@@ -79,7 +88,7 @@
  * @tparam FIELDS... 	list of "field tags" describing names an types
  * 			of members
  */
-template <template <typename...> class CONTAINER, typename... FIELDS>
+template <template <typename...> class CONTAINER, template <typename> class SKIN, typename... FIELDS>
 class SOAContainer {
     private:
 	/// little helper to verify the FIELDS template parameter
@@ -118,293 +127,27 @@ class SOAContainer {
 	/// type to represent differences of indices
 	typedef std::ptrdiff_t difference_type;
 	/// type to represent container itself
-	typedef SOAContainer<CONTAINER, FIELDS...> self_type;
+	typedef SOAContainer<CONTAINER, SKIN, FIELDS...> self_type;
+	typedef SOATypelist::typelist<FIELDS...> fields_typelist;
 
     private:
 	/// type of the storage backend
 	typedef typename SOATypelist::typelist_to_tuple_of_containers<
-	    SOATypelist::typelist<FIELDS...>,
+	    fields_typelist,
 	    SOATypelist::containerify<CONTAINER> >::type SOAStorage;
 
 	/// storage backend
 	SOAStorage m_storage;
 
+	/// tuple type used as values
+	typedef typename SOATypelist::typelist_to_tuple<
+	    fields_typelist>::type value_tuple_type;
+	/// tuple type used as reference
+	typedef typename SOATypelist::typelist_to_reftuple<
+	    fields_typelist>::type reference_tuple_type;
     public:
-	/** @brief proxy object for the elements stored in the container.
-	 *
-	 * @author Manuel Schiller <Manuel.Schiller@cern.ch>
-	 * @date 2015-04-10
-	 *
-	 * Conceptually, the SOAContainer contains a collection of objects
-	 * which have some data members. To optimise the data access patterns
-	 * in memory, the SOAContainer doesn't store the objects themselves,
-	 * but containers which each store a different member. That means the
-	 * conceptual objects mentioned above do not exist as such. The
-	 * SOAObjectProxy class stands in for these objects, and provides
-	 * support for accessing members, assigment of the whole conceptual
-	 * object from a tuple of its members, and similar functionality.
-	 *
-	 * At the same time, the SOAObjectProxy acts like a pointer to one of
-	 * the contained objects (this was done mainly to facilitate writing
-	 * iterator classes).
-	 *
-	 * Hence, a SOAObjectProxy is a strange entity which leads its
-	 * existence as a cross between a (smart) reference and a (smart)
-	 * pointer...
-	 */
-	class SOAObjectProxy {
-	    public:
-		/// type to which SOAObjectProxy converts and can be assigned from
-		typedef typename SOATypelist::typelist_to_tuple<
-		    SOATypelist::typelist<FIELDS...> >::type value_type;
-		/// type of parent container
-		typedef self_type parent_type;
-		/// type to hold the distance between two iterators
-		typedef typename parent_type::difference_type difference_type;
-
-	    private:
-		size_type m_index;	///< index into underlying SOA storage
-		SOAStorage* m_storage;	///< underlying SOA storage of members
-
-		// SOAContainer is allowed to invoke the private constructor
-		friend class SOAContainer<CONTAINER, FIELDS...>;
-		/// constructor is private, but parent container is a friend
-		SOAObjectProxy(
-			SOAStorage* storage = nullptr,
-			size_type index = 0) noexcept :
-		    m_index(index), m_storage(storage)
-	        { }
-
-		/// typedef for tuple of references to members
-		typedef typename SOATypelist::typelist_to_reftuple<
-		    SOATypelist::typelist<FIELDS...> >::type reference_type;
-
-		/// little helper to implement conversion to tuple
-		struct to_valueHelper {
-		    size_type m_idx;
-		    template <typename T, typename Idx>
-		    std::tuple<typename T::value_type>
-		    operator()(const T& obj, Idx) const
-		    { return std::tuple<typename T::value_type>(obj[m_idx]); }
-		};
-
-		/// little helper to implement conversion to tuple of references
-		struct to_referenceHelper {
-		    size_type m_idx;
-		    template <typename T, typename Idx>
-		    std::tuple<typename T::value_type&>
-		    operator()(const T& obj, Idx) const
-		    { return std::tuple<typename T::value_type&>(obj[m_idx]); }
-		};
-
-		/// little helper to implement concatenation of tuples
-		struct tuplecatHelper {
-		    template <typename... S, typename T>
-		    auto operator()(std::tuple<S...>&& t1, std::tuple<T>&& t2) const ->
-			decltype(std::tuple_cat(std::move(t1), std::move(t2)))
-		    { return std::tuple_cat(std::move(t1), std::move(t2)); }
-		};
-
-	    public:
-		/// copy constructor
-		SOAObjectProxy(const SOAObjectProxy& other) :
-		    m_index(other.m_index), m_storage(other.m_storage) { }
-		/// move constructor
-		SOAObjectProxy(SOAObjectProxy&& other) :
-		    m_index(std::move(other.m_index)),
-		    m_storage(std::move(other.m_storage)) { }
-		/// assignment operator
-		SOAObjectProxy& operator=(const SOAObjectProxy& other)
-		{
-		    if (&other != this)
-		       	m_index = other.m_index, m_storage = other.m_storage;
-		    return *this;
-		}
-		/// move assignment operator
-		SOAObjectProxy& operator=(SOAObjectProxy&& other)
-		{
-		    if (&other != this)
-		       	m_index = std::move(other.m_index),
-				m_storage = std::move(other.m_storage);
-		    return *this;
-		}
-
-		/// access to member by number
-		template <size_type MEMBERNO>
-		auto get() -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
-		{ return std::get<MEMBERNO>(*m_storage)[m_index]; }
-		/// access to member by "member tag"
-		template <typename MEMBER>
-		auto get() -> decltype(std::get<SOATypelist::find<
-			SOATypelist::typelist<FIELDS...>,
-			MEMBER>::index>(*m_storage)[m_index])
-		{
-		    return std::get<
-			SOATypelist::find<SOATypelist::typelist<FIELDS...>,
-		    MEMBER>::index>(*m_storage)[m_index];
-		}
-		/// access to member by number (read-only)
-		template <size_type MEMBERNO>
-		auto get() const ->
-		    decltype(std::get<MEMBERNO>(*m_storage)[m_index])
-		{ return std::get<MEMBERNO>(*m_storage)[m_index]; }
-		/// access to member by "member tag" (read-only)
-		template <typename MEMBER>
-		auto get() const -> decltype(std::get<SOATypelist::find<
-			SOATypelist::typelist<FIELDS...>,
-			MEMBER>::index>(*m_storage)[m_index])
-		{
-		    return std::get<
-			SOATypelist::find<SOATypelist::typelist<FIELDS...>,
-		    MEMBER>::index>(*m_storage)[m_index];
-		}
-
-		/// convert to tuple of member contents
-		operator value_type() const
-		{
-		    return SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-			    *m_storage, to_valueHelper({ m_index }),
-			    tuplecatHelper(), std::tuple<>());
-		}
-		
-		/// convert to tuple of references member contents
-		operator reference_type() const
-		{
-		    return SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-			    *m_storage, to_referenceHelper({ m_index }),
-			    tuplecatHelper(), std::tuple<>());
-		}
-
-		/// assign from tuple of member contents
-		SOAObjectProxy& operator=(const value_type& other)
-		{
-		    reference_type(*this) = other;
-		    return *this;
-		}
-
-		/// assign from tuple of member contents
-		SOAObjectProxy& operator=(const reference_type& other)
-		{
-		    reference_type(*this) = other;
-		    return *this;
-		}
-
-		/// "deep"-swap the contents of two SOAObjectProxy instances
-		void swap(SOAObjectProxy& other)
-		{ std::swap(reference_type(*this), reference_type(other)); }
-
-		/// dereference
-		SOAObjectProxy& operator*() noexcept
-		{ return *this; }
-		/// dereference
-		const SOAObjectProxy& operator*() const noexcept
-		{ return *this; }
-		/// helper to support iterator->get<...>() idiom
-		SOAObjectProxy* operator->() noexcept
-		{ return this; }
-		/// helper to support iterator->get<...>() idiom
-		const SOAObjectProxy* operator->() const noexcept
-		{ return this; }
-
-		/// move to next element (pre-increment)
-		SOAObjectProxy& operator++() noexcept
-		{ ++m_index; return *this; }
-		/// move to previous element (pre-decrement)
-		SOAObjectProxy& operator--() noexcept
-		{ --m_index; return *this; }
-		/// move to next element (post-increment)
-		SOAObjectProxy operator++(int) noexcept
-		{ SOAObjectProxy retVal(*this); operator++(); return retVal; }
-		/// move to previous element (post-decrement)
-		SOAObjectProxy operator--(int) noexcept
-		{ SOAObjectProxy retVal(*this); operator--(); return retVal; }
-		
-		/// advance dist elements
-		SOAObjectProxy& operator+=(difference_type dist) noexcept
-		{ m_index += dist; return *this; }
-		/// retreat dist elements
-		SOAObjectProxy& operator-=(difference_type dist) noexcept
-		{ m_index -= dist; return *this; }
-		/// advance dist elements
-		SOAObjectProxy operator+(difference_type dist) const noexcept
-		{ return SOAObjectProxy(*this) += dist; }
-		/// retreat dist elements
-		SOAObjectProxy operator-(difference_type dist) const noexcept
-		{ return SOAObjectProxy(*this) -= dist; }
-		/// distance between two SOAObjectProxy instances
-		difference_type operator-(const SOAObjectProxy& other) const noexcept
-		{
-		    return m_storage == other.m_storage ?
-			(m_index - other.m_index) : -1;
-		}
-
-		/// check if SOAObjectProxy is valid (i.e. points to something)
-		operator bool() const noexcept
-		{
-		    return nullptr != m_storage &&
-			m_index < std::get<0>(*m_storage).size();
-		}
-		/// check for equality (pointer aspect)
-		bool operator==(const SOAObjectProxy& other) const noexcept
-		{
-		    return m_storage == other.m_storage &&
-			m_index == other.m_index;
-		}
-		/// check for inequality (pointer aspect)
-		bool operator!=(const SOAObjectProxy& other) const noexcept
-		{
-		    return m_storage != other.m_storage ||
-			m_index != other.m_index;
-		}
-		/// ordering comparison: < (pointer aspect)
-		bool operator<(const SOAObjectProxy& other) const noexcept
-		{
-		    return (m_storage < other.m_storage) ? true :
-			(other.m_storage < m_storage) ? false :
-			m_index < other.m_index;
-		}
-		/// ordering comparison: <= (pointer aspect)
-		bool operator<=(const SOAObjectProxy& other) const noexcept
-		{
-		    return (m_storage < other.m_storage) ? true :
-			(other.m_storage < m_storage) ? false :
-			m_index <= other.m_index;
-		}
-		/// ordering comparison: > (pointer aspect)
-		bool operator>(const SOAObjectProxy& other) const noexcept
-		{
-		    return (m_storage < other.m_storage) ? false :
-			(other.m_storage < m_storage) ? true :
-			other.m_index < m_index;
-		}
-		/// ordering comparison: >= (pointer aspect)
-		bool operator>=(const SOAObjectProxy& other) const noexcept
-		{
-		    return (m_storage < other.m_storage) ? false :
-			(other.m_storage < m_storage) ? true :
-			other.m_index <= m_index;
-		}
-
-		/// check for equality (value aspect)
-		bool operator==(const value_type& other) const noexcept
-		{ return value_type(*this) == other; }
-		/// check for inequality (value aspect)
-		bool operator!=(const value_type& other) const noexcept
-		{ return value_type(*this) != other; }
-		/// ordering comparison: < (value aspect)
-		bool operator<(const value_type& other) const noexcept
-		{ return value_type(*this) < other; }
-		/// ordering comparison: <= (value aspect)
-		bool operator<=(const value_type& other) const noexcept
-		{ return value_type(*this) <= other; }
-		/// ordering comparison: > (value aspect)
-		bool operator>(const value_type& other) const noexcept
-		{ return value_type(*this) > other; }
-		/// ordering comparison: >= (value aspect)
-		bool operator>=(const value_type& other) const noexcept
-		{ return value_type(*this) >= other; }
-
-	}; 
+	typedef SOAObjectProxy<self_type> SOAObjectProxy;
+	friend SOAObjectProxy;
 
 	/// (notion of) type of the contained objects
 	typedef typename SOAObjectProxy::value_type value_type;
@@ -413,13 +156,13 @@ class SOAContainer {
 	/// pointer to contained objects
 	typedef SOAObjectProxy pointer_type;
 	/// reference to contained objects
-	typedef const SOAObjectProxy const_reference_type;
+	typedef const reference_type const_reference_type;
 	/// const pointer to contained objects
-	typedef const SOAObjectProxy const_pointer_type;
+	typedef const pointer_type const_pointer_type;
 	/// iterator type
-	typedef SOAIterator<SOAObjectProxy> iterator;
+	typedef SOAIterator<pointer_type> iterator;
 	/// const iterator type
-	typedef SOAIterator<const SOAObjectProxy> const_iterator;
+	typedef SOAIterator<const_pointer_type> const_iterator;
 	/// reverse iterator type
 	typedef std::reverse_iterator<iterator> reverse_iterator;
 	/// const reverse iterator type
