@@ -64,11 +64,11 @@ class SOAConstIterator
 
 	/// assignment
 	self_type& operator=(const self_type& other) noexcept
-	{ if (&other != this) m_proxy = other.m_proxy; return *this; }
+	{ if (&other != this) m_proxy.assign(other.m_proxy); return *this; }
 	/// assignment (move semantics)
 	self_type& operator=(self_type&& other) noexcept
 	{
-	    if (&other != this) m_proxy = std::move(other.m_proxy);
+	    if (&other != this) m_proxy.assign(std::move(other.m_proxy));
 	    return *this;
 	}
 
@@ -213,15 +213,6 @@ class SOAConstIterator
 	}
 };
 
-/// implement integer + SOAConstIterator
-template <typename PROXY, typename T>
-typename std::enable_if<
-    std::is_integral<T>::value && std::is_convertible<T,
-        typename SOAConstIterator<PROXY>::difference_type>::value,
-    SOAConstIterator<PROXY> >::type
-    operator+(T dist, const SOAConstIterator<PROXY>& other) noexcept
-{ return other + dist; }
-
 /** @brief class mimicking a pointer to pointee inidicated by PROXY
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
@@ -240,7 +231,7 @@ class SOAIterator : public SOAConstIterator<PROXY>
 
     public:
 	/// convenience typedef for our own type
-	typedef SOAConstIterator<PROXY> self_type;
+	typedef SOAIterator<PROXY> self_type;
 	/// import value_type from PROXY
 	typedef PROXY value_type;
 	/// import size_type from PROXY
@@ -374,6 +365,15 @@ typename std::enable_if<
         typename SOAIterator<PROXY>::difference_type>::value,
     SOAIterator<PROXY> >::type
     operator+(T dist, const SOAIterator<PROXY>& other) noexcept
+{ return other + dist; }
+
+/// implement integer + SOAConstIterator
+template <typename PROXY, typename T>
+typename std::enable_if<
+    std::is_integral<T>::value && std::is_convertible<T,
+        typename SOAConstIterator<PROXY>::difference_type>::value,
+    SOAConstIterator<PROXY> >::type
+    operator+(T dist, const SOAConstIterator<PROXY>& other) noexcept
 { return other + dist; }
 
 #endif // SOAITERATOR_H

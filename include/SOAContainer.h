@@ -145,7 +145,12 @@ class SOAContainer {
 	/// tuple type used as reference
 	typedef typename SOATypelist::typelist_to_reftuple<
 	    fields_typelist>::type reference_tuple_type;
+	/// tuple type used as const reference
+	typedef typename SOATypelist::typelist_to_creftuple<
+	    fields_typelist>::type const_reference_tuple_type;
+
     public:
+	/// type of proxy
 	typedef SOAObjectProxy<self_type> proxy_type;
 	friend proxy_type;
 	/// pointer to contained objects
@@ -672,7 +677,6 @@ class SOAContainer {
 		    std::forward<ARGS>(args)...);
 	    return iterator(pos.m_proxy.m_storage, pos.m_proxy.m_index);
 	}
-
 };
 
 #endif // SOACONTAINER_H

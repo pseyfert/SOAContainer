@@ -199,6 +199,16 @@ static void test()
 		    [] (size_type a, size_type b) { return a + b; },
 		    [] (const decltype(val)& a, const decltype(val)& b) {
 		        return size_type(a == b); }));
+	// test sort (and swap)
+	assert(std::is_sorted(c.begin(), c.end(),
+		[] (decltype(c.front()) a, decltype(c.front()) b)
+		{ return a.get<1>() < b.get<1>(); }));
+	std::sort(c.begin(), c.end(),
+		[] (decltype(c.front()) a, decltype(c.front()) b)
+		{ return a.get<1>() > b.get<1>(); });
+	assert(std::is_sorted(c.begin(), c.end(),
+		[] (decltype(c.front()) a, decltype(c.front()) b)
+		{ return a.get<1>() > b.get<1>(); }));
     }
     {
 	// test assign(count, val)

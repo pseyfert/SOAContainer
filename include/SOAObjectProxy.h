@@ -47,6 +47,9 @@ class SOAObjectProxy {
 	typedef typename parent_type::value_tuple_type value_type;
 	/// typedef for tuple of references to members
 	typedef typename parent_type::reference_tuple_type reference_type;
+	/// typedef for tuple of const references to members
+	typedef typename parent_type::const_reference_tuple_type
+	    const_reference_type;
 	/// typedef to identify the type of a pointer
 	typedef SOAIterator<self_type> pointer_type;
 	/// typedef to identify the type of a const pointer
@@ -79,26 +82,46 @@ class SOAObjectProxy {
 	struct to_valueHelper {
 	    size_type m_idx;
 	    template <typename T, typename Idx>
-		std::tuple<typename T::value_type>
-		operator()(const T& obj, Idx) const
-		{ return std::tuple<typename T::value_type>(obj[m_idx]); }
+	    std::tuple<typename T::value_type>
+	    operator()(const T& obj, Idx) const
+	    { return std::tuple<typename T::value_type>(obj[m_idx]); }
 	};
 
 	/// little helper to implement conversion to tuple of references
 	struct to_referenceHelper {
 	    size_type m_idx;
 	    template <typename T, typename Idx>
-		std::tuple<typename T::value_type&>
-		operator()(const T& obj, Idx) const
-		{ return std::tuple<typename T::value_type&>(obj[m_idx]); }
+	    std::tuple<typename T::reference> operator()(T& obj, Idx) const
+	    { return std::tuple<typename T::reference>(obj[m_idx]); }
+	};
+
+	/// little helper to implement conversion to tuple of const references
+	struct to_const_referenceHelper {
+	    size_type m_idx;
+	    template <typename T, typename Idx>
+	    std::tuple<typename T::const_reference>
+	    operator()(const T& obj, Idx) const
+	    { return std::tuple<const typename T::const_reference>(obj[m_idx]); }
 	};
 
 	/// little helper to implement concatenation of tuples
 	struct tuplecatHelper {
 	    template <typename... S, typename T>
-		auto operator()(std::tuple<S...>&& t1, std::tuple<T>&& t2) const ->
+	    auto operator()(std::tuple<S...>&& t1, std::tuple<T>&& t2) const ->
 		decltype(std::tuple_cat(std::move(t1), std::move(t2)))
-		{ return std::tuple_cat(std::move(t1), std::move(t2)); }
+	    { return std::tuple_cat(std::move(t1), std::move(t2)); }
+	};
+
+	struct swapHelper {
+	    size_type m_idx1;
+	    size_type m_idx2;
+	    SOAStorage* m_other;
+	    template <typename T, typename Idx>
+	    bool operator()(T& obj, Idx) const
+	    {
+		std::swap(obj[m_idx1], std::get<Idx::value>(*m_other)[m_idx2]);
+		return true;
+	    }
 	};
 
     public:
@@ -110,61 +133,80 @@ class SOAObjectProxy {
 	    m_index(std::move(other.m_index)),
 	    m_storage(std::move(other.m_storage)) { }
 
+	/// convert to tuple of member contents
+	operator value_type() const
+	{
+	    return SOAUtils::recursive_apply_tuple<
+		fields_typelist::size()>()(
+		    *m_storage, to_valueHelper({ m_index }),
+		    tuplecatHelper(), std::tuple<>());
+	}
+
+	/// convert to tuple of references member contents
+	operator reference_type()
+	{
+	    return SOAUtils::recursive_apply_tuple<
+		fields_typelist::size()>()(
+		    *m_storage, to_referenceHelper({ m_index }),
+		    tuplecatHelper(), std::tuple<>());
+	}
+
+	/// convert to tuple of const references member contents
+	operator const_reference_type() const
+	{
+	    return SOAUtils::recursive_apply_tuple<
+		fields_typelist::size()>()(
+		    *m_storage, to_const_referenceHelper({ m_index }),
+		    tuplecatHelper(), std::tuple<>());
+	}
+
 	/// assign from tuple of member contents
 	self_type& operator=(const value_type& other)
-	{
-	    reference_type(*this) = other;
-	    return *this;
-	}
+	{ reference_type(*this) = other; return *this; }
 
 	/// assign from tuple of member contents (move semantics)
 	self_type& operator=(value_type&& other)
-	{
-	    reference_type(*this) = std::move(other);
-	    return *this;
-	}
+	{ reference_type(*this) = std::move(other); return *this; }
 
 	/// assign from tuple of member contents
 	self_type& operator=(const reference_type& other)
-	{
-	    reference_type(*this) = other;
-	    return *this;
-	}
+	{ reference_type(*this) = other; return *this; }
 
 	/// assign from tuple of member contents (move semantics)
 	self_type& operator=(reference_type&& other)
-	{
-	    reference_type(*this) = std::move(other);
-	    return *this;
-	}
+	{ reference_type(*this) = std::move(other); return *this; }
 
-	/// assignment operator (value semanticis)
+	/// assign from tuple of member contents
+	self_type& operator=(const const_reference_type& other)
+	{ reference_type(*this) = other; return *this; }
+
+	/// assignment operator (value semantics)
 	self_type& operator=(const self_type& other)
 	{
-	    if (&other != this)
-		*this = reference_type(other);
+	    if (other.m_index != m_index || other.m_storage != m_storage)
+		reference_type(*this) = const_reference_type(other);
 	    return *this;
 	}
 
 	/// move assignment operator (value semantics)
 	self_type& operator=(self_type&& other)
 	{
-	    if (&other != this)
-		*this = std::move(reference_type(other));
+	    if (other.m_index != m_index || other.m_storage != m_storage)
+		reference_type(*this) = std::move(reference_type(other));
 	    return *this;
 	}
 
 	/// assignment (pointer-like semantics)
 	self_type& assign(const self_type& other)
 	{
-	    if (&other != this)
+	    if (other.m_index != m_index || other.m_storage != m_storage)
 		m_index = other.m_index, m_storage = other.m_storage;
 	    return *this;
 	}
 	/// move assignment (pointer-like semantics)
 	self_type& assign(self_type&& other)
 	{
-	    if (&other != this)
+	    if (other.m_index != m_index || other.m_storage != m_storage)
 		m_index = std::move(other.m_index),
 			m_storage = std::move(other.m_storage);
 	    return *this;
@@ -197,27 +239,15 @@ class SOAObjectProxy {
 	        MEMBER>::index>(*m_storage)[m_index];
 	}
 
-	/// convert to tuple of member contents
-	operator value_type() const
-	{
-	    return SOAUtils::recursive_apply_tuple<
-		fields_typelist::size()>()(
-		    *m_storage, to_valueHelper({ m_index }),
-		    tuplecatHelper(), std::tuple<>());
-	}
-
-	/// convert to tuple of references member contents
-	operator reference_type()
-	{
-	    return SOAUtils::recursive_apply_tuple<
-		fields_typelist::size()>()(
-		    *m_storage, to_referenceHelper({ m_index }),
-		    tuplecatHelper(), std::tuple<>());
-	}
-
 	/// swap the contents of two SOAObjectProxy instances
-	void swap(self_type& other)
-	{ std::swap(reference_type(*this), reference_type(other)); }
+	void swap(self_type& other) noexcept(
+		noexcept(std::swap<value_type&, value_type&>))
+	{
+	    SOAUtils::recursive_apply_tuple<fields_typelist::size()>()(
+		    *m_storage,
+		    swapHelper({ m_index, other.m_index, other.m_storage }),
+		    [] (bool, bool) { return true; }, true);
+	}
 
 	/// comparison (equality)
 	bool operator==(const value_type& other) const noexcept
@@ -285,7 +315,8 @@ bool operator>=(const typename SOAObjectProxy<T>::value_type& a,
 namespace std {
     /// specialise std::swap for SOAObjectProxy<T>
     template <typename T>
-    void swap(SOAObjectProxy<T>&a, SOAObjectProxy<T>& b) noexcept
+    void swap(SOAObjectProxy<T> a, SOAObjectProxy<T> b) noexcept(
+	    noexcept(a.swap(b)))
     { a.swap(b); }
 }
 
