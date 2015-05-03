@@ -146,23 +146,27 @@ class SOAContainer {
 	typedef typename SOATypelist::typelist_to_reftuple<
 	    fields_typelist>::type reference_tuple_type;
     public:
-	friend class SOAObjectProxy<self_type>;
-	typedef SOAObjectProxy<self_type> SOAObjectProxy;
-
-	/// (notion of) type of the contained objects
-	typedef typename SOAObjectProxy::value_type value_type;
-	/// reference to contained objects
-	typedef SOAObjectProxy reference_type;
+	typedef SOAObjectProxy<self_type> proxy_type;
+	friend proxy_type;
 	/// pointer to contained objects
-	typedef SOAObjectProxy pointer_type;
+	typedef SOAPtr<proxy_type> pointer_type;
+	friend pointer_type;
+	typedef pointer_type iterator;
+	/// (notion of) type of the contained objects
+	typedef typename proxy_type::value_type value_type;
+	/// reference to contained objects
+	typedef proxy_type reference_type;
 	/// reference to contained objects
 	typedef const reference_type const_reference_type;
 	/// const pointer to contained objects
-	typedef const pointer_type const_pointer_type;
+	typedef SOAConstPtr<proxy_type> const_pointer_type;
+	friend const_pointer_type;
+	typedef const_pointer_type const_iterator;
 	/// iterator type
-	typedef SOAIterator<pointer_type> iterator;
+	//typedef SOAIterator<pointer_type> iterator;
 	/// const iterator type
-	typedef SOAIterator<const_pointer_type> const_iterator;
+	//typedef SOAIterator<const_pointer_type> const_iterator;
+	//friend const_iterator;
 	/// reverse iterator type
 	typedef std::reverse_iterator<iterator> reverse_iterator;
 	/// const reverse iterator type
@@ -300,10 +304,10 @@ class SOAContainer {
 
 	/// access specified element
 	reference_type operator[](size_type idx)
-	{ return reference_type(&m_storage, idx); }
+	{ return { &m_storage, idx }; }
 	/// access specified element (read access only)
 	const_reference_type operator[](size_type idx) const
-	{ return const_reference_type(&const_cast<SOAStorage&>(m_storage), idx); }
+	{ return { &const_cast<SOAStorage&>(m_storage), idx }; }
 	/// access specified element with out of bounds checking
 	reference_type at(size_type idx)
 	{
@@ -327,32 +331,36 @@ class SOAContainer {
 	const_reference_type back() const { return operator[](size() - 1); }
 
 	/// iterator pointing to first element
-	iterator begin() { return iterator(operator[](0)); }
+	iterator begin() noexcept { return { &m_storage, 0 }; }
 	/// const iterator pointing to first element
-	const_iterator begin() const { return const_iterator(operator[](0)); }
+	const_iterator begin() const noexcept
+	{ return { const_cast<SOAStorage*>(&m_storage), 0 }; }
 	/// const iterator pointing to first element
-	const_iterator cbegin() const { return const_iterator(operator[](0)); }
+	const_iterator cbegin() const noexcept { return begin(); }
 
 	/// iterator pointing one element behind the last element
-	iterator end() { return iterator(operator[](size())); }
+	iterator end() noexcept { return { &m_storage, size() }; }
 	/// const iterator pointing one element behind the last element
-	const_iterator end() const { return const_iterator(operator[](size())); }
+	const_iterator end() const noexcept
+	{ return { const_cast<SOAStorage*>(&m_storage), size() }; }
 	/// const iterator pointing one element behind the last element
-	const_iterator cend() const { return const_iterator(operator[](size())); }
+	const_iterator cend() const noexcept { return end(); }
 
 	/// iterator pointing to first element in reverse order
-	reverse_iterator rbegin() { return reverse_iterator(end()); }
+	reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
 	/// const iterator pointing to first element in reverse order
-	const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+	const_reverse_iterator rbegin() const noexcept
+	{ return const_reverse_iterator(end()); }
 	/// const iterator pointing to first element in reverse order
-	const_reverse_iterator crbegin() const { return const_reverse_iterator(end()); }
+	const_reverse_iterator crbegin() const noexcept { return rbegin(); }
 
 	/// iterator pointing one element behind the last element in reverse order
-	reverse_iterator rend() { return reverse_iterator(begin()); }
+	reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
 	/// const iterator pointing one element behind the last element in reverse order
-	const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
+	const_reverse_iterator rend() const noexcept
+	{ return const_reverse_iterator(begin()); }
 	/// const iterator pointing one element behind the last element in reverse order
-	const_reverse_iterator crend() const { return const_reverse_iterator(begin()); }
+	const_reverse_iterator crend() const noexcept { return rend(); }
 
     private:
 	/// little helper for resize(sz)
@@ -670,7 +678,7 @@ class SOAContainer {
 
 };
 
-/// comparison between a SOAObjectProxy::value_type and the proxy
+/*/// comparison between a SOAObjectProxy::value_type and the proxy
 template <typename PROXY>
 typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
     typename PROXY::parent_type::reference_type>::value , bool>::type
@@ -710,7 +718,7 @@ template <typename PROXY>
 typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
     typename PROXY::parent_type::reference_type>::value , bool>::type
 operator>=(const typename PROXY::value_type& a, const PROXY b) noexcept
-{ return b <= a; }
+{ return b <= a; }*/
 
 #endif // SOACONTAINER_H
 

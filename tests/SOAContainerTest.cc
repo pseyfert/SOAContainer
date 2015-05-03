@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <cstdio>
+#include <iostream>
 
 #include "SOAContainer.h"
 
@@ -168,6 +169,7 @@ static void test()
 	auto it = c.insert(c.begin(), temp.cbegin(), temp.cend());
 	assert(c.begin() == it);
 	assert(64 == c.size());
+	assert(c.size() == temp.size());
 	assert(temp.size() == std::inner_product(
 		    c.begin(), c.end(), temp.begin(), size_type(0),
 		    [] (size_type a, size_type b) { return a + b; },
@@ -178,6 +180,7 @@ static void test()
 	assert(temp.begin() + 3 == jt);
 	auto kt = c.erase(c.begin() + 3);
 	assert(c.begin() + 3 == kt);
+	assert(c.size() == temp.size());
 	assert(temp.size() == std::inner_product(
 		    c.begin(), c.end(), temp.begin(), size_type(0),
 		    [] (size_type a, size_type b) { return a + b; },
@@ -188,6 +191,7 @@ static void test()
 	assert(temp.begin() + 5 == lt);
 	auto mt = c.erase(c.begin() + 5, c.begin() + 10);
 	assert(c.begin() + 5 == mt);
+	assert(c.size() == temp.size());
 	assert(temp.size() == std::inner_product(
 		    c.begin(), c.end(), temp.begin(), size_type(0),
 		    [] (size_type a, size_type b) { return a + b; },

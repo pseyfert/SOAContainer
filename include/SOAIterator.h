@@ -14,7 +14,7 @@
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
  * @date 2015-04-10
  *
- * @tparam T	SOAObjectProxy of SOAContainer in question
+ * @tparam T	a pointer type of SOAContainer in question
  *
  * This is a pretty standard iterator class implementation, with the caveats
  * stated in SOAContainer::SOAObjectProxy.
@@ -23,25 +23,22 @@ template <typename T>
 class SOAIterator : public std::iterator<
 		    std::random_access_iterator_tag,
 		    typename T::value_type, typename T::difference_type,
-		    T, T>
+		    T, typename T::reference_type>
 {
     private:
-	// I need to remove it's constness so I can "move" the iterator, all
-	// accesses to it will re-add the constness
-	typename std::remove_const<T>::type m_base; ///< proxy for underlying object
+	T m_base; ///< proxy for underlying object
 
-	friend class SOAIterator<typename std::remove_const<T>::type>;
-	friend class SOAIterator<const T>;
+	friend class SOAIterator<SOAPtr<
+	    typename std::remove_const<typename T::reference_type>::type> >;
+	friend class SOAIterator<SOAConstPtr<
+	    typename std::remove_const<typename T::reference_type>::type> >;
+	friend typename T::reference_type::parent_type;
 
     public:
 	/// shorthand to refer to the type of this class
 	typedef SOAIterator<T> self_type;
-	/// shorthand for SOAIterator<T'>; T' is T with its constness removed
-	typedef SOAIterator<typename std::remove_const<T>::type>
-	    self_type_nc;
-	/// shorthand for SOAIterator<T'>; T' is T with its constness enforced
-	typedef SOAIterator<const typename std::remove_const<T>::type>
-	    self_type_c;
+	/// shorthand to refer to corresponding const iterator
+	typedef SOAIterator<SOAConstPtr<typename std::remove_const<typename T::reference_type>::type> > self_type_c;
 
 	/// constructor
 	SOAIterator(const T& ptr) noexcept : m_base(ptr) { }
@@ -51,22 +48,27 @@ class SOAIterator : public std::iterator<
 	/// copy constructor from SOAIterator<S>
 	template <typename S>
 	SOAIterator(const typename std::enable_if<
-		((std::is_const<T>::value == std::is_const<S>::value) ||
-		 (std::is_const<T>::value && !std::is_const<S>::value)) &&
-		std::is_same<typename std::remove_const<S>::type,
-		typename std::remove_const<T>::type>::value,
+		((std::is_const<typename T::reference_type>::value == std::is_const<typename S::reference_type>::value) ||
+		 (std::is_const<typename T::reference_type>::value && !std::is_const<typename S::reference_type>::value)) &&
+		std::is_same<typename S::const_reference_type,
+		typename T::const_reference_type>::value,
 		SOAIterator<S> >::type& other) : m_base(other.m_base) { }
 	/// move constructor from SOAIterator<S>
 	template <typename S>
 	SOAIterator(typename std::enable_if<
-		((std::is_const<T>::value == std::is_const<S>::value) ||
-		 (std::is_const<T>::value && !std::is_const<S>::value)) &&
-		std::is_same<typename std::remove_const<S>::type,
-		typename std::remove_const<T>::type>::value,
+		((std::is_const<typename T::reference_type>::value == std::is_const<typename S::reference_type>::value) ||
+		 (std::is_const<typename T::reference_type>::value && !std::is_const<typename S::reference_type>::value)) &&
+		std::is_same<typename S::const_reference_type,
+		typename T::const_reference_type>::value,
 		SOAIterator<S> >::type&& other) :
 	    m_base(std::move(other.m_base))
         { }
 
+    private:
+	SOAIterator(typename T::reference_type::parent_type::SOAStorage* storage, typename T::size_type index) :
+	    m_base(storage, index) { }
+
+    public:
 	/// assignment from T
 	self_type& operator=(const T& ptr) noexcept
 	{ reinterpret_cast<T>(m_base) = ptr; return *this; }
@@ -99,19 +101,17 @@ class SOAIterator : public std::iterator<
 	    return *this;
 	}
 
-	/// we can always convert the SOAIterator<T> to SOAIterator<const T>
-	operator self_type_c() const { return self_type_c(m_base); }
+	/// we can always convert to the const_iterator
+	operator self_type_c() const { return m_base; }
 
-	/// dereference (but do not leak non-const handle to m_base)
-	typename std::conditional<std::is_const<T>::value, const T&, T>::type
-	operator*() { return m_base; }
+	/// dereference
+	typename T::reference_type operator*() { return *m_base; }
 	/// deference (read-only version)
-	const T& operator*() const { return m_base; }
-	/// dereference (but do not leak non-const handle to m_base)
-	typename std::conditional<std::is_const<T>::value, const T&, T>::type
-	operator->() { return m_base; }
+	typename T::const_reference_type operator*() const { return *m_base; }
+	/// dereference
+	typename T::pointer_type operator->() { return m_base; }
 	/// deference (read-only version)
-	const T& operator->() const { return m_base; }
+	typename T::const_pointer_type operator->() const { return m_base; }
 
 	/// for stunts like "if (it) *it = ...;"
 	operator bool() const noexcept { return bool(m_base); }
@@ -184,7 +184,7 @@ template <typename S, typename T>
 typename S::difference_type operator-(
 	const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
 {
-    static_assert(std::is_same<const S, const T>::value,
+    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
 	    "SOAIterator<S> - SOAIterator<T> can only be evaluated if "
 	    "S and T refer to the same type, up to constness.");
     return *it - *jt;
@@ -194,7 +194,7 @@ typename S::difference_type operator-(
 template <typename S, typename T>
 bool operator==(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
 {
-    static_assert(std::is_same<const S, const T>::value,
+    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
 	    "SOAIterator<S> == SOAIterator<T> can only be evaluated if "
 	    "S and T refer to the same type, up to constness.");
     return *it == *jt;
@@ -204,7 +204,7 @@ bool operator==(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
 template <typename S, typename T>
 bool operator!=(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
 {
-    static_assert(std::is_same<const S, const T>::value,
+    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
 	    "SOAIterator<S> != SOAIterator<T> can only be evaluated if "
 	    "S and T refer to the same type, up to constness.");
     return *it != *jt;
@@ -214,7 +214,7 @@ bool operator!=(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
 template <typename S, typename T>
 bool operator<(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
 {
-    static_assert(std::is_same<const S, const T>::value,
+    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
 	    "SOAIterator<S> < SOAIterator<T> can only be evaluated if "
 	    "S and T refer to the same type, up to constness.");
     return *it < *jt;
@@ -224,7 +224,7 @@ bool operator<(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
 template <typename S, typename T>
 bool operator>(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
 {
-    static_assert(std::is_same<const S, const T>::value,
+    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
 	    "SOAIterator<S> > SOAIterator<T> can only be evaluated if "
 	    "S and T refer to the same type, up to constness.");
     return *it > *jt;
@@ -234,7 +234,7 @@ bool operator>(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
 template <typename S, typename T>
 bool operator<=(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
 {
-    static_assert(std::is_same<const S, const T>::value,
+    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
 	    "SOAIterator<S> <= SOAIterator<T> can only be evaluated if "
 	    "S and T refer to the same type, up to constness.");
     return *it <= *jt;
@@ -244,7 +244,7 @@ bool operator<=(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
 template <typename S, typename T>
 bool operator>=(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
 {
-    static_assert(std::is_same<const S, const T>::value,
+    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
 	    "SOAIterator<S> >= SOAIterator<T> can only be evaluated if "
 	    "S and T refer to the same type, up to constness.");
     return *it >= *jt;
