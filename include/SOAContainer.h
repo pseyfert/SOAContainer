@@ -149,8 +149,9 @@ class SOAContainer {
 	typedef SOAObjectProxy<self_type> proxy_type;
 	friend proxy_type;
 	/// pointer to contained objects
-	typedef SOAPtr<proxy_type> pointer_type;
+	typedef SOAIterator<proxy_type> pointer_type;
 	friend pointer_type;
+	/// iterator type
 	typedef pointer_type iterator;
 	/// (notion of) type of the contained objects
 	typedef typename proxy_type::value_type value_type;
@@ -159,14 +160,10 @@ class SOAContainer {
 	/// reference to contained objects
 	typedef const reference_type const_reference_type;
 	/// const pointer to contained objects
-	typedef SOAConstPtr<proxy_type> const_pointer_type;
+	typedef SOAConstIterator<proxy_type> const_pointer_type;
 	friend const_pointer_type;
-	typedef const_pointer_type const_iterator;
-	/// iterator type
-	//typedef SOAIterator<pointer_type> iterator;
 	/// const iterator type
-	//typedef SOAIterator<const_pointer_type> const_iterator;
-	//friend const_iterator;
+	typedef const_pointer_type const_iterator;
 	/// reverse iterator type
 	typedef std::reverse_iterator<iterator> reverse_iterator;
 	/// const reverse iterator type

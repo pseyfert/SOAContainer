@@ -4,251 +4,385 @@
  * @date 2015-10-02
  */
 
-#ifndef  SOAITERATOR_H
+#ifndef SOAITERATOR_H
 #define SOAITERATOR_H
 
 #include <iterator>
 
-/** @brief iterator class for various SOAContainer instances
+/** @brief class mimicking a const pointer to pointee inidicated by PROXY
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
- * @date 2015-04-10
+ * @date 2015-05-03
  *
- * @tparam T	a pointer type of SOAContainer in question
- *
- * This is a pretty standard iterator class implementation, with the caveats
- * stated in SOAContainer::SOAObjectProxy.
+ * @tparam PROXY	proxy class
  */
-template <typename T>
-class SOAIterator : public std::iterator<
-		    std::random_access_iterator_tag,
-		    typename T::value_type, typename T::difference_type,
-		    T, typename T::reference_type>
+template <typename PROXY>
+class SOAConstIterator
 {
-    private:
-	T m_base; ///< proxy for underlying object
+    protected:
+	PROXY m_proxy; ///< pointee
 
-	friend class SOAIterator<SOAPtr<
-	    typename std::remove_const<typename T::reference_type>::type> >;
-	friend class SOAIterator<SOAConstPtr<
-	    typename std::remove_const<typename T::reference_type>::type> >;
-	friend typename T::reference_type::parent_type;
+	// parent container is a friend
+	friend typename PROXY::parent_type;
 
     public:
-	/// shorthand to refer to the type of this class
-	typedef SOAIterator<T> self_type;
-	/// shorthand to refer to corresponding const iterator
-	typedef SOAIterator<SOAConstPtr<typename std::remove_const<typename T::reference_type>::type> > self_type_c;
+	/// convenience typedef for our own type
+	typedef SOAConstIterator<PROXY> self_type;
+	/// import value_type from PROXY
+	typedef const PROXY value_type;
+	/// import size_type from PROXY
+	typedef typename PROXY::size_type size_type;
+	/// import difference_type from PROXY
+	typedef typename PROXY::difference_type difference_type;
+	/// typedef for reference to pointee
+	typedef const PROXY reference;
+	/// typedef for const reference to pointee
+	typedef const PROXY const_reference;
+	/// typedef for pointer
+	typedef SOAConstIterator<PROXY> pointer;
+	/// typedef for const pointer
+	typedef SOAConstIterator<PROXY> const_pointer;
+	/// iterator category
+	typedef std::random_access_iterator_tag iterator_category;
 
-	/// constructor
-	SOAIterator(const T& ptr) noexcept : m_base(ptr) { }
+	/// copying constructor from proxy
+	SOAConstIterator(const PROXY& proxy) noexcept : m_proxy(proxy) { }
+	/// moving constructor from proxy
+	SOAConstIterator(PROXY&& proxy) noexcept : m_proxy(std::move(proxy)) { }
+
+    protected:
+	/// constructor building proxy in place
+	SOAConstIterator(
+		typename PROXY::parent_type::SOAStorage* storage,
+		size_type index) noexcept :
+	    m_proxy(storage, index) { }
+
+    public:
+	/// copy constructor
+	SOAConstIterator(const self_type& other) noexcept :
+	    m_proxy(other.m_proxy) { }
 	/// move constructor
-	SOAIterator(T&& ptr) noexcept : m_base(std::move(ptr)) { }
+	SOAConstIterator(self_type&& other) noexcept :
+	    m_proxy(std::move(other.m_proxy)) { }
 
-	/// copy constructor from SOAIterator<S>
-	template <typename S>
-	SOAIterator(const typename std::enable_if<
-		((std::is_const<typename T::reference_type>::value == std::is_const<typename S::reference_type>::value) ||
-		 (std::is_const<typename T::reference_type>::value && !std::is_const<typename S::reference_type>::value)) &&
-		std::is_same<typename S::const_reference_type,
-		typename T::const_reference_type>::value,
-		SOAIterator<S> >::type& other) : m_base(other.m_base) { }
-	/// move constructor from SOAIterator<S>
-	template <typename S>
-	SOAIterator(typename std::enable_if<
-		((std::is_const<typename T::reference_type>::value == std::is_const<typename S::reference_type>::value) ||
-		 (std::is_const<typename T::reference_type>::value && !std::is_const<typename S::reference_type>::value)) &&
-		std::is_same<typename S::const_reference_type,
-		typename T::const_reference_type>::value,
-		SOAIterator<S> >::type&& other) :
-	    m_base(std::move(other.m_base))
-        { }
-
-    private:
-	SOAIterator(typename T::reference_type::parent_type::SOAStorage* storage, typename T::size_type index) :
-	    m_base(storage, index) { }
-
-    public:
-	/// assignment from T
-	self_type& operator=(const T& ptr) noexcept
-	{ reinterpret_cast<T>(m_base) = ptr; return *this; }
-	/// assignment from T (move semantics)
-	self_type& operator=(T&& ptr) noexcept
-	{ reinterpret_cast<T>(m_base) = std::move(ptr); return *this; }
-
-	/// assignment from SOAIterator<S>
-	template <typename S>
-	self_type& operator=(const typename std::enable_if<
-		((std::is_const<T>::value == std::is_const<S>::value) ||
-		 (std::is_const<T>::value && !std::is_const<S>::value)) &&
-		std::is_same<typename std::remove_const<S>::type,
-		typename std::remove_const<T>::type>::value,
-		SOAIterator<S> >::type& other)
+	/// assignment
+	self_type& operator=(const self_type& other) noexcept
+	{ if (&other != this) m_proxy = other.m_proxy; return *this; }
+	/// assignment (move semantics)
+	self_type& operator=(self_type&& other) noexcept
 	{
-	    if (&other != this) m_base = other.m_base;
-	    return *this;
-	}
-	/// move assignment from SOAIterator<S>
-	template <typename S>
-	self_type& operator=(typename std::enable_if<
-		((std::is_const<T>::value == std::is_const<S>::value) ||
-		 (std::is_const<T>::value && !std::is_const<S>::value)) &&
-		std::is_same<typename std::remove_const<S>::type,
-		typename std::remove_const<T>::type>::value,
-		SOAIterator<S> >::type&& other)
-	{
-	    if (&other != this) m_base = std::move(other.m_base);
+	    if (&other != this) m_proxy = std::move(other.m_proxy);
 	    return *this;
 	}
 
-	/// we can always convert to the const_iterator
-	operator self_type_c() const { return m_base; }
+	/// deference pointer (*p)
+	reference operator*() noexcept
+	{ return m_proxy; }
+	/// deference pointer (*p)
+	const_reference operator*() const noexcept
+	{ return m_proxy; }
+	/// deference pointer (p->blah)
+	const self_type& operator->() noexcept
+	{ return *this; }
+	/// deference pointer (p->blah)
+	const self_type& operator->() const noexcept
+	{ return *this; }
 
-	/// dereference
-	typename T::reference_type operator*() { return *m_base; }
-	/// deference (read-only version)
-	typename T::const_reference_type operator*() const { return *m_base; }
-	/// dereference
-	typename T::pointer_type operator->() { return m_base; }
-	/// deference (read-only version)
-	typename T::const_pointer_type operator->() const { return m_base; }
-
-	/// for stunts like "if (it) *it = ...;"
-	operator bool() const noexcept { return bool(m_base); }
-	/// pre-increment
+	/// (pre-)increment
 	self_type& operator++() noexcept
-	{ ++m_base; return *this; }
-	/// post-increment
-	self_type operator++(int) noexcept
-	{ self_type retVal(*this); ++m_base; return retVal; }
-	/// pre-decrement
+	{ ++m_proxy.m_index; return *this; }
+	/// (pre-)decrement
 	self_type& operator--() noexcept
-	{ --m_base; return *this; }
-	/// post-decrement
+	{ --m_proxy.m_index; return *this; }
+	/// (post-)increment
+	self_type operator++(int) noexcept
+	{ self_type retVal(*this); ++m_proxy.m_index; return retVal; }
+	/// (post-)decrement
 	self_type operator--(int) noexcept
-	{ self_type retVal(*this); --m_base; return retVal; }
-	/// addition and assignment
-	self_type& operator+=(typename T::difference_type dist) noexcept
-	{ m_base += dist; return *this; }
-	/// subtraction and assignment
-	self_type& operator-=(typename T::difference_type dist) noexcept
-	{ m_base -= dist; return *this; }
-	/// addition
-	self_type operator+(typename T::difference_type dist) const noexcept
+	{ self_type retVal(*this); --m_proxy.m_index; return retVal; }
+	/// advance by dist elements
+	self_type& operator+=(difference_type dist) noexcept
+	{ m_proxy.m_index += dist; return *this; }
+	/// "retreat" by dist elements
+	self_type& operator-=(difference_type dist) noexcept
+	{ m_proxy.m_index -= dist; return *this; }
+	/// advance by dist elements
+	template <typename T>
+	typename std::enable_if<
+		std::is_integral<T>::value &&
+		std::is_convertible<T, difference_type>::value, self_type&
+		>::type operator+=(T dist) noexcept
+	{ return (*this += difference_type(dist)); }
+	/// "retreat" by dist elements
+	template <typename T>
+	typename std::enable_if<
+		std::is_integral<T>::value &&
+		std::is_convertible<T, difference_type>::value, self_type&
+		>::type operator-=(T dist) noexcept
+	{ return (*this -= difference_type(dist)); }
+	/// advance by dist elements
+	self_type operator+(difference_type dist) const noexcept
 	{ return self_type(*this) += dist; }
-	/// subtraction
-	self_type operator-(typename T::difference_type dist) const noexcept
+	/// "retreat" by dist elements
+	self_type operator-(difference_type dist) const noexcept
 	{ return self_type(*this) -= dist; }
-	/// distance between iterators
-	typename T::difference_type operator-(const self_type& other) const noexcept
-	{ return m_base - other.m_base; }
-	/// addition and assignment
-	template <typename S>
-	typename std::enable_if<std::is_integral<S>::value &&
-	    std::is_convertible<S, typename T::difference_type>::value,
-	    self_type&>::type operator+=(S dist) noexcept
-        { return (*this += static_cast<typename T::difference_type>(dist)); }
-	/// subtraction and assignment
-	template <typename S>
-	typename std::enable_if<std::is_integral<S>::value &&
-	    std::is_convertible<S, typename T::difference_type>::value,
-	    self_type&>::type operator-=(S dist) noexcept
-        { return (*this -= static_cast<typename T::difference_type>(dist)); }
-	/// addition
-	template <typename S>
-	typename std::enable_if<std::is_integral<S>::value &&
-	    std::is_convertible<S, typename T::difference_type>::value,
-	    self_type>::type operator+(S dist) const noexcept
-	{ return (self_type(*this) +=
-		static_cast<typename T::difference_type>(dist)); }
-	/// subtraction
-	template <typename S>
-	typename std::enable_if<std::is_integral<S>::value &&
-	    std::is_convertible<S, typename T::difference_type>::value,
-	    self_type>::type operator-(S dist) const noexcept
-	{ return (self_type(*this) -=
-		static_cast<typename T::difference_type>(dist)); }
+	/// advance by dist elements
+	template <typename T>
+	typename std::enable_if<
+		std::is_integral<T>::value &&
+		std::is_convertible<T, difference_type>::value, self_type
+		>::type operator+(T dist) const noexcept
+	{ return self_type(*this) += dist; }
+	/// "retreat" by dist elements
+	template <typename T>
+	typename std::enable_if<
+		std::is_integral<T>::value &&
+		std::is_convertible<T, difference_type>::value, self_type
+		>::type operator-(T dist) const noexcept
+	{ return self_type(*this) -= dist; }
+	/// distance between two pointers
+	difference_type operator-(const self_type& other) const noexcept
+	{
+	    // give warning about buggy code subtracting pointers from
+	    // different containers (ill-defined operation on this pointer
+	    // class), use plain C style assert here
+	    assert(m_proxy.m_storage &&
+		    m_proxy.m_storage == other.m_proxy.m_storage);
+#if !defined(BREAKACTIVELY) && !defined(NDEBUG)
+	    return (m_proxy.m_index - other.m_proxy.m_index);
+#else
+	    // return distance if pointers from same container, else return
+	    // ridiculously large value in the hopes of badly breaking
+	    // ill-behaved client code (when asserts are disabled)
+	    return (m_proxy.m_storage &&
+		    m_proxy.m_storage == other.m_proxy.m_storage) ?
+		std::numeric_limits<difference_type>::max :
+		(m_proxy.m_index - other.m_proxy.m_index);
+#endif
+	}
 
+	/// indexing
+	reference operator[](size_type idx) noexcept
+	{ return *((*this) + idx); }
+	/// indexing
+	const_reference operator[](size_type idx) const noexcept
+	{ return *((*this) + idx); }
+
+	/// comparison (equality)
+	bool operator==(const self_type& other) const noexcept
+	{
+	    return m_proxy.m_storage == other.m_proxy.m_storage &&
+		m_proxy.m_index == other.m_proxy.m_index;
+	}
+	/// comparison (inequality)
+	bool operator!=(const self_type& other) const noexcept
+	{
+	    return m_proxy.m_index != other.m_proxy.m_index ||
+		m_proxy.m_storage != other.m_proxy.m_storage;
+	}
+	/// comparison (less than)
+	bool operator<(const self_type& other) const noexcept
+	{
+	    return m_proxy.m_storage < other.m_proxy.m_storage ? true :
+		other.m_proxy.m_storage < m_proxy.m_storage ? false :
+		m_proxy.m_index < other.m_proxy.m_index;
+	}
+	/// comparison (greater than)
+	bool operator>(const self_type& other) const noexcept
+	{
+	    return m_proxy.m_storage < other.m_proxy.m_storage ? false :
+		other.m_proxy.m_storage < m_proxy.m_storage ? true :
+		other.m_proxy.m_index < m_proxy.m_index;
+	}
+	/// comparison (less than or equal to)
+	bool operator<=(const self_type& other) const noexcept
+	{
+	    return m_proxy.m_storage < other.m_proxy.m_storage ? true :
+		other.m_proxy.m_storage < m_proxy.m_storage ? false :
+		m_proxy.m_index <= other.m_proxy.m_index;
+	}
+	/// comparison (greater than or equal to)
+	bool operator>=(const self_type& other) const noexcept
+	{
+	    return m_proxy.m_storage < other.m_proxy.m_storage ? false :
+		other.m_proxy.m_storage < m_proxy.m_storage ? true :
+		other.m_proxy.m_index <= m_proxy.m_index;
+	}
+	/// check for validity (if (ptr) or if (!ptr) idiom)
+	operator bool() const noexcept
+	{
+	    return m_proxy.m_storage &&
+		m_proxy.m_index < std::get<0>(*m_proxy.m_storage).size();
+	}
 };
 
-/// addition of constant to iterator (e.g. 3 + it)
-template <typename I, typename T>
-SOAIterator<T> operator+(I dist, const SOAIterator<T>& other) noexcept
-{
-    static_assert(std::is_integral<I>::value, "dist must be integer type");
-    return SOAIterator<typename std::remove_const<T>::type>(*other) += dist;
-}
+/// implement integer + SOAConstIterator
+template <typename PROXY, typename T>
+typename std::enable_if<
+    std::is_integral<T>::value && std::is_convertible<T,
+        typename SOAConstIterator<PROXY>::difference_type>::value,
+    SOAConstIterator<PROXY> >::type
+    operator+(T dist, const SOAConstIterator<PROXY>& other) noexcept
+{ return other + dist; }
 
-/// distance between iterators, i.e. it - jt
-template <typename S, typename T>
-typename S::difference_type operator-(
-	const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
+/** @brief class mimicking a pointer to pointee inidicated by PROXY
+ *
+ * @author Manuel Schiller <Manuel.Schiller@cern.ch>
+ * @date 2015-05-03
+ *
+ * @tparam PROXY	proxy class
+ */
+template <typename PROXY>
+class SOAIterator : public SOAConstIterator<PROXY>
 {
-    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
-	    "SOAIterator<S> - SOAIterator<T> can only be evaluated if "
-	    "S and T refer to the same type, up to constness.");
-    return *it - *jt;
-}
+    private:
+	// parent container is a friend
+	friend typename PROXY::parent_type;
 
-/// comparison of iterators, i.e. it == jt
-template <typename S, typename T>
-bool operator==(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
-{
-    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
-	    "SOAIterator<S> == SOAIterator<T> can only be evaluated if "
-	    "S and T refer to the same type, up to constness.");
-    return *it == *jt;
-}
+    public:
+	/// convenience typedef for our own type
+	typedef SOAConstIterator<PROXY> self_type;
+	/// import value_type from PROXY
+	typedef PROXY value_type;
+	/// import size_type from PROXY
+	typedef typename PROXY::size_type size_type;
+	/// import difference_type from PROXY
+	typedef typename PROXY::difference_type difference_type;
+	/// typedef for reference to pointee
+	typedef PROXY reference;
+	/// typedef for const reference to pointee
+	typedef const PROXY const_reference;
+	/// typedef for pointer
+	typedef SOAIterator<PROXY> pointer;
+	/// typedef for const pointer
+	typedef SOAConstIterator<PROXY> const_pointer;
+	/// iterator category
+	typedef std::random_access_iterator_tag iterator_category;
 
-/// comparison of iterators, i.e. it != jt
-template <typename S, typename T>
-bool operator!=(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
-{
-    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
-	    "SOAIterator<S> != SOAIterator<T> can only be evaluated if "
-	    "S and T refer to the same type, up to constness.");
-    return *it != *jt;
-}
+	/// copying constructor from proxy
+	SOAIterator(const PROXY& proxy) noexcept :
+	    SOAConstIterator<PROXY>(proxy) { }
+	/// moving constructor from proxy
+	SOAIterator(PROXY&& proxy) noexcept :
+	    SOAConstIterator<PROXY>(std::move(proxy)) { }
 
-/// comparison of iterators, i.e. it < jt
-template <typename S, typename T>
-bool operator<(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
-{
-    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
-	    "SOAIterator<S> < SOAIterator<T> can only be evaluated if "
-	    "S and T refer to the same type, up to constness.");
-    return *it < *jt;
-}
+    private:
+	/// constructor building proxy in place
+	SOAIterator(
+		typename PROXY::parent_type::SOAStorage* storage,
+		size_type index) noexcept :
+	    SOAConstIterator<PROXY>(storage, index) { }
 
-/// comparison of iterators, i.e. it > jt
-template <typename S, typename T>
-bool operator>(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
-{
-    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
-	    "SOAIterator<S> > SOAIterator<T> can only be evaluated if "
-	    "S and T refer to the same type, up to constness.");
-    return *it > *jt;
-}
+    public:
+	/// copy constructor
+	SOAIterator(const self_type& other) noexcept :
+	    SOAConstIterator<PROXY>(other) { }
 
-/// comparison of iterators, i.e. it <= jt
-template <typename S, typename T>
-bool operator<=(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
-{
-    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
-	    "SOAIterator<S> <= SOAIterator<T> can only be evaluated if "
-	    "S and T refer to the same type, up to constness.");
-    return *it <= *jt;
-}
+	/// move constructor
+	SOAIterator(self_type&& other) noexcept :
+	    SOAConstIterator<PROXY>(std::move(other)) { }
 
-/// comparison of iterators, i.e. it >= jt
-template <typename S, typename T>
-bool operator>=(const SOAIterator<S>& it, const SOAIterator<T>& jt) noexcept
-{
-    static_assert(std::is_same<typename S::const_reference_type, typename T::const_reference_type>::value,
-	    "SOAIterator<S> >= SOAIterator<T> can only be evaluated if "
-	    "S and T refer to the same type, up to constness.");
-    return *it >= *jt;
-}
+	/// assignment
+	self_type& operator=(const self_type& other) noexcept
+	{ SOAConstIterator<PROXY>::operator=(other); return *this; }
+	/// assignment (move semantics)
+	self_type& operator=(self_type&& other) noexcept
+	{ SOAConstIterator<PROXY>::operator=(std::move(other)); return *this; }
+
+	/// deference pointer (*p)
+	reference operator*() noexcept
+	{ return SOAConstIterator<PROXY>::m_proxy; }
+	/// deference pointer (*p)
+	const_reference operator*() const noexcept
+	{ return SOAConstIterator<PROXY>::m_proxy; }
+	/// deference pointer (p->blah)
+	const self_type& operator->() noexcept
+	{ return *this; }
+	/// deference pointer (p->blah)
+	const self_type& operator->() const noexcept
+	{ return *this; }
+
+	/// (pre-)increment
+	self_type& operator++() noexcept
+	{ ++SOAConstIterator<PROXY>::m_proxy.m_index; return *this; }
+	/// (pre-)decrement
+	self_type& operator--() noexcept
+	{ --SOAConstIterator<PROXY>::m_proxy.m_index; return *this; }
+	/// (post-)increment
+	self_type operator++(int) noexcept
+	{
+	    self_type retVal(*this);
+	    ++SOAConstIterator<PROXY>::m_proxy.m_index;
+	    return retVal;
+	}
+	/// (post-)decrement
+	self_type operator--(int) noexcept
+	{
+	    self_type retVal(*this);
+	    --SOAConstIterator<PROXY>::m_proxy.m_index;
+	    return retVal;
+	}
+	/// advance by dist elements
+	self_type& operator+=(difference_type dist) noexcept
+	{ SOAConstIterator<PROXY>::m_proxy.m_index += dist; return *this; }
+	/// "retreat" by dist elements
+	self_type& operator-=(difference_type dist) noexcept
+	{ SOAConstIterator<PROXY>::m_proxy.m_index -= dist; return *this; }
+	/// advance by dist elements
+	template <typename T>
+	typename std::enable_if<
+		std::is_integral<T>::value &&
+		std::is_convertible<T, difference_type>::value, self_type
+		>::type operator+=(T dist) noexcept
+	{ return (*this += difference_type(dist)); }
+	/// "retreat" by dist elements
+	template <typename T>
+	typename std::enable_if<
+		std::is_integral<T>::value &&
+		std::is_convertible<T, difference_type>::value, self_type
+		>::type operator-=(T dist) noexcept
+	{ return (*this -= difference_type(dist)); }
+	/// advance by dist elements
+	self_type operator+(difference_type dist) const noexcept
+	{ return self_type(*this) += dist; }
+	/// "retreat" by dist elements
+	self_type operator-(difference_type dist) const noexcept
+	{ return self_type(*this) -= dist; }
+	/// advance by dist elements
+	template <typename T>
+	typename std::enable_if<
+		std::is_integral<T>::value &&
+		std::is_convertible<T, difference_type>::value, self_type
+		>::type operator+(T dist) const noexcept
+	{ return self_type(*this) += dist; }
+	/// "retreat" by dist elements
+	template <typename T>
+	typename std::enable_if<
+		std::is_integral<T>::value &&
+		std::is_convertible<T, difference_type>::value, self_type
+		>::type operator-(T dist) const noexcept
+	{ return self_type(*this) -= dist; }
+	/// return distance between two pointers
+	difference_type operator-(
+		const SOAConstIterator<PROXY>& other) const noexcept
+	{ return SOAConstIterator<PROXY>::operator-(other); }
+
+	/// indexing
+	reference operator[](size_type idx) noexcept
+	{ return *((*this) + idx); }
+	/// indexing
+	const_reference operator[](size_type idx) const noexcept
+	{ return *((*this) + idx); }
+};
+
+/// implement integer + SOAIterator
+template <typename PROXY, typename T>
+typename std::enable_if<
+    std::is_integral<T>::value && std::is_convertible<T,
+        typename SOAIterator<PROXY>::difference_type>::value,
+    SOAIterator<PROXY> >::type
+    operator+(T dist, const SOAIterator<PROXY>& other) noexcept
+{ return other + dist; }
 
 #endif // SOAITERATOR_H
 
