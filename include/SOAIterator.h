@@ -24,6 +24,8 @@ class SOAConstIterator
 
 	// parent container is a friend
 	friend typename PROXY::parent_type;
+	// underlying proxy is friend as well
+	friend PROXY;
 
     public:
 	/// convenience typedef for our own type
@@ -44,11 +46,6 @@ class SOAConstIterator
 	typedef SOAConstIterator<PROXY> const_pointer;
 	/// iterator category
 	typedef std::random_access_iterator_tag iterator_category;
-
-	/// copying constructor from proxy
-	SOAConstIterator(const PROXY& proxy) noexcept : m_proxy(proxy) { }
-	/// moving constructor from proxy
-	SOAConstIterator(PROXY&& proxy) noexcept : m_proxy(std::move(proxy)) { }
 
     protected:
 	/// constructor building proxy in place
@@ -238,6 +235,8 @@ class SOAIterator : public SOAConstIterator<PROXY>
     private:
 	// parent container is a friend
 	friend typename PROXY::parent_type;
+	// underlying proxy is friend as well
+	friend PROXY;
 
     public:
 	/// convenience typedef for our own type
@@ -258,13 +257,6 @@ class SOAIterator : public SOAConstIterator<PROXY>
 	typedef SOAConstIterator<PROXY> const_pointer;
 	/// iterator category
 	typedef std::random_access_iterator_tag iterator_category;
-
-	/// copying constructor from proxy
-	SOAIterator(const PROXY& proxy) noexcept :
-	    SOAConstIterator<PROXY>(proxy) { }
-	/// moving constructor from proxy
-	SOAIterator(PROXY&& proxy) noexcept :
-	    SOAConstIterator<PROXY>(std::move(proxy)) { }
 
     private:
 	/// constructor building proxy in place

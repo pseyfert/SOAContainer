@@ -67,6 +67,8 @@ static void test()
 	assert(c.front() == c.back());
 	assert(c.end() == 1 + c.begin());
 	assert(c.rend() == 1 + c.rbegin());
+	assert(&c.front() == c.begin());
+	assert(&cc.front() == c.cbegin());
 	const decltype(val) val2(c.front());
 	assert(val == val2);
 	// trigger the move-variant of push_back

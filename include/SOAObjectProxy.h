@@ -63,8 +63,11 @@ class SOAObjectProxy {
 
 	// SOAContainer is allowed to invoke the private constructor
 	friend parent_type;
-	friend SOAConstIterator<self_type>;
-	friend SOAIterator<self_type>;
+	// so is the pointer/iterator type
+	friend pointer_type;
+	// and the const pointer/iterator type
+	friend const_pointer_type;
+
 	/// constructor is private, but parent container is a friend
 	SOAObjectProxy(
 		SOAStorage* storage = nullptr, size_type index = 0) noexcept :
@@ -212,35 +215,52 @@ class SOAObjectProxy {
 		    tuplecatHelper(), std::tuple<>());
 	}
 
-	/// "deep"-swap the contents of two SOAObjectProxy instances
+	/// swap the contents of two SOAObjectProxy instances
 	void swap(self_type& other)
 	{ std::swap(reference_type(*this), reference_type(other)); }
 
+	/// comparison (equality)
 	bool operator==(const value_type& other) const noexcept
 	{ return value_type(*this) == other; }
+	/// comparison (inequality)
 	bool operator!=(const value_type& other) const noexcept
 	{ return value_type(*this) != other; }
+	/// comparison (less than)
 	bool operator<(const value_type& other) const noexcept
 	{ return value_type(*this) < other; }
+	/// comparison (greater than)
 	bool operator>(const value_type& other) const noexcept
 	{ return value_type(*this) > other; }
+	/// comparison (less than or equal to)
 	bool operator<=(const value_type& other) const noexcept
 	{ return value_type(*this) <= other; }
+	/// comparison (greater than or equal to)
 	bool operator>=(const value_type& other) const noexcept
 	{ return value_type(*this) >= other; }
 
+	/// comparison (equality)
 	bool operator==(const self_type& other) const noexcept
 	{ return *this == value_type(other); }
+	/// comparison (inequality)
 	bool operator!=(const self_type& other) const noexcept
 	{ return *this != value_type(other); }
+	/// comparison (less than)
 	bool operator<(const self_type& other) const noexcept
 	{ return *this < value_type(other); }
+	/// comparison (greater than)
 	bool operator>(const self_type& other) const noexcept
 	{ return *this > value_type(other); }
+	/// comparison (less than or equal to)
 	bool operator<=(const self_type& other) const noexcept
 	{ return *this <= value_type(other); }
+	/// comparison (greater than or equal to)
 	bool operator>=(const self_type& other) const noexcept
 	{ return *this >= value_type(other); }
+
+	/// return pointer to element pointed to be this proxy
+	pointer_type operator&() noexcept;
+	/// return const pointer to element pointed to be this proxy
+	const_pointer_type operator&() const noexcept;
 };
 
 template <typename T>
@@ -268,6 +288,18 @@ namespace std {
     void swap(SOAObjectProxy<T>&a, SOAObjectProxy<T>& b) noexcept
     { a.swap(b); }
 }
+
+#include "SOAIterator.h"
+
+template <typename PARENTCONTAINER>
+typename SOAObjectProxy<PARENTCONTAINER>::pointer_type
+SOAObjectProxy<PARENTCONTAINER>::operator&() noexcept
+{ return { m_storage, m_index }; }
+
+template <typename PARENTCONTAINER>
+typename SOAObjectProxy<PARENTCONTAINER>::const_pointer_type
+SOAObjectProxy<PARENTCONTAINER>::operator&() const noexcept
+{ return { m_storage, m_index }; }
 
 #endif // SOAOBJECTPROXY_H
 

@@ -530,7 +530,7 @@ class SOAContainer {
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
 		    insertHelper(val, idx), [] (bool, bool) {
 		    return true; }, true);
-	    return iterator(*pos);
+	    return iterator(pos.m_proxy.m_storage, pos.m_proxy.m_index);
 	}
 
 	/// insert a value at the given position (move variant)
@@ -541,7 +541,7 @@ class SOAContainer {
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
 		    insertHelper_move(std::move(val), idx), [] (bool, bool) {
 		    return true; }, true);
-	    return iterator(*pos);
+	    return iterator(pos.m_proxy.m_storage, pos.m_proxy.m_index);
 	}
 
 	/// insert count copies of value at the given position
@@ -553,14 +553,14 @@ class SOAContainer {
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
 		    insertHelper_count(val, idx, count), [] (bool, bool) {
 		    return true; }, true);
-	    return iterator(*pos);
+	    return iterator(pos.m_proxy.m_storage, pos.m_proxy.m_index);
 	}
 
 	/// insert elements between first and last at position pos
 	template <typename IT>
 	iterator insert(const_iterator pos, IT first, IT last)
 	{
-	    iterator retVal(*pos);
+	    iterator retVal(pos.m_proxy.m_storage, pos.m_proxy.m_index);
 	    while (first != last) { insert(pos, *first); ++first; ++pos; }
 	    return retVal;
 	}
@@ -572,7 +572,7 @@ class SOAContainer {
 	    const size_type idx = pos - cbegin();
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
 		    eraseHelper(idx), [] (bool, bool) { return true; }, true);
-	    return iterator(*pos);
+	    return iterator(pos.m_proxy.m_storage, pos.m_proxy.m_index);
 	}
 
 	/// erase elements from first to last
@@ -585,7 +585,7 @@ class SOAContainer {
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
 		    eraseHelper_N(idx, sz), [] (bool, bool) {
 		    return true; }, true);
-	    return iterator(*first);
+	    return iterator(first.m_proxy.m_storage, first.m_proxy.m_index);
 	}
 
 	/// assign the vector to contain count copies of val
@@ -670,7 +670,7 @@ class SOAContainer {
 	    assert(&m_storage == (*pos).m_storage);
 	    emplaceHelper<0>(m_storage, pos - cbegin()).doIt(
 		    std::forward<ARGS>(args)...);
-	    return iterator(*pos);
+	    return iterator(pos.m_proxy.m_storage, pos.m_proxy.m_index);
 	}
 
 };
