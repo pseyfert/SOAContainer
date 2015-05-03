@@ -82,10 +82,10 @@ class SOAConstIterator
 	const_reference operator*() const noexcept
 	{ return m_proxy; }
 	/// deference pointer (p->blah)
-	const self_type& operator->() noexcept
+	const pointer operator->() noexcept
 	{ return *this; }
 	/// deference pointer (p->blah)
-	const self_type& operator->() const noexcept
+	const const_pointer operator->() const noexcept
 	{ return *this; }
 
 	/// (pre-)increment
@@ -296,10 +296,10 @@ class SOAIterator : public SOAConstIterator<PROXY>
 	const_reference operator*() const noexcept
 	{ return SOAConstIterator<PROXY>::m_proxy; }
 	/// deference pointer (p->blah)
-	const self_type& operator->() noexcept
+	const pointer operator->() noexcept
 	{ return *this; }
 	/// deference pointer (p->blah)
-	const self_type& operator->() const noexcept
+	const const_pointer operator->() const noexcept
 	{ return *this; }
 
 	/// (pre-)increment

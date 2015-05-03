@@ -261,6 +261,14 @@ bool operator<=(const typename SOAObjectProxy<T>::value_type& a,
 template <typename T>
 bool operator>=(const typename SOAObjectProxy<T>::value_type& a,
 	const SOAObjectProxy<T>& b) noexcept { return b <= a; }
+
+namespace std {
+    /// specialise std::swap for SOAObjectProxy<T>
+    template <typename T>
+    void swap(SOAObjectProxy<T>&a, SOAObjectProxy<T>& b) noexcept
+    { a.swap(b); }
+}
+
 #endif // SOAOBJECTPROXY_H
 
 // vim: sw=4:tw=78:ft=cpp

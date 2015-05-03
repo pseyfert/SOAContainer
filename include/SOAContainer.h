@@ -675,48 +675,6 @@ class SOAContainer {
 
 };
 
-/*/// comparison between a SOAObjectProxy::value_type and the proxy
-template <typename PROXY>
-typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
-    typename PROXY::parent_type::reference_type>::value , bool>::type
-operator==(const typename PROXY::value_type& a, const PROXY b) noexcept
-{ return b == a; }
-
-/// comparison between a SOAObjectProxy::value_type and the proxy
-template <typename PROXY>
-typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
-    typename PROXY::parent_type::reference_type>::value , bool>::type
-operator!=(const typename PROXY::value_type& a, const PROXY b) noexcept
-{ return b != a; }
-
-/// comparison between a SOAObjectProxy::value_type and the proxy
-template <typename PROXY>
-typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
-    typename PROXY::parent_type::reference_type>::value , bool>::type
-operator<(const typename PROXY::value_type& a, const PROXY b) noexcept
-{ return b > a; }
-
-/// comparison between a SOAObjectProxy::value_type and the proxy
-template <typename PROXY>
-typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
-    typename PROXY::parent_type::reference_type>::value , bool>::type
-operator<=(const typename PROXY::value_type& a, const PROXY b) noexcept
-{ return b >= a; }
-
-/// comparison between a SOAObjectProxy::value_type and the proxy
-template <typename PROXY>
-typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
-    typename PROXY::parent_type::reference_type>::value , bool>::type
-operator>(const typename PROXY::value_type& a, const PROXY b) noexcept
-{ return b < a; }
-
-/// comparison between a SOAObjectProxy::value_type and the proxy
-template <typename PROXY>
-typename std::enable_if<std::is_same<typename std::remove_const<PROXY>::type,
-    typename PROXY::parent_type::reference_type>::value , bool>::type
-operator>=(const typename PROXY::value_type& a, const PROXY b) noexcept
-{ return b <= a; }*/
-
 #endif // SOACONTAINER_H
 
 // vim: sw=4:tw=78:ft=cpp
