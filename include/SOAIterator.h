@@ -24,8 +24,9 @@ class SOAConstIterator
 
 	// parent container is a friend
 	friend typename PROXY::parent_type;
-	// underlying proxy is friend as well
+	// underlying "dressed" proxy is friend as well
 	friend PROXY;
+	// underlying "naked" proxy is friend as well
 	friend typename PROXY::parent_type::naked_proxy;
 
     public:
@@ -227,8 +228,9 @@ class SOAIterator : public SOAConstIterator<PROXY>
     private:
 	// parent container is a friend
 	friend typename PROXY::parent_type;
-	// underlying proxy is friend as well
+	// underlying "dressed" proxy is friend as well
 	friend PROXY;
+	// underlying "naked" proxy is friend as well
 	friend typename PROXY::parent_type::naked_proxy;
 
     public:

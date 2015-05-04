@@ -16,10 +16,17 @@
 #include "SOAIterator.h"
 #include "SOAUtils.h"
 
+/** @brief skin class for SOAContainer which does nothing and preserved the
+ * raw proxy interface.
+ *
+ * @author Manuel Schiller <Manuel.Schiller@cern.ch>
+ * @date 2015-04-21
+ */
 template <typename NAKEDPROXY>
 class NullSkin : public NAKEDPROXY
 {
     public:
+	/// constructor - forward to underlying proxy
 	template <typename... ARGS>
 	NullSkin(ARGS&&... args) : NAKEDPROXY(std::forward<ARGS>(args)...) { }
 };
@@ -57,11 +64,11 @@ class NullSkin : public NAKEDPROXY
  * // below, you couldn't distinguish between the two fields, or refer to them
  * // by their symbolic name; the typedef of the anonymous struct below solves
  * // that issue)
- * typedef struct : wrap<double> point_x;
- * typedef struct : wrap<double> point_y;
+ * typedef struct : wrap_type<double> point_x;
+ * typedef struct : wrap_type<double> point_y;
  *
  * // create container
- * SOAContainer<std::vector, point_x, point_y> points;
+ * SOAContainer<std::vector, NullSkin, point_x, point_y> points;
  * // insert some elements
  * // access an element
  * points[0].get<point_x>() *= 2.0;
@@ -85,10 +92,14 @@ class NullSkin : public NAKEDPROXY
  *
  * @tparam CONTAINER 	underlying container type (anything that follows
  * 			std::vector's interface is fine)
+ * @tparam SKIN		"skin" to dress the the interface provided by the
+ * 			get<fieldtag>() syntax with something more convenient;
+ * 			NullSkin leaves the raw interface intact
  * @tparam FIELDS... 	list of "field tags" describing names an types
  * 			of members
  */
-template <template <typename...> class CONTAINER, template <typename> class SKIN, typename... FIELDS>
+template < template <typename...> class CONTAINER,
+    template <typename> class SKIN, typename... FIELDS>
 class SOAContainer {
     private:
 	/// little helper to verify the FIELDS template parameter
@@ -113,6 +124,7 @@ class SOAContainer {
 		    SOATypelist::typelist_helpers::is_wrapped<HEAD>::value
 	    };
 	};
+
     public:
 	// storing objects without state doesn't make sense
 	static_assert(1 <= sizeof...(FIELDS),
@@ -128,6 +140,7 @@ class SOAContainer {
 	typedef std::ptrdiff_t difference_type;
 	/// type to represent container itself
 	typedef SOAContainer<CONTAINER, SKIN, FIELDS...> self_type;
+	/// typedef holding a typelist with the given fields
 	typedef SOATypelist::typelist<FIELDS...> fields_typelist;
 
     private:
@@ -150,6 +163,7 @@ class SOAContainer {
 	    fields_typelist>::type const_reference_tuple_type;
 
     public:
+	/// naked proxy type (to be given a "skin" later)
 	typedef SOAObjectProxy<self_type> naked_proxy;
 	friend naked_proxy;
 	/// type of proxy
