@@ -1,7 +1,7 @@
 /** @file SOATypelist.h
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
- * @date 2015-10-02
+ * @date 2015-04-10
  */
 
 #ifndef SOATYPELIST_H

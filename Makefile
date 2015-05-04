@@ -1,5 +1,6 @@
-CXX = g++
-CXXFLAGS = -g -std=c++11 -Wall -Wextra -pedantic -march=native -Ofast -I include
+CXX ?= g++
+CXXFLAGS = -g -std=c++11 -Wall -Wextra -pedantic \
+	   -O2 -ffast-math -ftree-vectorize -march=native -I include
 
 TARGETS = SOAContainerTest
 
