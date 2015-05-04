@@ -26,6 +26,7 @@ class SOAConstIterator
 	friend typename PROXY::parent_type;
 	// underlying proxy is friend as well
 	friend PROXY;
+	friend typename PROXY::parent_type::naked_proxy;
 
     public:
 	/// convenience typedef for our own type
@@ -41,9 +42,9 @@ class SOAConstIterator
 	/// typedef for const reference to pointee
 	typedef const PROXY const_reference;
 	/// typedef for pointer
-	typedef SOAConstIterator<PROXY> pointer;
+	typedef typename PROXY::pointer pointer;
 	/// typedef for const pointer
-	typedef SOAConstIterator<PROXY> const_pointer;
+	typedef typename PROXY::const_pointer const_pointer;
 	/// iterator category
 	typedef std::random_access_iterator_tag iterator_category;
 
@@ -79,11 +80,11 @@ class SOAConstIterator
 	const_reference operator*() const noexcept
 	{ return m_proxy; }
 	/// deference pointer (p->blah)
-	const pointer operator->() noexcept
-	{ return *this; }
+	reference* operator->() noexcept
+	{ return std::addressof(m_proxy); }
 	/// deference pointer (p->blah)
-	const const_pointer operator->() const noexcept
-	{ return *this; }
+	const_reference* operator->() const noexcept
+	{ return std::addressof(m_proxy); }
 
 	/// (pre-)increment
 	self_type& operator++() noexcept
@@ -228,6 +229,7 @@ class SOAIterator : public SOAConstIterator<PROXY>
 	friend typename PROXY::parent_type;
 	// underlying proxy is friend as well
 	friend PROXY;
+	friend typename PROXY::parent_type::naked_proxy;
 
     public:
 	/// convenience typedef for our own type
@@ -279,11 +281,11 @@ class SOAIterator : public SOAConstIterator<PROXY>
 	const_reference operator*() const noexcept
 	{ return SOAConstIterator<PROXY>::m_proxy; }
 	/// deference pointer (p->blah)
-	const pointer operator->() noexcept
-	{ return *this; }
+	reference* operator->() noexcept
+	{ return std::addressof(SOAConstIterator<PROXY>::m_proxy); }
 	/// deference pointer (p->blah)
-	const const_pointer operator->() const noexcept
-	{ return *this; }
+	const_reference* operator->() const noexcept
+	{ return std::addressof(SOAConstIterator<PROXY>::m_proxy); }
 
 	/// (pre-)increment
 	self_type& operator++() noexcept

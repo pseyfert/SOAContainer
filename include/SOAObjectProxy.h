@@ -46,14 +46,14 @@ class SOAObjectProxy {
 	/// type to which SOAObjectProxy converts and can be assigned from
 	typedef typename parent_type::value_tuple_type value_type;
 	/// typedef for tuple of references to members
-	typedef typename parent_type::reference_tuple_type reference_type;
+	typedef typename parent_type::reference_tuple_type reference;
 	/// typedef for tuple of const references to members
 	typedef typename parent_type::const_reference_tuple_type
-	    const_reference_type;
+	    const_reference;
 	/// typedef to identify the type of a pointer
-	typedef SOAIterator<self_type> pointer_type;
+	typedef SOAIterator<typename parent_type::proxy> pointer;
 	/// typedef to identify the type of a const pointer
-	typedef SOAConstIterator<self_type> const_pointer_type;
+	typedef SOAConstIterator<typename parent_type::proxy> const_pointer;
 
     protected:
 	/// type used by the parent container to hold the SOA data
@@ -67,9 +67,9 @@ class SOAObjectProxy {
 	// SOAContainer is allowed to invoke the private constructor
 	friend parent_type;
 	// so is the pointer/iterator type
-	friend pointer_type;
+	friend pointer;
 	// and the const pointer/iterator type
-	friend const_pointer_type;
+	friend const_pointer;
 
 	/// constructor is private, but parent container is a friend
 	SOAObjectProxy(
@@ -143,7 +143,7 @@ class SOAObjectProxy {
 	}
 
 	/// convert to tuple of references member contents
-	operator reference_type()
+	operator reference()
 	{
 	    return SOAUtils::recursive_apply_tuple<
 		fields_typelist::size()>()(
@@ -152,7 +152,7 @@ class SOAObjectProxy {
 	}
 
 	/// convert to tuple of const references member contents
-	operator const_reference_type() const
+	operator const_reference() const
 	{
 	    return SOAUtils::recursive_apply_tuple<
 		fields_typelist::size()>()(
@@ -162,29 +162,29 @@ class SOAObjectProxy {
 
 	/// assign from tuple of member contents
 	self_type& operator=(const value_type& other)
-	{ reference_type(*this) = other; return *this; }
+	{ reference(*this) = other; return *this; }
 
 	/// assign from tuple of member contents (move semantics)
 	self_type& operator=(value_type&& other)
-	{ reference_type(*this) = std::move(other); return *this; }
+	{ reference(*this) = std::move(other); return *this; }
 
 	/// assign from tuple of member contents
-	self_type& operator=(const reference_type& other)
-	{ reference_type(*this) = other; return *this; }
+	self_type& operator=(const reference& other)
+	{ reference(*this) = other; return *this; }
 
 	/// assign from tuple of member contents (move semantics)
-	self_type& operator=(reference_type&& other)
-	{ reference_type(*this) = std::move(other); return *this; }
+	self_type& operator=(reference&& other)
+	{ reference(*this) = std::move(other); return *this; }
 
 	/// assign from tuple of member contents
-	self_type& operator=(const const_reference_type& other)
-	{ reference_type(*this) = other; return *this; }
+	self_type& operator=(const const_reference& other)
+	{ reference(*this) = other; return *this; }
 
 	/// assignment operator (value semantics)
 	self_type& operator=(const self_type& other)
 	{
 	    if (other.m_index != m_index || other.m_storage != m_storage)
-		reference_type(*this) = const_reference_type(other);
+		reference(*this) = const_reference(other);
 	    return *this;
 	}
 
@@ -192,7 +192,7 @@ class SOAObjectProxy {
 	self_type& operator=(self_type&& other)
 	{
 	    if (other.m_index != m_index || other.m_storage != m_storage)
-		reference_type(*this) = std::move(reference_type(other));
+		reference(*this) = std::move(reference(other));
 	    return *this;
 	}
 
@@ -214,11 +214,11 @@ class SOAObjectProxy {
 
 	/// access to member by number
 	template <size_type MEMBERNO>
-	auto get() -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
+	auto get() noexcept -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
 	{ return std::get<MEMBERNO>(*m_storage)[m_index]; }
 	/// access to member by "member tag"
 	template <typename MEMBER>
-        auto get() -> decltype(std::get<SOATypelist::find<
+        auto get() noexcept -> decltype(std::get<SOATypelist::find<
 		fields_typelist,
 		MEMBER>::index>(*m_storage)[m_index])
 	{
@@ -227,11 +227,11 @@ class SOAObjectProxy {
 	}
 	/// access to member by number (read-only)
 	template <size_type MEMBERNO>
-	auto get() const -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
+	auto get() const noexcept -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
 	{ return std::get<MEMBERNO>(*m_storage)[m_index]; }
 	/// access to member by "member tag" (read-only)
 	template <typename MEMBER>
-	auto get() const -> decltype(std::get<SOATypelist::find<
+	auto get() const noexcept -> decltype(std::get<SOATypelist::find<
 		    fields_typelist,
 		    MEMBER>::index>(*m_storage)[m_index])
 	{
@@ -288,9 +288,9 @@ class SOAObjectProxy {
 	{ return *this >= value_type(other); }
 
 	/// return pointer to element pointed to be this proxy
-	pointer_type operator&() noexcept;
+	pointer operator&() noexcept;
 	/// return const pointer to element pointed to be this proxy
-	const_pointer_type operator&() const noexcept;
+	const_pointer operator&() const noexcept;
 };
 
 template <typename T>
@@ -323,12 +323,12 @@ namespace std {
 #include "SOAIterator.h"
 
 template <typename PARENTCONTAINER>
-typename SOAObjectProxy<PARENTCONTAINER>::pointer_type
+typename SOAObjectProxy<PARENTCONTAINER>::pointer
 SOAObjectProxy<PARENTCONTAINER>::operator&() noexcept
 { return { m_storage, m_index }; }
 
 template <typename PARENTCONTAINER>
-typename SOAObjectProxy<PARENTCONTAINER>::const_pointer_type
+typename SOAObjectProxy<PARENTCONTAINER>::const_pointer
 SOAObjectProxy<PARENTCONTAINER>::operator&() const noexcept
 { return { m_storage, m_index }; }
 

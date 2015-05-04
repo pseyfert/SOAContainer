@@ -1,5 +1,5 @@
 CXX = clang++
-CXXFLAGS = -std=c++11 -Wall -Wextra -pedantic -O2 -I include
+CXXFLAGS = -g -std=c++11 -Wall -Wextra -pedantic -march=native -O2 -ftree-vectorize -I include
 
 TARGETS = SOAContainerTest
 
@@ -21,6 +21,7 @@ SOAContainerTest.o: tests/SOAContainerTest.cc include/SOAContainer.h \
 SOAContainerTest: SOAContainerTest.o
 
 SOAContainerTest: CC=$(CXX)
+SOAContainerTest: LDFLAGS=$(CXXFLAGS)
 
 %.o: tests/%.cc
 	$(CXX) $(CXXFLAGS) -c -o $@ $<

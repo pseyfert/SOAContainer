@@ -150,25 +150,27 @@ class SOAContainer {
 	    fields_typelist>::type const_reference_tuple_type;
 
     public:
+	typedef SOAObjectProxy<self_type> naked_proxy;
+	friend naked_proxy;
 	/// type of proxy
-	typedef SOAObjectProxy<self_type> proxy_type;
-	friend proxy_type;
+	typedef SKIN<naked_proxy> proxy;
+	friend proxy;
 	/// pointer to contained objects
-	typedef SOAIterator<proxy_type> pointer_type;
-	friend pointer_type;
+	typedef SOAIterator<proxy> pointer;
+	friend pointer;
 	/// iterator type
-	typedef pointer_type iterator;
+	typedef pointer iterator;
 	/// (notion of) type of the contained objects
-	typedef typename proxy_type::value_type value_type;
+	typedef typename proxy::value_type value_type;
 	/// reference to contained objects
-	typedef proxy_type reference_type;
+	typedef proxy reference;
 	/// reference to contained objects
-	typedef const reference_type const_reference_type;
+	typedef const reference const_reference;
 	/// const pointer to contained objects
-	typedef SOAConstIterator<proxy_type> const_pointer_type;
-	friend const_pointer_type;
+	typedef SOAConstIterator<proxy> const_pointer;
+	friend const_pointer;
 	/// const iterator type
-	typedef const_pointer_type const_iterator;
+	typedef const_pointer const_iterator;
 	/// reverse iterator type
 	typedef std::reverse_iterator<iterator> reverse_iterator;
 	/// const reverse iterator type
@@ -305,32 +307,32 @@ class SOAContainer {
        	}
 
 	/// access specified element
-	reference_type operator[](size_type idx)
+	reference operator[](size_type idx)
 	{ return { &m_storage, idx }; }
 	/// access specified element (read access only)
-	const_reference_type operator[](size_type idx) const
+	const_reference operator[](size_type idx) const
 	{ return { &const_cast<SOAStorage&>(m_storage), idx }; }
 	/// access specified element with out of bounds checking
-	reference_type at(size_type idx)
+	reference at(size_type idx)
 	{
 	    if (idx < size()) return operator[](idx);
 	    else throw std::out_of_range("out of bounds");
 	}
 	/// access specified element with out of bounds checking (read-only)
-	const_reference_type at(size_type idx) const
+	const_reference at(size_type idx) const
 	{
 	    if (idx < size()) return operator[](idx);
 	    else throw std::out_of_range("out of bounds");
 	}
 
 	/// access first element (non-empty container)
-	reference_type front() { return operator[](0); }
+	reference front() { return operator[](0); }
 	/// access first element (non-empty container, read-only)
-	const_reference_type front() const { return operator[](0); }
+	const_reference front() const { return operator[](0); }
 	/// access last element (non-empty container)
-	reference_type back() { return operator[](size() - 1); }
+	reference back() { return operator[](size() - 1); }
 	/// access last element (non-empty container, read-only)
-	const_reference_type back() const { return operator[](size() - 1); }
+	const_reference back() const { return operator[](size() - 1); }
 
 	/// iterator pointing to first element
 	iterator begin() noexcept { return { &m_storage, 0 }; }
