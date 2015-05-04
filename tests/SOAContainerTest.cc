@@ -6,8 +6,9 @@
  * unit test for SOAContainer class
  */
 
-#include <cassert>
 #include <cstdio>
+#include <cassert>
+#include <numeric>
 
 #include "SOAContainer.h"
 
