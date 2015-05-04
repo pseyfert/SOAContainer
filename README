@@ -27,7 +27,8 @@ class Point {
 	float r2() const noexcept { return m_x * m_x + m_y * m_y; }
 };
 
-typedef std::vector<Point> Points;
+typedef std::vector<Point> AOSPoints;
+typedef Point& AOSPoint;
 
 Then we can all use Points and Point as we know it. Unfortunately, the
 memory layout is AOS, i.e. not what SIMD units like. Converting this to a
@@ -79,10 +80,27 @@ typedef SOAContainer<
 typedef typename SOAPoints::proxy SOAPoint;
 
 From that point on, you can more or less so what you're used to with your
-points, the SOA nature should largely be invisible. The fields can
-essentially be of any POD type or pointer type, and there can be as many
-as the compiler will support - if you need something more specialised,
-it'll likely work, but may need some tweaking...
+points, the SOA nature should largely be invisible. For example, the code
+
+// normalise to unit length
+for (AOSPoint p: points) {
+    auto ir = 1 / std::sqrt(p.r2());
+    p.setX(p.x() * ir), p.setY(p.y() * ir);
+}
+
+would require virtually no changes when going from the AOS point to the SOA
+point class:
+
+// normalise to unit length
+for (SOAPoint p: points) {
+    auto ir = 1 / std::sqrt(p.r2());
+    p.setX(p.x() * ir), p.setY(p.y() * ir);
+}
+
+The fields (members) in a SOAContainer-contained object can essentially be of
+any POD type or pointer type, and there can be as many as the compiler will
+support - if you need something more specialised, it'll likely work, but may
+need some tweaking...
 
 A few notes at this point seem to be in order:
 
@@ -133,6 +151,7 @@ we'll have to see...
 
 Future plans:
 -------------
+- improve documentation (Doxygen)
 - clean up the interface
 - investigate if supporting the std::initializer_list interface of
   std::vector makes sense (I think at one point I convinced myself that
