@@ -154,8 +154,8 @@ class SOAConstIterator
 	    // ill-behaved client code (when asserts are disabled)
 	    return (m_proxy.m_storage &&
 		    m_proxy.m_storage == other.m_proxy.m_storage) ?
-		std::numeric_limits<difference_type>::max :
-		(m_proxy.m_index - other.m_proxy.m_index);
+		(m_proxy.m_index - other.m_proxy.m_index) :
+		std::numeric_limits<difference_type>::max();
 #endif
 	}
 
