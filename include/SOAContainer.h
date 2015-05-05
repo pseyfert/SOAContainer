@@ -300,22 +300,22 @@ class SOAContainer {
 	/// little helper for indexing to implement clear()
 	struct clearHelper {
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    { obj.clear(); return true; }
+	    void operator()(T& obj, IDX) const
+	    { obj.clear(); }
 	};
 
 	/// little helper for indexing to implement pop_back()
 	struct pop_backHelper {
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    { obj.pop_back(); return true; }
+	    void operator()(T& obj, IDX) const
+	    { obj.pop_back(); }
 	};
 
 	/// little helper for indexing to implement shrink_to_fit()
 	struct shrink_to_fitHelper {
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    { obj.shrink_to_fit(); return true; }
+	    void operator()(T& obj, IDX) const
+	    { obj.shrink_to_fit(); }
 	};
 
 	/// little helper for indexing to implement reserve()
@@ -323,8 +323,8 @@ class SOAContainer {
 	    size_type m_sz;
 	    reserveHelper(size_type sz) : m_sz(sz) { }
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    { obj.reserve(m_sz); return true; }
+	    void operator()(T& obj, IDX) const
+	    { obj.reserve(m_sz); }
 	};
 
 	/// little helper for indexing to implement capacity()
@@ -344,29 +344,28 @@ class SOAContainer {
 	void clear()
 	{
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    clearHelper(), [] (bool, bool) { return true; }, true);
+		    clearHelper());
        	}
 
 	/// pop the last element off the container
 	void pop_back()
 	{
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    pop_backHelper(), [] (bool, bool) { return true; }, true);
+		    pop_backHelper());
        	}
 
 	/// shrink the underlying storage of the container to fit its size
 	void shrink_to_fit()
 	{
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    shrink_to_fitHelper(), [] (bool, bool) {
-		    return true; }, true);
+		    shrink_to_fitHelper());
        	}
 
 	/// reserve space for at least sz elements
 	void reserve(size_type sz)
 	{
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    reserveHelper(sz), [] (bool, bool) { return true; }, true);
+		    reserveHelper(sz));
        	}
 
 	/// return capacity of container
@@ -453,8 +452,8 @@ class SOAContainer {
 	    size_type m_sz;
 	    resizeHelper(size_type sz) : m_sz(sz) { }
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    { obj.resize(m_sz); return true; }
+	    void operator()(T& obj, IDX) const
+	    { obj.resize(m_sz); }
 	};
 
 	/// little helper for resize(sz, val)
@@ -464,8 +463,8 @@ class SOAContainer {
 	    resizeHelper_val(size_type sz, const value_type& val) :
 		m_sz(sz), m_val(val) { }
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    { obj.resize(m_sz, std::get<IDX::value>(m_val)); return true; }
+	    void operator()(T& obj, IDX) const
+	    { obj.resize(m_sz, std::get<IDX::value>(m_val)); }
 	};
 
 	/// little helper for push_back
@@ -473,8 +472,8 @@ class SOAContainer {
 	    const value_type& m_val;
 	    push_backHelper(const value_type& val) : m_val(val) { }
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    { obj.push_back(std::get<IDX::value>(m_val)); return true; }
+	    void operator()(T& obj, IDX) const
+	    { obj.push_back(std::get<IDX::value>(m_val)); }
 	};
 
 	/// little helper for push_back (move variant)
@@ -482,11 +481,8 @@ class SOAContainer {
 	    value_type&& m_val;
 	    push_backHelper_move(value_type&& val) : m_val(std::move(val)) { }
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    {
-		obj.push_back(std::move(std::get<IDX::value>(m_val)));
-		return true;
-	    }
+	    void operator()(T& obj, IDX) const
+	    { obj.push_back(std::move(std::get<IDX::value>(m_val))); }
 	};
 
 	/// little helper for insert(it, val)
@@ -496,11 +492,8 @@ class SOAContainer {
 	    insertHelper(const value_type& val, size_type idx) :
 		m_val(val), m_idx(idx) { }
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    {
-		obj.insert(obj.begin() + m_idx, std::get<IDX::value>(m_val));
-		return true;
-	    }
+	    void operator()(T& obj, IDX) const
+	    { obj.insert(obj.begin() + m_idx, std::get<IDX::value>(m_val)); }
 	};
 
 	/// little helper for insert(it, val) - move variant
@@ -510,12 +503,9 @@ class SOAContainer {
 	    insertHelper_move(value_type&& val, size_type idx) :
 		m_val(std::move(val)), m_idx(idx) { }
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    {
-		obj.insert(obj.begin() + m_idx,
-			std::move(std::get<IDX::value>(m_val)));
-		return true;
-	    }
+	    void operator()(T& obj, IDX) const
+	    { obj.insert(obj.begin() + m_idx,
+		    std::move(std::get<IDX::value>(m_val))); }
 	};
 
 	/// little helper for insert(it, count, val)
@@ -527,11 +517,10 @@ class SOAContainer {
 		    const value_type& val, size_type idx, size_type cnt) :
 		m_val(val), m_idx(idx), m_cnt(cnt) { }
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
+	    void operator()(T& obj, IDX) const
 	    {
 		obj.insert(obj.begin() + m_idx, m_cnt,
 			std::get<IDX::value>(m_val));
-		return true;
 	    }
 	};
 
@@ -540,11 +529,8 @@ class SOAContainer {
 	    size_type m_idx;
 	    eraseHelper(size_type idx) : m_idx(idx) { }
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    {
-		obj.erase(obj.begin() + m_idx);
-		return true;
-	    }
+	    void operator()(T& obj, IDX) const
+	    { obj.erase(obj.begin() + m_idx); }
 	};
 
 	/// little helper for erase(first, last)
@@ -554,11 +540,10 @@ class SOAContainer {
 	    eraseHelper_N(size_type idx, size_type sz) :
 		m_idx(idx), m_sz(sz) { }
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
+	    void operator()(T& obj, IDX) const
 	    {
 		const auto it = obj.begin() + m_idx;
 		obj.erase(it, it + m_sz);
-		return true;
 	    }
 	};
 
@@ -570,11 +555,8 @@ class SOAContainer {
 		    const value_type& val, size_type cnt) :
 		m_val(val), m_cnt(cnt) { }
 	    template <typename T, typename IDX>
-	    bool operator()(T& obj, IDX) const
-	    {
-		obj.assign(m_cnt, std::get<IDX::value>(m_val));
-		return true;
-	    }
+	    void operator()(T& obj, IDX) const
+	    { obj.assign(m_cnt, std::get<IDX::value>(m_val)); }
 	};
 
     public:
@@ -582,32 +564,28 @@ class SOAContainer {
 	void resize(size_type sz)
 	{
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    resizeHelper(sz), [] (bool, bool) {
-		    return true; }, true);
+		    resizeHelper(sz));
 	}
 
 	/// resize the container (append val if the container grows)
 	void resize(size_type sz, const value_type& val)
 	{
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    resizeHelper_val(sz, val), [] (bool, bool) {
-		    return true; }, true);
+		    resizeHelper_val(sz, val));
 	}
 
 	/// push an element at the back of the array
 	void push_back(const value_type& val)
 	{
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    push_backHelper(val), [] (bool, bool) {
-		    return true; }, true);
+		    push_backHelper(val));
 	}
 
 	/// push an element at the back of the array (move variant)
 	void push_back(value_type&& val)
 	{
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    push_backHelper_move(std::move(val)), [] (bool, bool) {
-		    return true; }, true);
+		    push_backHelper_move(std::move(val)));
 	}
 
 	/// insert a value at the given position
@@ -616,8 +594,7 @@ class SOAContainer {
 	    assert((*pos).m_storage == &m_storage);
 	    const size_type idx = pos - cbegin();
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    insertHelper(val, idx), [] (bool, bool) {
-		    return true; }, true);
+		    insertHelper(val, idx));
 	    return iterator(pos.m_proxy.m_storage, pos.m_proxy.m_index);
 	}
 
@@ -627,8 +604,7 @@ class SOAContainer {
 	    assert((*pos).m_storage == &m_storage);
 	    const size_type idx = pos - cbegin();
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    insertHelper_move(std::move(val), idx), [] (bool, bool) {
-		    return true; }, true);
+		    insertHelper_move(std::move(val), idx));
 	    return iterator(pos.m_proxy.m_storage, pos.m_proxy.m_index);
 	}
 
@@ -639,8 +615,7 @@ class SOAContainer {
 	    assert((*pos).m_storage == &m_storage);
 	    const size_type idx = pos - cbegin();
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    insertHelper_count(val, idx, count), [] (bool, bool) {
-		    return true; }, true);
+		    insertHelper_count(val, idx, count));
 	    return iterator(pos.m_proxy.m_storage, pos.m_proxy.m_index);
 	}
 
@@ -659,7 +634,7 @@ class SOAContainer {
 	    assert((*pos).m_storage == &m_storage);
 	    const size_type idx = pos - cbegin();
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    eraseHelper(idx), [] (bool, bool) { return true; }, true);
+		    eraseHelper(idx));
 	    return iterator(pos.m_proxy.m_storage, pos.m_proxy.m_index);
 	}
 
@@ -671,8 +646,7 @@ class SOAContainer {
 	    const size_type idx = first - cbegin();
 	    const size_type sz = last - first;
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    eraseHelper_N(idx, sz), [] (bool, bool) {
-		    return true; }, true);
+		    eraseHelper_N(idx, sz));
 	    return iterator(first.m_proxy.m_storage, first.m_proxy.m_index);
 	}
 
@@ -680,7 +654,7 @@ class SOAContainer {
 	void assign(size_type count, const value_type& val)
 	{
 	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    assignHelper(val, count), [] (bool, bool) { return true; }, true);
+		    assignHelper(val, count));
 	}
 
 	/// assign the vector from a range of elements in another container

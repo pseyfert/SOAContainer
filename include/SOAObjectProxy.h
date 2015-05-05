@@ -239,13 +239,14 @@ class SOAObjectProxy {
 	}
 
 	/// swap the contents of two SOAObjectProxy instances
-	void swap(self_type& other) noexcept(
-		noexcept(std::swap<value_type&, value_type&>))
+	void swap(self_type& other) noexcept(noexcept(
+		    SOAUtils::recursive_apply_tuple<fields_typelist::size()>()(
+		    *m_storage,
+		    swapHelper({ m_index, other.m_index, other.m_storage }))))
 	{
 	    SOAUtils::recursive_apply_tuple<fields_typelist::size()>()(
 		    *m_storage,
-		    swapHelper({ m_index, other.m_index, other.m_storage }),
-		    [] (bool, bool) { return true; }, true);
+		    swapHelper({ m_index, other.m_index, other.m_storage }));
 	}
 
 	/// comparison (equality)
