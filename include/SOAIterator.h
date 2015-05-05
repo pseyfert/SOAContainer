@@ -7,6 +7,7 @@
 #ifndef SOAITERATOR_H
 #define SOAITERATOR_H
 
+#include <tuple>
 #include <iterator>
 
 /** @brief class mimicking a const pointer to pointee inidicated by PROXY
