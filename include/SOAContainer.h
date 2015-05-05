@@ -760,7 +760,23 @@ class SOAContainer {
 		    std::forward<ARGS>(args)...);
 	    return iterator(pos.m_proxy.m_storage, pos.m_proxy.m_index);
 	}
+
+	/// swap contents of two containers
+	void swap(self_type& other) noexcept(
+		noexcept(std::swap(m_storage, other.m_storage)))
+	{ std::swap(m_storage, other.m_storage); }
 };
+
+namespace std {
+    /// specialise std::swap
+    template <template <typename...> class CONTAINER,
+	     template <typename> class SKIN,
+	     typename... FIELDS>
+    void swap(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
+	    const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+		noexcept(a.swap(b)))
+    { a.swap(b); }
+}
 
 #endif // SOACONTAINER_H
 
