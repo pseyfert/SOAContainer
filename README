@@ -172,9 +172,7 @@ Random notes on current status:
 -------------------------------
 - the typelist functions and what's built around it (especially
   recursive_apply_tuple) should be reviewed by someone who's familiar
-  with functional languages and template metaprogramming; especially the
-  hack bool return values of functors passed to recursive_apply_tuple
-  which should return void should be redone without the dummy return
+  with functional languages and template metaprogramming
 
 - somehow, I had hoped that I would be able to scatter/gather like
   Gerhard did with index_sequence, but I'm either not clever enough, or
