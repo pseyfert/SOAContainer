@@ -209,6 +209,26 @@ static void test()
 	assert(std::is_sorted(c.begin(), c.end(),
 		[] (decltype(c.front()) a, decltype(c.front()) b)
 		{ return a.get<1>() > b.get<1>(); }));
+	/// test the begin<fieldno> and end<fieldno> calls
+	assert(&(*c.begin<0>()) == &(c.begin()->get<0>()));
+	assert(&(*cc.begin<0>()) == &(cc.begin()->get<0>()));
+	assert(&(*c.cbegin<0>()) == &(c.cbegin()->get<0>()));
+	assert(&(*c.end<0>()) == &(c.end()->get<0>()));
+	assert(&(*cc.end<0>()) == &(cc.end()->get<0>()));
+	assert(&(*c.cend<0>()) == &(c.cend()->get<0>()));
+	/// test (some of) the rbegin<fieldno> and rend<fieldno> calls
+	assert(&(*c.rbegin<0>()) == &(c.rbegin()->get<0>()));
+	assert(&(*c.rend<0>()) == &(c.rend()->get<0>()));
+	/// test the begin<fieldtag> and end<fieldtag> calls
+	assert(&(*c.begin<double>()) == &(c.begin()->get<double>()));
+	assert(&(*cc.begin<double>()) == &(cc.begin()->get<double>()));
+	assert(&(*c.cbegin<double>()) == &(c.cbegin()->get<double>()));
+	assert(&(*c.end<double>()) == &(c.end()->get<double>()));
+	assert(&(*cc.end<double>()) == &(cc.end()->get<double>()));
+	assert(&(*c.cend<double>()) == &(c.cend()->get<double>()));
+	/// test (some of) the rbegin<fieldno> and rend<fieldno> calls
+	assert(&(*c.rbegin<double>()) == &(c.rbegin()->get<double>()));
+	assert(&(*c.rend<double>()) == &(c.rend()->get<double>()));
     }
     {
 	// test assign(count, val)
