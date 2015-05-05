@@ -8,6 +8,7 @@
 #define SOAOBJECTPROXY_H
 
 #include <tuple>
+#include <memory>
 
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
@@ -61,8 +62,8 @@ class SOAObjectProxy {
 	/// typelist of fields
 	typedef typename parent_type::fields_typelist fields_typelist;
 
-	size_type m_index;	///< index into underlying SOA storage
 	SOAStorage* m_storage;	///< underlying SOA storage of members
+	size_type m_index;	///< index into underlying SOA storage
 
 	// SOAContainer is allowed to invoke the private constructor
 	friend parent_type;
@@ -74,7 +75,7 @@ class SOAObjectProxy {
 	/// constructor is private, but parent container is a friend
 	SOAObjectProxy(
 		SOAStorage* storage = nullptr, size_type index = 0) noexcept :
-	    m_index(index), m_storage(storage)
+	    m_storage(storage), m_index(index)
         { }
 
     private:
@@ -127,11 +128,11 @@ class SOAObjectProxy {
     public:
 	/// copy constructor
 	SOAObjectProxy(const self_type& other) :
-	    m_index(other.m_index), m_storage(other.m_storage) { }
+	    m_storage(other.m_storage), m_index(other.m_index) { }
 	/// move constructor
 	SOAObjectProxy(self_type&& other) :
-	    m_index(std::move(other.m_index)),
-	    m_storage(std::move(other.m_storage)) { }
+	    m_storage(std::move(other.m_storage)),
+	    m_index(std::move(other.m_index)) { }
 
 	/// convert to tuple of member contents
 	operator value_type() const
@@ -183,7 +184,7 @@ class SOAObjectProxy {
 	/// assignment operator (value semantics)
 	self_type& operator=(const self_type& other)
 	{
-	    if (other.m_index != m_index || other.m_storage != m_storage)
+	    if (other.m_storage != m_storage || other.m_index != m_index)
 		reference(*this) = const_reference(other);
 	    return *this;
 	}
@@ -191,7 +192,7 @@ class SOAObjectProxy {
 	/// move assignment operator (value semantics)
 	self_type& operator=(self_type&& other)
 	{
-	    if (other.m_index != m_index || other.m_storage != m_storage)
+	    if (other.m_storage != m_storage || other.m_index != m_index)
 		reference(*this) = std::move(reference(other));
 	    return *this;
 	}
@@ -199,16 +200,16 @@ class SOAObjectProxy {
 	/// assignment (pointer-like semantics)
 	self_type& assign(const self_type& other)
 	{
-	    if (other.m_index != m_index || other.m_storage != m_storage)
-		m_index = other.m_index, m_storage = other.m_storage;
+	    if (this != std::addressof(other))
+		m_storage = other.m_storage, m_index = other.m_index;
 	    return *this;
 	}
 	/// move assignment (pointer-like semantics)
 	self_type& assign(self_type&& other)
 	{
-	    if (other.m_index != m_index || other.m_storage != m_storage)
-		m_index = std::move(other.m_index),
-			m_storage = std::move(other.m_storage);
+	    if (this != std::addressof(other))
+		m_storage = std::move(other.m_storage),
+			  m_index = std::move(other.m_index);
 	    return *this;
 	}	
 
@@ -219,8 +220,7 @@ class SOAObjectProxy {
 	/// access to member by "member tag"
 	template <typename MEMBER>
         auto get() noexcept -> decltype(std::get<SOATypelist::find<
-		fields_typelist,
-		MEMBER>::index>(*m_storage)[m_index])
+		fields_typelist, MEMBER>::index>(*m_storage)[m_index])
 	{
 	    return std::get<SOATypelist::find<fields_typelist,
 	        MEMBER>::index>(*m_storage)[m_index];
@@ -232,8 +232,7 @@ class SOAObjectProxy {
 	/// access to member by "member tag" (read-only)
 	template <typename MEMBER>
 	auto get() const noexcept -> decltype(std::get<SOATypelist::find<
-		    fields_typelist,
-		    MEMBER>::index>(*m_storage)[m_index])
+		    fields_typelist, MEMBER>::index>(*m_storage)[m_index])
 	{
 	    return std::get<SOATypelist::find<fields_typelist,
 	        MEMBER>::index>(*m_storage)[m_index];
@@ -251,41 +250,41 @@ class SOAObjectProxy {
 
 	/// comparison (equality)
 	bool operator==(const value_type& other) const noexcept
-	{ return value_type(*this) == other; }
+	{ return const_reference(*this) == other; }
 	/// comparison (inequality)
 	bool operator!=(const value_type& other) const noexcept
-	{ return value_type(*this) != other; }
+	{ return const_reference(*this) != other; }
 	/// comparison (less than)
 	bool operator<(const value_type& other) const noexcept
-	{ return value_type(*this) < other; }
+	{ return const_reference(*this) < other; }
 	/// comparison (greater than)
 	bool operator>(const value_type& other) const noexcept
-	{ return value_type(*this) > other; }
+	{ return const_reference(*this) > other; }
 	/// comparison (less than or equal to)
 	bool operator<=(const value_type& other) const noexcept
-	{ return value_type(*this) <= other; }
+	{ return const_reference(*this) <= other; }
 	/// comparison (greater than or equal to)
 	bool operator>=(const value_type& other) const noexcept
-	{ return value_type(*this) >= other; }
+	{ return const_reference(*this) >= other; }
 
 	/// comparison (equality)
 	bool operator==(const self_type& other) const noexcept
-	{ return *this == value_type(other); }
+	{ return *this == const_reference(other); }
 	/// comparison (inequality)
 	bool operator!=(const self_type& other) const noexcept
-	{ return *this != value_type(other); }
+	{ return *this != const_reference(other); }
 	/// comparison (less than)
 	bool operator<(const self_type& other) const noexcept
-	{ return *this < value_type(other); }
+	{ return *this < const_reference(other); }
 	/// comparison (greater than)
 	bool operator>(const self_type& other) const noexcept
-	{ return *this > value_type(other); }
+	{ return *this > const_reference(other); }
 	/// comparison (less than or equal to)
 	bool operator<=(const self_type& other) const noexcept
-	{ return *this <= value_type(other); }
+	{ return *this <= const_reference(other); }
 	/// comparison (greater than or equal to)
 	bool operator>=(const self_type& other) const noexcept
-	{ return *this >= value_type(other); }
+	{ return *this >= const_reference(other); }
 
 	/// return pointer to element pointed to be this proxy
 	pointer operator&() noexcept;
@@ -293,21 +292,27 @@ class SOAObjectProxy {
 	const_pointer operator&() const noexcept;
 };
 
+/// comparison (equality)
 template <typename T>
 bool operator==(const typename SOAObjectProxy<T>::value_type& a,
 	const SOAObjectProxy<T>& b) noexcept { return b == a; }
+/// comparison (inequality)
 template <typename T>
 bool operator!=(const typename SOAObjectProxy<T>::value_type& a,
 	const SOAObjectProxy<T>& b) noexcept { return b != a; }
+/// comparison (less than)
 template <typename T>
 bool operator<(const typename SOAObjectProxy<T>::value_type& a,
 	const SOAObjectProxy<T>& b) noexcept { return b > a; }
+/// comparison (greater than)
 template <typename T>
 bool operator>(const typename SOAObjectProxy<T>::value_type& a,
 	const SOAObjectProxy<T>& b) noexcept { return b < a; }
+/// comparison (less than or equal to)
 template <typename T>
 bool operator<=(const typename SOAObjectProxy<T>::value_type& a,
 	const SOAObjectProxy<T>& b) noexcept { return b >= a; }
+/// comparison (greater than or equal to)
 template <typename T>
 bool operator>=(const typename SOAObjectProxy<T>::value_type& a,
 	const SOAObjectProxy<T>& b) noexcept { return b <= a; }
