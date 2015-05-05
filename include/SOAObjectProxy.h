@@ -84,7 +84,8 @@ class SOAObjectProxy {
 	    size_type m_idx;
 	    template <typename T, typename Idx>
 	    std::tuple<typename T::value_type>
-	    operator()(const T& obj, Idx) const
+	    operator()(const T& obj, Idx) const noexcept(noexcept(
+			std::tuple<typename T::value_type>(obj[m_idx])))
 	    { return std::tuple<typename T::value_type>(obj[m_idx]); }
 	};
 
@@ -92,7 +93,9 @@ class SOAObjectProxy {
 	struct to_referenceHelper {
 	    size_type m_idx;
 	    template <typename T, typename Idx>
-	    std::tuple<typename T::reference> operator()(T& obj, Idx) const
+	    std::tuple<typename T::reference>
+	    operator()(T& obj, Idx) const noexcept(noexcept(
+			    std::tuple<typename T::reference>(obj[m_idx])))
 	    { return std::tuple<typename T::reference>(obj[m_idx]); }
 	};
 
@@ -101,14 +104,17 @@ class SOAObjectProxy {
 	    size_type m_idx;
 	    template <typename T, typename Idx>
 	    std::tuple<typename T::const_reference>
-	    operator()(const T& obj, Idx) const
+	    operator()(const T& obj, Idx) const noexcept(noexcept(
+			std::tuple<const typename T::const_reference>(obj[m_idx])))
 	    { return std::tuple<const typename T::const_reference>(obj[m_idx]); }
 	};
 
 	/// little helper to implement concatenation of tuples
 	struct tuplecatHelper {
 	    template <typename... S, typename T>
-	    auto operator()(std::tuple<S...>&& t1, std::tuple<T>&& t2) const ->
+	    auto operator()(
+		    std::tuple<S...>&& t1, std::tuple<T>&& t2) const noexcept(
+		    noexcept(std::tuple_cat(std::move(t1), std::move(t2)))) ->
 		decltype(std::tuple_cat(std::move(t1), std::move(t2)))
 	    { return std::tuple_cat(std::move(t1), std::move(t2)); }
 	};
@@ -118,24 +124,29 @@ class SOAObjectProxy {
 	    size_type m_idx2;
 	    SOAStorage* m_other;
 	    template <typename T, typename Idx>
-	    bool operator()(T& obj, Idx) const
+	    void operator()(T& obj, Idx) const noexcept(noexcept(
+			std::swap(obj[m_idx1],
+			    std::get<Idx::value>(*m_other)[m_idx2])))
 	    {
 		std::swap(obj[m_idx1], std::get<Idx::value>(*m_other)[m_idx2]);
-		return true;
 	    }
 	};
 
     public:
 	/// copy constructor
-	SOAObjectProxy(const self_type& other) :
+	SOAObjectProxy(const self_type& other) noexcept :
 	    m_storage(other.m_storage), m_index(other.m_index) { }
 	/// move constructor
-	SOAObjectProxy(self_type&& other) :
+	SOAObjectProxy(self_type&& other) noexcept :
 	    m_storage(std::move(other.m_storage)),
 	    m_index(std::move(other.m_index)) { }
 
 	/// convert to tuple of member contents
-	operator value_type() const
+	operator value_type() const noexcept(noexcept(
+		    SOAUtils::recursive_apply_tuple<
+		    fields_typelist::size()>()(
+			*m_storage, to_valueHelper({ m_index }),
+			tuplecatHelper(), std::tuple<>())))
 	{
 	    return SOAUtils::recursive_apply_tuple<
 		fields_typelist::size()>()(
@@ -144,7 +155,11 @@ class SOAObjectProxy {
 	}
 
 	/// convert to tuple of references member contents
-	operator reference()
+	operator reference() noexcept(noexcept(
+		    SOAUtils::recursive_apply_tuple<
+		    fields_typelist::size()>()(
+			*m_storage, to_referenceHelper({ m_index }),
+			tuplecatHelper(), std::tuple<>())))
 	{
 	    return SOAUtils::recursive_apply_tuple<
 		fields_typelist::size()>()(
@@ -153,7 +168,11 @@ class SOAObjectProxy {
 	}
 
 	/// convert to tuple of const references member contents
-	operator const_reference() const
+	operator const_reference() const noexcept(noexcept(
+		    SOAUtils::recursive_apply_tuple<
+		    fields_typelist::size()>()(
+			*m_storage, to_const_referenceHelper({ m_index }),
+			tuplecatHelper(), std::tuple<>())))
 	{
 	    return SOAUtils::recursive_apply_tuple<
 		fields_typelist::size()>()(
@@ -162,27 +181,33 @@ class SOAObjectProxy {
 	}
 
 	/// assign from tuple of member contents
-	self_type& operator=(const value_type& other)
+	self_type& operator=(const value_type& other) noexcept(noexcept(
+		    reference(self_type()) == other))
 	{ reference(*this) = other; return *this; }
 
 	/// assign from tuple of member contents (move semantics)
-	self_type& operator=(value_type&& other)
+	self_type& operator=(value_type&& other) noexcept(noexcept(
+		    reference(self_type()) == std::move(other)))
 	{ reference(*this) = std::move(other); return *this; }
 
 	/// assign from tuple of member contents
-	self_type& operator=(const reference& other)
+	self_type& operator=(const reference& other) noexcept(noexcept(
+		    reference(self_type()) == other))
 	{ reference(*this) = other; return *this; }
 
 	/// assign from tuple of member contents (move semantics)
-	self_type& operator=(reference&& other)
+	self_type& operator=(reference&& other) noexcept(noexcept(
+		    reference(self_type()) == std::move(other)))
 	{ reference(*this) = std::move(other); return *this; }
 
 	/// assign from tuple of member contents
-	self_type& operator=(const const_reference& other)
+	self_type& operator=(const const_reference& other) noexcept(noexcept(
+		    reference(self_type()) == other))
 	{ reference(*this) = other; return *this; }
 
 	/// assignment operator (value semantics)
-	self_type& operator=(const self_type& other)
+	self_type& operator=(const self_type& other) noexcept(noexcept(
+		    reference(self_type()) = const_reference(other)))
 	{
 	    if (other.m_storage != m_storage || other.m_index != m_index)
 		reference(*this) = const_reference(other);
@@ -190,7 +215,8 @@ class SOAObjectProxy {
 	}
 
 	/// move assignment operator (value semantics)
-	self_type& operator=(self_type&& other)
+	self_type& operator=(self_type&& other) noexcept(noexcept(
+		    reference(self_type()) = std::move(reference(other))))
 	{
 	    if (other.m_storage != m_storage || other.m_index != m_index)
 		reference(*this) = std::move(reference(other));
@@ -198,14 +224,14 @@ class SOAObjectProxy {
 	}
 
 	/// assignment (pointer-like semantics)
-	self_type& assign(const self_type& other)
+	self_type& assign(const self_type& other) noexcept
 	{
 	    if (this != std::addressof(other))
 		m_storage = other.m_storage, m_index = other.m_index;
 	    return *this;
 	}
 	/// move assignment (pointer-like semantics)
-	self_type& assign(self_type&& other)
+	self_type& assign(self_type&& other) noexcept
 	{
 	    if (this != std::addressof(other))
 		m_storage = std::move(other.m_storage),
