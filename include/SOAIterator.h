@@ -113,14 +113,14 @@ class SOAConstIterator
 		std::is_integral<T>::value &&
 		std::is_convertible<T, difference_type>::value, self_type&
 		>::type operator+=(T dist) noexcept
-	{ return (*this += difference_type(dist)); }
+	{ m_proxy.m_index += dist; return *this; }
 	/// "retreat" by dist elements
 	template <typename T>
 	typename std::enable_if<
 		std::is_integral<T>::value &&
 		std::is_convertible<T, difference_type>::value, self_type&
 		>::type operator-=(T dist) noexcept
-	{ return (*this -= difference_type(dist)); }
+	{ m_proxy.m_index -= dist; return *this; }
 	/// advance by dist elements
 	self_type operator+(difference_type dist) const noexcept
 	{ return self_type(*this) += dist; }
@@ -320,14 +320,14 @@ class SOAIterator : public SOAConstIterator<PROXY>
 		std::is_integral<T>::value &&
 		std::is_convertible<T, difference_type>::value, self_type
 		>::type operator+=(T dist) noexcept
-	{ return (*this += difference_type(dist)); }
+	{ SOAConstIterator<proxy>::operator+=(dist); return *this; }
 	/// "retreat" by dist elements
 	template <typename T>
 	typename std::enable_if<
 		std::is_integral<T>::value &&
 		std::is_convertible<T, difference_type>::value, self_type
 		>::type operator-=(T dist) noexcept
-	{ return (*this -= difference_type(dist)); }
+	{ SOAConstIterator<proxy>::operator-=(dist); return *this; }
 	/// advance by dist elements
 	self_type operator+(difference_type dist) const noexcept
 	{ return self_type(*this) += dist; }
