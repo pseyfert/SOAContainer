@@ -58,10 +58,8 @@ class SOAConstIterator
 
     protected:
 	/// constructor building proxy in place
-	SOAConstIterator(
-		typename proxy::parent_type::SOAStorage* storage,
-		size_type index) noexcept :
-	    m_proxy(storage, index) { }
+	SOAConstIterator(typename proxy::SOAStorage* storage,
+		size_type index) noexcept : m_proxy(storage, index) { }
 
     public:
 	/// copy constructor
@@ -73,13 +71,10 @@ class SOAConstIterator
 
 	/// assignment
 	self_type& operator=(const self_type& other) noexcept
-	{ if (&other != this) m_proxy.assign(other.m_proxy); return *this; }
+	{ m_proxy.assign(other.m_proxy); return *this; }
 	/// assignment (move semantics)
 	self_type& operator=(self_type&& other) noexcept
-	{
-	    if (&other != this) m_proxy.assign(std::move(other.m_proxy));
-	    return *this;
-	}
+	{ m_proxy.assign(std::move(other.m_proxy)); return *this; }
 
 	/// deference pointer (*p)
 	reference operator*() noexcept
@@ -88,10 +83,10 @@ class SOAConstIterator
 	const_reference operator*() const noexcept
 	{ return m_proxy; }
 	/// deference pointer (p->blah)
-	reference* operator->() noexcept
+	const reference* operator->() noexcept
 	{ return std::addressof(m_proxy); }
 	/// deference pointer (p->blah)
-	const_reference* operator->() const noexcept
+	const const_reference* operator->() const noexcept
 	{ return std::addressof(m_proxy); }
 
 	/// (pre-)increment
@@ -169,16 +164,16 @@ class SOAConstIterator
 
 	/// indexing
 	reference operator[](size_type idx) noexcept
-	{ return *((*this) + idx); }
+	{ return { m_proxy.m_storage, m_proxy.m_index + idx }; }
 	/// indexing
 	const_reference operator[](size_type idx) const noexcept
-	{ return *((*this) + idx); }
+	{ return { m_proxy.m_storage, m_proxy.m_index + idx }; }
 
 	/// comparison (equality)
 	bool operator==(const self_type& other) const noexcept
 	{
-	    return m_proxy.m_storage == other.m_proxy.m_storage &&
-		m_proxy.m_index == other.m_proxy.m_index;
+	    return m_proxy.m_index == other.m_proxy.m_index &&
+		m_proxy.m_storage == other.m_proxy.m_storage;
 	}
 	/// comparison (inequality)
 	bool operator!=(const self_type& other) const noexcept
@@ -268,8 +263,7 @@ class SOAIterator : public SOAConstIterator<PROXY>
 
     private:
 	/// constructor building proxy in place
-	SOAIterator(
-		typename proxy::parent_type::SOAStorage* storage,
+	SOAIterator(typename proxy::parent_type::SOAStorage* storage,
 		size_type index) noexcept :
 	    SOAConstIterator<proxy>(storage, index) { }
 
@@ -296,38 +290,30 @@ class SOAIterator : public SOAConstIterator<PROXY>
 	const_reference operator*() const noexcept
 	{ return SOAConstIterator<proxy>::m_proxy; }
 	/// deference pointer (p->blah)
-	reference* operator->() noexcept
+	const reference* operator->() noexcept
 	{ return std::addressof(SOAConstIterator<proxy>::m_proxy); }
 	/// deference pointer (p->blah)
-	const_reference* operator->() const noexcept
+	const const_reference* operator->() const noexcept
 	{ return std::addressof(SOAConstIterator<proxy>::m_proxy); }
 
 	/// (pre-)increment
 	self_type& operator++() noexcept
-	{ ++SOAConstIterator<proxy>::m_proxy.m_index; return *this; }
+	{ SOAConstIterator<proxy>::operator++(); return *this; }
 	/// (pre-)decrement
 	self_type& operator--() noexcept
-	{ --SOAConstIterator<proxy>::m_proxy.m_index; return *this; }
+	{ SOAConstIterator<proxy>::operator--(); return *this; }
 	/// (post-)increment
 	self_type operator++(int) noexcept
-	{
-	    self_type retVal(*this);
-	    ++SOAConstIterator<proxy>::m_proxy.m_index;
-	    return retVal;
-	}
+	{ self_type retVal(*this); operator++(); return retVal; }
 	/// (post-)decrement
 	self_type operator--(int) noexcept
-	{
-	    self_type retVal(*this);
-	    --SOAConstIterator<proxy>::m_proxy.m_index;
-	    return retVal;
-	}
+	{ self_type retVal(*this); operator--(); return retVal; }
 	/// advance by dist elements
 	self_type& operator+=(difference_type dist) noexcept
-	{ SOAConstIterator<proxy>::m_proxy.m_index += dist; return *this; }
+	{ SOAConstIterator<proxy>::operator+=(dist); return *this; }
 	/// "retreat" by dist elements
 	self_type& operator-=(difference_type dist) noexcept
-	{ SOAConstIterator<proxy>::m_proxy.m_index -= dist; return *this; }
+	{ SOAConstIterator<proxy>::operator-=(dist); return *this; }
 	/// advance by dist elements
 	template <typename T>
 	typename std::enable_if<
@@ -369,10 +355,12 @@ class SOAIterator : public SOAConstIterator<PROXY>
 
 	/// indexing
 	reference operator[](size_type idx) noexcept
-	{ return *((*this) + idx); }
+	{ return { SOAConstIterator<proxy>::m_proxy.m_storage,
+		     SOAIterator<proxy>::m_proxy.m_index + idx }; }
 	/// indexing
 	const_reference operator[](size_type idx) const noexcept
-	{ return *((*this) + idx); }
+	{ return { SOAConstIterator<proxy>::m_proxy.m_storage,
+		     SOAIterator<proxy>::m_proxy.m_index + idx }; }
 };
 
 /// implement integer + SOAIterator
