@@ -167,6 +167,9 @@ class SOAContainer {
     private:
 	/// hide verification of FIELDS inside struct or doxygen gets confused
 	struct fields_verifier {
+	    // storing objects without state doesn't make sense
+	    static_assert(1 <= sizeof...(FIELDS),
+	    	"need to supply at least one field");
 	    /// little helper to verify the FIELDS template parameter
 	    template <typename... ARGS>
 	    struct verify_fields;
@@ -185,16 +188,12 @@ class SOAContainer {
 	    template <typename HEAD>
 	    struct verify_fields<HEAD>
 	    {
-	        /// true if HEADL verifies okay
+	        /// true if HEAD verifies okay
 	        enum {
 		    value = std::is_pod<HEAD>::value ||
 			SOATypelist::typelist_helpers::is_wrapped<HEAD>::value
 	        };
 	    };
-
-	    // storing objects without state doesn't make sense
-	    static_assert(1 <= sizeof...(FIELDS),
-	    	"need to supply at least one field");
 	    // make sure fields are either POD or wrapped types
 	    static_assert(verify_fields<FIELDS...>::value,
 	    	"Fields should be either plain old data (POD) or "
