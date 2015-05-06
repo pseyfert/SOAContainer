@@ -7,10 +7,24 @@
  */
 
 #include <cstdio>
-#include <cassert>
 #include <numeric>
 
 #include "SOAContainer.h"
+
+static unsigned ntestsfail = 0;
+
+#define do_test_impl(cond, condstr, line, file, func) \
+	{ if (!(cond)) { \
+	    ++ntestsfail; \
+	    std::fprintf(stderr, "In routine \"%s\" (line %u in %s): " \
+		    "test failed, condition\n\t\"%s\"\n", \
+		    func, line, file, condstr); \
+	} }
+#if defined(__GNUC__)
+#define do_test(cond) do_test_impl((cond), #cond, __LINE__, __FILE__, __PRETTY_FUNCTION__)
+#else
+#define do_test(cond) do_test_impl((cond), #cond, __LINE__, __FILE__, __func__)
+#endif
 
 /// unit test SOAContainer class
 static void test()
@@ -18,36 +32,36 @@ static void test()
     SOAContainer<std::vector, NullSkin, double, int, int> c;
     const SOAContainer<std::vector, NullSkin, double, int, int>& cc = c;
     // check basic properties
-    assert(c.empty());
-    assert(0 == c.size());
+    do_test(c.empty());
+    do_test(0 == c.size());
     c.clear();
-    assert(1 <= c.max_size());
-    assert(0 <= c.capacity());
+    do_test(1 <= c.max_size());
+    do_test(0 <= c.capacity());
     // reserve space
     c.reserve(64);
-    assert(64 <= c.capacity());
-    assert(c.capacity() <= c.max_size());
+    do_test(64 <= c.capacity());
+    do_test(c.capacity() <= c.max_size());
     // check iterators
-    assert(!c.begin());
-    assert(c.begin() == c.end());
-    assert(cc.begin() == cc.end());
-    assert(c.begin() == cc.begin());
-    assert(c.begin() <= c.end());
-    assert(cc.begin() <= cc.end());
-    assert(c.begin() <= cc.begin());
-    assert(c.begin() >= c.end());
-    assert(cc.begin() >= cc.end());
+    do_test(!c.begin());
+    do_test(c.begin() == c.end());
+    do_test(cc.begin() == cc.end());
+    do_test(c.begin() == cc.begin());
+    do_test(c.begin() <= c.end());
+    do_test(cc.begin() <= cc.end());
+    do_test(c.begin() <= cc.begin());
+    do_test(c.begin() >= c.end());
+    do_test(cc.begin() >= cc.end());
     // check reverse iterators
-    assert(c.rbegin() >= cc.rbegin());
-    assert(c.rbegin() == c.rend());
-    assert(cc.rbegin() == cc.rend());
-    assert(c.rbegin() == cc.rbegin());
-    assert(c.rbegin() <= c.rend());
-    assert(cc.rbegin() <= cc.rend());
-    assert(c.rbegin() <= cc.rbegin());
-    assert(c.rbegin() >= c.rend());
-    assert(cc.rbegin() >= cc.rend());
-    assert(c.rbegin() >= cc.rbegin());
+    do_test(c.rbegin() >= cc.rbegin());
+    do_test(c.rbegin() == c.rend());
+    do_test(cc.rbegin() == cc.rend());
+    do_test(c.rbegin() == cc.rbegin());
+    do_test(c.rbegin() <= c.rend());
+    do_test(cc.rbegin() <= cc.rend());
+    do_test(c.rbegin() <= cc.rbegin());
+    do_test(c.rbegin() >= c.rend());
+    do_test(cc.rbegin() >= cc.rend());
+    do_test(c.rbegin() >= cc.rbegin());
     // test at
     {
 	bool exception = false;
@@ -56,100 +70,100 @@ static void test()
 	} catch (const std::out_of_range&) {
 	    exception = true;
 	}
-	assert(exception);
+	do_test(exception);
     }
     {
 	std::tuple<double, int, int> val(3.14, 17, 42);
 	// standard push_back by const reference
 	c.push_back(val);
-	assert(!c.empty());
-	assert(1 == c.size());
-	assert(c.front() == c.back());
-	assert(c.end() == 1 + c.begin());
-	assert(c.rend() == 1 + c.rbegin());
-	assert(&c.front() == c.begin());
-	assert(&cc.front() == c.cbegin());
+	do_test(!c.empty());
+	do_test(1 == c.size());
+	do_test(c.front() == c.back());
+	do_test(c.end() == 1 + c.begin());
+	do_test(c.rend() == 1 + c.rbegin());
+	do_test(&c.front() == c.begin());
+	do_test(&cc.front() == c.cbegin());
 	const decltype(val) val2(c.front());
-	assert(val == val2);
+	do_test(val == val2);
 	// trigger the move-variant of push_back
 	c.push_back(std::make_tuple(2.79, 42, 17));
-	assert(2 == c.size());
-	assert(c.front() != c.back());
-	assert(c.end() == 2 + c.begin());
-	assert(c.rend() == 2 + c.rbegin());
+	do_test(2 == c.size());
+	do_test(c.front() != c.back());
+	do_test(c.end() == 2 + c.begin());
+	do_test(c.rend() == 2 + c.rbegin());
 	// test pop_back
 	c.pop_back();
-	assert(1 == c.size());
+	do_test(1 == c.size());
 	// start testing plain and simple insert
 	std::tuple<double, int, int> val3(2.79, 42, 17);
 	auto it = c.insert(c.begin(), val3);
-	assert(2 == c.size());
-	assert(it == c.begin());
+	do_test(2 == c.size());
+	do_test(it == c.begin());
 	const decltype(val) val4(c.front()), val5(c.back());
-	assert(val3 == val4);
-	assert(val == val5);
+	do_test(val3 == val4);
+	do_test(val == val5);
 	c.insert(1 + c.cbegin(), std::make_tuple(2.79, 42, 17));
-	assert(3 == c.size());
+	do_test(3 == c.size());
 	const decltype(val) val6(c[0]), val7(c[1]);
-	assert(val3 == val6);
-	assert(val3 == val7);
+	do_test(val3 == val6);
+	do_test(val3 == val7);
     }
     {
-	assert(!c.empty());
+	do_test(!c.empty());
 	auto oldcap = c.capacity();
-	assert(oldcap > 0);
+	do_test(oldcap > 0);
 	c.clear();
-	assert(c.empty());
-	assert(oldcap = c.capacity());
+	do_test(c.empty());
+	do_test(oldcap = c.capacity());
 	c.insert(c.begin(), oldcap, std::make_tuple(3.14, 42, 17));
-	assert(oldcap == c.size());
+	do_test(oldcap == c.size());
 	// check if they're all the same
-	assert(oldcap == static_cast<decltype(oldcap)>(
+	do_test(oldcap == static_cast<decltype(oldcap)>(
 		    std::count_if(std::begin(c), std::end(c),
 			[] (decltype(c)::const_reference obj) {
 			return (obj == std::make_tuple(3.14, 42, 17)); })));
 	// check the other variants of comparison operators
-	assert(oldcap == static_cast<decltype(oldcap)>(
+	do_test(oldcap == static_cast<decltype(oldcap)>(
 		    std::count_if(std::begin(c), std::end(c),
 			[] (decltype(c)::const_reference obj) {
 			return (std::make_tuple(3.14, 42, 17) == obj); })));
 	// check if they're all >=
-	assert(oldcap == static_cast<decltype(oldcap)>(
+	do_test(oldcap == static_cast<decltype(oldcap)>(
 		    std::count_if(std::begin(c), std::end(c),
 			[] (decltype(c)::const_reference obj) {
 			return (obj >= std::make_tuple(3.14, 42, 17)); })));
 	// check the other variants of comparison operators
-	assert(oldcap == static_cast<decltype(oldcap)>(
+	do_test(oldcap == static_cast<decltype(oldcap)>(
 		    std::count_if(std::begin(c), std::end(c),
 			[] (decltype(c)::const_reference obj) {
 			return (std::make_tuple(3.14, 42, 17) >= obj); })));
 	// check if they're all <=
-	assert(oldcap == static_cast<decltype(oldcap)>(
+	do_test(oldcap == static_cast<decltype(oldcap)>(
 		    std::count_if(std::begin(c), std::end(c),
 			[] (decltype(c)::const_reference obj) {
 			return (obj <= std::make_tuple(3.14, 42, 17)); })));
 	// check the other variants of comparison operators
-	assert(oldcap == static_cast<decltype(oldcap)>(
+	do_test(oldcap == static_cast<decltype(oldcap)>(
 		    std::count_if(std::begin(c), std::end(c),
 			[] (decltype(c)::const_reference obj) {
 			return (std::make_tuple(3.14, 42, 17) <= obj); })));
 	// check if none are <
-	assert(0 == static_cast<decltype(oldcap)>(
+	do_test(0 == static_cast<decltype(oldcap)>(
 		    std::count_if(std::begin(c), std::end(c),
 			[] (decltype(c)::const_reference obj) {
 			return (obj < std::make_tuple(3.14, 42, 17)); })));
 	// check the other variants of comparison operators
-	assert(0 == static_cast<decltype(oldcap)>(
+	do_test(0 == static_cast<decltype(oldcap)>(
 		    std::count_if(std::begin(c), std::end(c),
 			[] (decltype(c)::const_reference obj) {
 			return (std::make_tuple(3.14, 42, 17) < obj); })));
 	// check if none are >
-	assert(0 == static_cast<decltype(oldcap)>(
+	do_test(0 == static_cast<decltype(oldcap)>(
 		    std::count_if(std::begin(c), std::end(c),
 			[] (decltype(c)::const_reference obj) {
 			return (obj > std::make_tuple(3.14, 42, 17)); })));
 	// check the other variants of comparison operators
-	assert(0 == static_cast<decltype(oldcap)>(
+	do_test(0 == static_cast<decltype(oldcap)>(
 		    std::count_if(std::begin(c), std::end(c),
 			[] (decltype(c)::const_reference obj) {
 			return (std::make_tuple(3.14, 42, 17) > obj); })));
@@ -159,7 +173,7 @@ static void test()
 	// by comparing to an array-of-structures in a std::vector
 	typedef std::size_t size_type;
 	c.clear();
-	assert(c.empty());
+	do_test(c.empty());
 	std::tuple<double, int, int> val(3.14, 0, 63);
 	std::vector<std::tuple<double, int, int> > temp;
 	temp.reserve(64);
@@ -169,72 +183,128 @@ static void test()
 	    temp.push_back(val);
 	}
 	auto it = c.insert(c.begin(), temp.cbegin(), temp.cend());
-	assert(c.begin() == it);
-	assert(64 == c.size());
-	assert(c.size() == temp.size());
-	assert(temp.size() == std::inner_product(
+	do_test(c.begin() == it);
+	do_test(64 == c.size());
+	do_test(c.size() == temp.size());
+	do_test(temp.size() == std::inner_product(
 		    c.begin(), c.end(), temp.begin(), size_type(0),
 		    [] (size_type a, size_type b) { return a + b; },
 		    [] (const decltype(val)& a, const decltype(val)& b) {
 		        return size_type(a == b); }));
+
 	// erase(pos)
 	auto jt = temp.erase(temp.begin() + 3);
-	assert(temp.begin() + 3 == jt);
+	do_test(temp.begin() + 3 == jt);
 	auto kt = c.erase(c.begin() + 3);
-	assert(c.begin() + 3 == kt);
-	assert(c.size() == temp.size());
-	assert(temp.size() == std::inner_product(
+	do_test(c.begin() + 3 == kt);
+	do_test(c.size() == temp.size());
+	do_test(temp.size() == std::inner_product(
 		    c.begin(), c.end(), temp.begin(), size_type(0),
 		    [] (size_type a, size_type b) { return a + b; },
 		    [] (const decltype(val)& a, const decltype(val)& b) {
 		        return size_type(a == b); }));
+
 	// erase(first, last)
 	auto lt = temp.erase(temp.begin() + 5, temp.begin() + 10);
-	assert(temp.begin() + 5 == lt);
+	do_test(temp.begin() + 5 == lt);
 	auto mt = c.erase(c.begin() + 5, c.begin() + 10);
-	assert(c.begin() + 5 == mt);
-	assert(c.size() == temp.size());
-	assert(temp.size() == std::inner_product(
+	do_test(c.begin() + 5 == mt);
+	do_test(c.size() == temp.size());
+	do_test(temp.size() == std::inner_product(
 		    c.begin(), c.end(), temp.begin(), size_type(0),
 		    [] (size_type a, size_type b) { return a + b; },
 		    [] (const decltype(val)& a, const decltype(val)& b) {
 		        return size_type(a == b); }));
+
 	// test sort (and swap)
-	assert(std::is_sorted(c.begin(), c.end(),
+	do_test(std::is_sorted(c.begin(), c.end(),
 		[] (decltype(c.front()) a, decltype(c.front()) b)
 		{ return a.get<1>() < b.get<1>(); }));
+	for (unsigned i = 0; i < temp.size(); ++i) {
+	    auto tmp = temp[i];
+	    std::printf("%2d temp (%f, %2d, %2d) ", i,
+		    std::get<0>(tmp), std::get<1>(tmp), std::get<2>(tmp));
+	    tmp = c[i];
+	    std::printf("c (%f, %2d, %2d)\n",
+		    std::get<0>(tmp), std::get<1>(tmp), std::get<2>(tmp));
+	}
+	std::printf("\n"); std::fflush(stdout);
 	std::sort(c.begin(), c.end(),
 		[] (decltype(c.front()) a, decltype(c.front()) b)
 		{ return a.get<1>() > b.get<1>(); });
-	assert(std::is_sorted(c.begin(), c.end(),
+	std::sort(temp.begin(), temp.end(),
+		[] (decltype(temp.front()) a, decltype(temp.front()) b)
+		{ return std::get<1>(a) > std::get<1>(b); });
+	do_test(std::is_sorted(c.begin(), c.end(),
 		[] (decltype(c.front()) a, decltype(c.front()) b)
 		{ return a.get<1>() > b.get<1>(); }));
-	/// test the begin<fieldno> and end<fieldno> calls
-	assert(&(*c.begin<0>()) == &(c.begin()->get<0>()));
-	assert(&(*cc.begin<0>()) == &(cc.begin()->get<0>()));
-	assert(&(*c.cbegin<0>()) == &(c.cbegin()->get<0>()));
-	assert(&(*c.end<0>()) == &(c.end()->get<0>()));
-	assert(&(*cc.end<0>()) == &(cc.end()->get<0>()));
-	assert(&(*c.cend<0>()) == &(c.cend()->get<0>()));
-	/// test (some of) the rbegin<fieldno> and rend<fieldno> calls
-	assert(&(*c.rbegin<0>()) == &(c.rbegin()->get<0>()));
-	assert(&(*c.rend<0>()) == &(c.rend()->get<0>()));
-	/// test the begin<fieldtag> and end<fieldtag> calls
-	assert(&(*c.begin<double>()) == &(c.begin()->get<double>()));
-	assert(&(*cc.begin<double>()) == &(cc.begin()->get<double>()));
-	assert(&(*c.cbegin<double>()) == &(c.cbegin()->get<double>()));
-	assert(&(*c.end<double>()) == &(c.end()->get<double>()));
-	assert(&(*cc.end<double>()) == &(cc.end()->get<double>()));
-	assert(&(*c.cend<double>()) == &(c.cend()->get<double>()));
-	/// test (some of) the rbegin<fieldno> and rend<fieldno> calls
-	assert(&(*c.rbegin<double>()) == &(c.rbegin()->get<double>()));
-	assert(&(*c.rend<double>()) == &(c.rend()->get<double>()));
+	do_test(std::is_sorted(temp.begin(), temp.end(),
+		[] (decltype(temp.front()) a, decltype(temp.front()) b)
+		{ return std::get<1>(a) > std::get<1>(b); }));
+	do_test(c.size() == temp.size());
+	for (unsigned i = 0; i < temp.size(); ++i) {
+	    auto tmp = temp[i];
+	    std::printf("%2d temp (%f, %2d, %2d) ", i,
+		    std::get<0>(tmp), std::get<1>(tmp), std::get<2>(tmp));
+	    tmp = c[i];
+	    std::printf("c (%f, %2d, %2d)\n",
+		    std::get<0>(tmp), std::get<1>(tmp), std::get<2>(tmp));
+	}
+	std::printf("\n"); std::fflush(stdout);
+	do_test(temp.size() == std::inner_product(
+		    c.begin(), c.end(), temp.begin(), size_type(0),
+		    [] (size_type a, size_type b) { return a + b; },
+		    [] (const decltype(val)& a, const decltype(val)& b) {
+		        return size_type(a == b); }));
+
+	// test the begin<fieldno> and end<fieldno> calls
+	do_test(&(*c.begin<0>()) == &(c.begin()->get<0>()));
+	do_test(&(*cc.begin<0>()) == &(cc.begin()->get<0>()));
+	do_test(&(*c.cbegin<0>()) == &(c.cbegin()->get<0>()));
+	do_test(&(*c.end<0>()) == &(c.end()->get<0>()));
+	do_test(&(*cc.end<0>()) == &(cc.end()->get<0>()));
+	do_test(&(*c.cend<0>()) == &(c.cend()->get<0>()));
+	// test (some of) the rbegin<fieldno> and rend<fieldno> calls
+	do_test(&(*c.rbegin<0>()) == &(c.rbegin()->get<0>()));
+	do_test(&(*c.rend<0>()) == &(c.rend()->get<0>()));
+	// test the begin<fieldtag> and end<fieldtag> calls
+	do_test(&(*c.begin<double>()) == &(c.begin()->get<double>()));
+	do_test(&(*cc.begin<double>()) == &(cc.begin()->get<double>()));
+	do_test(&(*c.cbegin<double>()) == &(c.cbegin()->get<double>()));
+	do_test(&(*c.end<double>()) == &(c.end()->get<double>()));
+	do_test(&(*cc.end<double>()) == &(cc.end()->get<double>()));
+	do_test(&(*c.cend<double>()) == &(c.cend()->get<double>()));
+	// test (some of) the rbegin<fieldno> and rend<fieldno> calls
+	do_test(&(*c.rbegin<double>()) == &(c.rbegin()->get<double>()));
+	do_test(&(*c.rend<double>()) == &(c.rend()->get<double>()));
+
+	// rudimentary tests of comparison of containers
+	decltype(c) d;
+	decltype(temp) temp2;
+	do_test(c == c);
+	do_test(temp == temp);
+	do_test(!(c != c));
+	do_test(!(temp != temp));
+	do_test(c != d);
+	do_test(temp != temp2);
+	do_test(!(c < c));
+	do_test(!(temp < temp));
+	do_test(d < c);
+	do_test(temp2 < temp);
+	do_test(!(c > c));
+	do_test(!(temp > temp));
+	do_test(d > c);
+	do_test(temp2 > temp);
+	do_test(c <= c);
+	do_test(temp <= temp);
+	do_test(c >= c);
+	do_test(temp >= temp);
     }
     {
 	// test assign(count, val)
 	c.assign(42, std::make_tuple(3.14, 0, -1));
-	assert(42u == c.size());
-	assert(c.size() == std::size_t(std::count(std::begin(c), std::end(c),
+	do_test(42u == c.size());
+	do_test(c.size() == std::size_t(std::count(std::begin(c), std::end(c),
 			std::make_tuple(3.14, 0, -1))));
 	// assign(first, last) is just a frontend for clear(); insert(front,
 	// end); - therefore, no test here
@@ -243,22 +313,22 @@ static void test()
 	// test emplace, emplace_back, resize
 	c.clear();
 	c.emplace_back(2.79, 42, 17);
-	assert(1 == c.size());
-	assert(c.front() == std::make_tuple(2.79, 42, 17));
+	do_test(1 == c.size());
+	do_test(c.front() == std::make_tuple(2.79, 42, 17));
 	auto it = c.emplace(c.begin(), 2.79, 17, 42);
-	assert(2 == c.size());
-	assert(c.begin() == it);
-	assert(c.front() == std::make_tuple(2.79, 17, 42));
-	assert(c.back() == std::make_tuple(2.79, 42, 17));
+	do_test(2 == c.size());
+	do_test(c.begin() == it);
+	do_test(c.front() == std::make_tuple(2.79, 17, 42));
+	do_test(c.back() == std::make_tuple(2.79, 42, 17));
 	c.resize(64, std::make_tuple(3.14, 78, 17));
-	assert(64 == c.size());
-	assert(c.back() == std::make_tuple(3.14, 78, 17));
+	do_test(64 == c.size());
+	do_test(c.back() == std::make_tuple(3.14, 78, 17));
 	c.resize(0);
-	assert(c.empty());
+	do_test(c.empty());
 	c.resize(32);
-	assert(32 == c.size());
+	do_test(32 == c.size());
 	const std::tuple<double, int, int> defaultval;
-	assert(c.back() == defaultval);
+	do_test(c.back() == defaultval);
     }
 }
 
@@ -426,8 +496,9 @@ static void realistic_test_aos()
 int main()
 {
     test();
-    std::printf("All tests passed.\n");
+    if (0 == ntestsfail) std::printf("All tests passed.\n");
+    else std::printf("Number of failed tests: %u\n", ntestsfail);
     realistic_test();
     realistic_test_aos();
-    return 0;
+    return ntestsfail;
 }

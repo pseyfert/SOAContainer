@@ -7,6 +7,7 @@
 #ifndef SOACONTAINER_H
 #define SOACONTAINER_H
 
+#include <cassert>
 #include <stdexcept>
 #include <algorithm>
 
@@ -1026,7 +1027,7 @@ namespace SOAContainerImpl {
 	private:
 	    /// compare field N - 1 element by element
 	    template <typename T>
-	    bool doit(const T& a, const T& b) const noexcept(noexcept(
+	    static bool doit(const T& a, const T& b) noexcept(noexcept(
 			COMP<decltype(a.front().template get<N - 1>())>()(
 				a.front().template get<N - 1>(),
 				b.front().template get<N - 1>())))
@@ -1053,7 +1054,7 @@ namespace SOAContainerImpl {
 	private:
 	    /// compare field 0 element by element
 	    template <typename T>
-	    bool doit(const T& a, const T& b) const noexcept(noexcept(
+	    static bool doit(const T& a, const T& b) noexcept(noexcept(
 			COMP<decltype(a.front().template get<0>())>()(
 				a.front().template get<0>(),
 				b.front().template get<0>())))
@@ -1083,12 +1084,14 @@ bool operator==(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
 	const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
 	    noexcept(a.size()) && noexcept(
 		SOAContainerImpl::compare<std::equal_to,
-		decltype(a)::fields_typelist::size()>()(a, b)))
+		SOAContainer<CONTAINER, SKIN, FIELDS...
+		>::fields_typelist::size()>()(a, b)))
 {
     if (a.size() != b.size()) return false;
     // compare one field at a time
     return SOAContainerImpl::compare<std::equal_to,
-	   decltype(a)::fields_typelist::size()>()(a, b);
+	   SOAContainer<CONTAINER, SKIN, FIELDS...
+	       >::fields_typelist::size()>()(a, b);
 }
 
 /// compare two SOAContainers for inequality
@@ -1098,12 +1101,14 @@ bool operator!=(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
 	const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
 	    noexcept(a.size()) && noexcept(
 		SOAContainerImpl::compare<std::not_equal_to,
-		decltype(a)::fields_typelist::size()>()(a, b)))
+		SOAContainer<CONTAINER, SKIN, FIELDS...
+		>::fields_typelist::size()>()(a, b)))
 {
     if (a.size() != b.size()) return true;
     // compare one field at a time
     return SOAContainerImpl::compare<std::not_equal_to,
-	   decltype(a)::fields_typelist::size()>()(a, b);
+	   SOAContainer<CONTAINER, SKIN, FIELDS...
+	       >::fields_typelist::size()>()(a, b);
 }
 
 /// compare two SOAContainers lexicographically using <
@@ -1113,11 +1118,10 @@ bool operator<(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
 	const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
 	    noexcept(std::lexicographical_compare(a.cbegin(), a.cend(),
 		    b.cbegin(), b.cend(),
-		    std::less<typename decltype(a)::const_reference>())))
+		    std::less<decltype(a.front())>())))
 {
     return std::lexicographical_compare(a.cbegin(), a.cend(),
-	    b.cbegin(), b.cend(),
-	    std::less<typename decltype(a)::const_reference>());
+	    b.cbegin(), b.cend(), std::less<decltype(a.front())>());
 }
 
 /// compare two SOAContainers lexicographically using <=
@@ -1127,11 +1131,10 @@ bool operator<=(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
 	const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
 	    noexcept(std::lexicographical_compare(a.cbegin(), a.cend(),
 		    b.cbegin(), b.cend(),
-		    std::less_equal<typename decltype(a)::const_reference>())))
+		    std::less_equal<decltype(a.front())>())))
 {
     return std::lexicographical_compare(a.cbegin(), a.cend(),
-	    b.cbegin(), b.cend(),
-	    std::less_equal<typename decltype(a)::const_reference>());
+	    b.cbegin(), b.cend(), std::less_equal<decltype(a.front())>());
 }
 
 /// compare two SOAContainers lexicographically using >
@@ -1141,11 +1144,10 @@ bool operator>(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
 	const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
 	    noexcept(std::lexicographical_compare(a.cbegin(), a.cend(),
 		    b.cbegin(), b.cend(),
-		    std::greater<typename decltype(a)::const_reference>())))
+		    std::greater<decltype(a.front())>())))
 {
     return std::lexicographical_compare(a.cbegin(), a.cend(),
-	    b.cbegin(), b.cend(),
-	    std::greater<typename decltype(a)::const_reference>());
+	    b.cbegin(), b.cend(), std::greater<decltype(a.front())>());
 }
 
 /// compare two SOAContainers lexicographically using >=
@@ -1155,11 +1157,10 @@ bool operator>=(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
 	const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
 	    noexcept(std::lexicographical_compare(a.cbegin(), a.cend(),
 		    b.cbegin(), b.cend(), std::greater_equal<
-		    typename decltype(a)::const_reference>())))
+		    decltype(a.front())>())))
 {
     return std::lexicographical_compare(a.cbegin(), a.cend(),
-	    b.cbegin(), b.cend(), std::greater_equal<
-	    typename decltype(a)::const_reference>());
+	    b.cbegin(), b.cend(), std::greater_equal<decltype(a.front())>());
 }
 
 #endif // SOACONTAINER_H
