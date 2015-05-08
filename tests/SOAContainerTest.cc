@@ -13,17 +13,22 @@
 
 static unsigned ntestsfail = 0;
 
+/// implementation of an assert-like framework (keeps working with -DNDEBUG)
 #define do_test_impl(cond, condstr, line, file, func) \
 	{ if (!(cond)) { \
 	    ++ntestsfail; \
-	    std::fprintf(stderr, "In routine \"%s\" (line %u in %s): " \
+	    std::printf("In routine \"%s\" (line %u in %s): " \
 		    "test failed, condition\n\t\"%s\"\n", \
 		    func, line, file, condstr); \
 	} }
 #if defined(__GNUC__)
-#define do_test(cond) do_test_impl((cond), #cond, __LINE__, __FILE__, __PRETTY_FUNCTION__)
+/// test entry point (variant for gcc-like compilers with __PRETTY_FUNCTION__)
+#define do_test(cond) do_test_impl((cond), #cond, \
+	__LINE__, __FILE__, __PRETTY_FUNCTION__)
 #else
-#define do_test(cond) do_test_impl((cond), #cond, __LINE__, __FILE__, __func__)
+/// test entry point (generic variant for compilers with __func__)
+#define do_test(cond) do_test_impl((cond), #cond, \
+	__LINE__, __FILE__, __func__)
 #endif
 
 /// unit test SOAContainer class
@@ -228,7 +233,7 @@ static void test()
 	    std::printf("c (%f, %2d, %2d)\n",
 		    std::get<0>(tmp), std::get<1>(tmp), std::get<2>(tmp));
 	}
-	std::printf("\n"); std::fflush(stdout);
+	std::printf("\n");
 	std::sort(c.begin(), c.end(),
 		[] (decltype(c.front()) a, decltype(c.front()) b)
 		{ return a.get<1>() > b.get<1>(); });
@@ -250,7 +255,7 @@ static void test()
 	    std::printf("c (%f, %2d, %2d)\n",
 		    std::get<0>(tmp), std::get<1>(tmp), std::get<2>(tmp));
 	}
-	std::printf("\n"); std::fflush(stdout);
+	std::printf("\n");
 	do_test(temp.size() == std::inner_product(
 		    c.begin(), c.end(), temp.begin(), size_type(0),
 		    [] (size_type a, size_type b) { return a + b; },
@@ -496,9 +501,10 @@ static void realistic_test_aos()
 int main()
 {
     test();
-    if (0 == ntestsfail) std::printf("All tests passed.\n");
-    else std::printf("Number of failed tests: %u\n", ntestsfail);
     realistic_test();
     realistic_test_aos();
+    std::printf("\n");
+    if (0 == ntestsfail) std::printf("All tests passed.\n");
+    else std::printf("Number of failed tests: %u\n", ntestsfail);
     return ntestsfail;
 }
