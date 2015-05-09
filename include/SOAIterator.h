@@ -41,7 +41,7 @@ class SOAConstIterator
 	/// convenience typedef for our own type
 	typedef SOAConstIterator<proxy> self_type;
 	/// import value_type from proxy
-	typedef const proxy value_type;
+	typedef typename proxy::value_type value_type;
 	/// import size_type from proxy
 	typedef typename proxy::size_type size_type;
 	/// import difference_type from proxy
@@ -246,7 +246,7 @@ class SOAIterator : public SOAConstIterator<PROXY>
 	/// convenience typedef for our own type
 	typedef SOAIterator<proxy> self_type;
 	/// import value_type from proxy
-	typedef proxy value_type;
+	typedef typename proxy::value_type value_type;
 	/// import size_type from proxy
 	typedef typename proxy::size_type size_type;
 	/// import difference_type from proxy

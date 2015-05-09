@@ -27,15 +27,49 @@ template <typename NAKEDPROXY>
 class NullSkin : public NAKEDPROXY
 {
     public:
-	/// constructor - forward to underlying proxy
-	template <typename... ARGS>
-	NullSkin(ARGS&&... args) : NAKEDPROXY(std::forward<ARGS>(args)...) { }
+        /// constructor - forward to underlying proxy
+        template <typename... ARGS>
+        NullSkin(ARGS&&... args)
+            // ordinarily, we would like to have the following noexcept
+            // specification here:
+            //
+            // noexcept(noexcept(NAKEDPROXY(std::forward<ARGS>(args)...)))
+            //
+            // however, gcc 4.9 and clang 3.5 insist that NAKEDPROXY's
+            // constructor is protected and refuse the code in the exception
+            // specification (despite the fact that it's perfectly legal to
+            // call that very constructor in the initializer list below
+            // because NullSkin<NAKEDPROXY> is a friend of NAKEDPROXY)
+            : NAKEDPROXY(std::forward<ARGS>(args)...) { }
+
+        /// assignment operator - forward to underlying proxy
+        template <typename ARG>
+        NullSkin<NAKEDPROXY>& operator=(const ARG& arg) noexcept(noexcept(
+                    static_cast<NAKEDPROXY*>(nullptr)->operator=(arg)))
+        { NAKEDPROXY::operator=(arg); return *this; }
+
+        /// move assignment operator - forward to underlying proxy
+        template <typename ARG>
+        NullSkin<NAKEDPROXY>& operator=(ARG&& arg) noexcept(noexcept(
+                    static_cast<NAKEDPROXY*>(nullptr)->operator=(
+                        std::move(arg))))
+        { NAKEDPROXY::operator=(std::move(arg)); return *this; }
 };
 
 /** @brief container class for objects with given fields (SOA storage)
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
  * @date 2015-04-10
+ *
+ * @tparam CONTAINER    underlying container type (anything that follows
+ *                      std::vector's interface is fine)
+ * @tparam SKIN         "skin" to dress the the interface of the object
+ *                      proxying the content elemnts; this can be used to
+ *                      augment the interface provided by the get<fieldtag>()
+ *                      syntax with something more convenient; NullSkin leaves
+ *                      the raw interface intact
+ * @tparam FIELDS...    list of "field tags" describing names an types
+ *                      of members
  *
  * This class represents a container of objects with the given list of fields,
  * the objects are not stored as such, but each of object's fields gets its own
@@ -91,6 +125,16 @@ class NullSkin : public NAKEDPROXY
  *         template <typename... ARGS>
  *         SOAPoint(ARGS&&... args) :
  *             NAKEDPROXY(std::forward<ARGS>(args)...) { }
+ *
+ *         /// assignment operator - forward to underlying proxy
+ *         template <typename ARG>
+ *         SOAPoint<NAKEDPROXY>& operator=(const ARG& arg)
+ *         { NAKEDPROXY::operator=(arg); return *this; }
+ *
+ *         /// move assignment operator - forward to underlying proxy
+ *         template <typename ARG>
+ *         SOAPoint<NAKEDPROXY>& operator=(ARG&& arg)
+ *         { NAKEDPROXY::operator=(std::move(arg)); return *this; }
  * 
  *         float x() const noexcept
  *         { return this-> template get<PointFields::x>(); }
@@ -154,869 +198,883 @@ class NullSkin : public NAKEDPROXY
  * considerations), the class tries to follow the example of the interface of
  * std::vector as closely as possible.
  *
- * @tparam CONTAINER 	underlying container type (anything that follows
- * 			std::vector's interface is fine)
- * @tparam SKIN		"skin" to dress the the interface provided by the
- * 			get<fieldtag>() syntax with something more convenient;
- * 			NullSkin leaves the raw interface intact
- * @tparam FIELDS... 	list of "field tags" describing names an types
- * 			of members
+ * There is one point worthy of note: Only the proxy objects are dressed up
+ * with a SKIN. This has an impact on routines like std::sort which internally
+ * store single elements (of type value_type) while moving them around. Since
+ * value_type is internally an instantiation of std::tuple, the raw std::tuple
+ * interface applies, not the SKINned one. To give an example, consider the
+ * case where a SOAPoints container is to be sorted by y:
+ *
+ * @code
+ * SOAPoints& points = get_points_from_somewhere();
+ * std::sort(points.begin(), points.end(),
+ *     [] (std::tuple<float, float> a, std::tuple<float, float> b) {
+ *         return std::get<1>(a) < std::get<1>(b); });
+ * @endcode
+ *
+ * In the example above, it is neccessary to force conversion to the tuple
+ * type, since std::sort may internally compare to a single point that is not
+ * stored inside the points container, and must therefore be of type
+ * value_type (i.e. a std::tuple<...>). Hence, in the comparison functor (the
+ * lambda in the third argument), the use of the convenient SKINned proxies is
+ * impossible, and the raw std::tuple interface, i.e. std::get<FIELDNO>(tuple)
+ * needs to be used.
  */
 template < template <typename...> class CONTAINER,
     template <typename> class SKIN, typename... FIELDS>
 class SOAContainer {
     private:
-	/// hide verification of FIELDS inside struct or doxygen gets confused
-	struct fields_verifier {
-	    // storing objects without state doesn't make sense
-	    static_assert(1 <= sizeof...(FIELDS),
-	    	"need to supply at least one field");
-	    /// little helper to verify the FIELDS template parameter
-	    template <typename... ARGS>
-	    struct verify_fields;
-	    /// specialisation for more than one field
-	    template <typename HEAD, typename... TAIL>
-	    struct verify_fields<HEAD, TAIL...>
-	    {
-	        /// true if HEAD and TAIL verify okay
-	        enum {
-		    value = (std::is_pod<HEAD>::value ||
-	    		SOATypelist::typelist_helpers::is_wrapped<
-	    		HEAD>::value) && verify_fields<TAIL...>::value
-	        };
-	    };
-	    /// specialisation for one field
-	    template <typename HEAD>
-	    struct verify_fields<HEAD>
-	    {
-	        /// true if HEAD verifies okay
-	        enum {
-		    value = std::is_pod<HEAD>::value ||
-			SOATypelist::typelist_helpers::is_wrapped<HEAD>::value
-	        };
-	    };
-	    // make sure fields are either POD or wrapped types
-	    static_assert(verify_fields<FIELDS...>::value,
-	    	"Fields should be either plain old data (POD) or "
-	    	"wrapped types.");
-	};
+        /// hide verification of FIELDS inside struct or doxygen gets confused
+        struct fields_verifier {
+            // storing objects without state doesn't make sense
+            static_assert(1 <= sizeof...(FIELDS),
+                "need to supply at least one field");
+            /// little helper to verify the FIELDS template parameter
+            template <typename... ARGS>
+            struct verify_fields;
+            /// specialisation for more than one field
+            template <typename HEAD, typename... TAIL>
+            struct verify_fields<HEAD, TAIL...>
+            {
+                /// true if HEAD and TAIL verify okay
+                enum {
+                    value = (std::is_pod<HEAD>::value ||
+                        SOATypelist::typelist_helpers::is_wrapped<
+                        HEAD>::value) && verify_fields<TAIL...>::value
+                };
+            };
+            /// specialisation for one field
+            template <typename HEAD>
+            struct verify_fields<HEAD>
+            {
+                /// true if HEAD verifies okay
+                enum {
+                    value = std::is_pod<HEAD>::value ||
+                        SOATypelist::typelist_helpers::is_wrapped<HEAD>::value
+                };
+            };
+            // make sure fields are either POD or wrapped types
+            static_assert(verify_fields<FIELDS...>::value,
+                "Fields should be either plain old data (POD) or "
+                "wrapped types.");
+        };
 
     public:
-	/// type to represent sizes and indices
-	typedef std::size_t size_type;
-	/// type to represent differences of indices
-	typedef std::ptrdiff_t difference_type;
-	/// type to represent container itself
-	typedef SOAContainer<CONTAINER, SKIN, FIELDS...> self_type;
-	/// typedef holding a typelist with the given fields
-	typedef SOATypelist::typelist<FIELDS...> fields_typelist;
+        /// type to represent sizes and indices
+        typedef std::size_t size_type;
+        /// type to represent differences of indices
+        typedef std::ptrdiff_t difference_type;
+        /// type to represent container itself
+        typedef SOAContainer<CONTAINER, SKIN, FIELDS...> self_type;
+        /// typedef holding a typelist with the given fields
+        typedef SOATypelist::typelist<FIELDS...> fields_typelist;
 
     private:
-	/// type of the storage backend
-	typedef typename SOATypelist::typelist_to_tuple_of_containers<
-	    fields_typelist,
-	    SOATypelist::containerify<CONTAINER> >::type SOAStorage;
+        /// type of the storage backend
+        typedef typename SOATypelist::typelist_to_tuple_of_containers<
+            fields_typelist,
+            SOATypelist::containerify<CONTAINER> >::type SOAStorage;
 
-	/// storage backend
-	SOAStorage m_storage;
+        /// storage backend
+        SOAStorage m_storage;
 
-	/// tuple type used as values
-	typedef typename SOATypelist::typelist_to_tuple<
-	    fields_typelist>::type value_tuple_type;
-	/// tuple type used as reference
-	typedef typename SOATypelist::typelist_to_reftuple<
-	    fields_typelist>::type reference_tuple_type;
-	/// tuple type used as const reference
-	typedef typename SOATypelist::typelist_to_creftuple<
-	    fields_typelist>::type const_reference_tuple_type;
+        /// tuple type used as values
+        typedef typename SOATypelist::typelist_to_tuple<
+            fields_typelist>::type value_tuple_type;
+        /// tuple type used as reference
+        typedef typename SOATypelist::typelist_to_reftuple<
+            fields_typelist>::type reference_tuple_type;
+        /// tuple type used as const reference
+        typedef typename SOATypelist::typelist_to_creftuple<
+            fields_typelist>::type const_reference_tuple_type;
 
     public:
-	/// naked proxy type (to be given a "skin" later)
-	typedef SOAObjectProxy<self_type> naked_proxy;
-	friend naked_proxy;
-	/// type of proxy
-	typedef SKIN<naked_proxy> proxy;
-	friend proxy;
-	/// pointer to contained objects
-	typedef SOAIterator<proxy> pointer;
-	friend pointer;
-	/// iterator type
-	typedef pointer iterator;
-	/// (notion of) type of the contained objects
-	typedef typename proxy::value_type value_type;
-	/// reference to contained objects
-	typedef proxy reference;
-	/// reference to contained objects
-	typedef const reference const_reference;
-	/// const pointer to contained objects
-	typedef SOAConstIterator<proxy> const_pointer;
-	friend const_pointer;
-	/// const iterator type
-	typedef const_pointer const_iterator;
-	/// reverse iterator type
-	typedef std::reverse_iterator<iterator> reverse_iterator;
-	/// const reverse iterator type
-	typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+        /// naked proxy type (to be given a "skin" later)
+        typedef SOAObjectProxy<self_type> naked_proxy;
+        friend naked_proxy;
+        /// type of proxy
+        typedef SKIN<naked_proxy> proxy;
+        friend proxy;
+        /// pointer to contained objects
+        typedef SOAIterator<proxy> pointer;
+        friend pointer;
+        /// iterator type
+        typedef pointer iterator;
+        /// (notion of) type of the contained objects
+        typedef typename proxy::value_type value_type;
+        /// reference to contained objects
+        typedef proxy reference;
+        /// reference to contained objects
+        typedef const reference const_reference;
+        /// const pointer to contained objects
+        typedef SOAConstIterator<proxy> const_pointer;
+        friend const_pointer;
+        /// const iterator type
+        typedef const_pointer const_iterator;
+        /// reverse iterator type
+        typedef std::reverse_iterator<iterator> reverse_iterator;
+        /// const reverse iterator type
+        typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-	/// default constructor
-	SOAContainer() { }
-	/// fill container with count copies of val
-	SOAContainer(size_type count, const value_type& val)
-	{
-	    reserve(count);
-	    assign(count, val);
-	}
-	/// fill container with count (default constructed) elements
-	SOAContainer(size_type count) : SOAContainer(count, value_type()) { }
-	/// fill container with elements from other container
-	template <typename IT>
-	SOAContainer(IT first, IT last)
-	{ assign(first, last); }
-	/// copy constructor
-	SOAContainer(const self_type& other) : m_storage(other.m_storage) { }
-	/// move constructor
-	SOAContainer(self_type&& other) :
-	    m_storage(std::move(other.m_storage)) { }
+        /// default constructor
+        SOAContainer() { }
+        /// fill container with count copies of val
+        SOAContainer(size_type count, const value_type& val)
+        {
+            reserve(count);
+            assign(count, val);
+        }
+        /// fill container with count (default constructed) elements
+        SOAContainer(size_type count) : SOAContainer(count, value_type()) { }
+        /// fill container with elements from other container
+        template <typename IT>
+        SOAContainer(IT first, IT last)
+        { assign(first, last); }
+        /// copy constructor
+        SOAContainer(const self_type& other) : m_storage(other.m_storage) { }
+        /// move constructor
+        SOAContainer(self_type&& other) :
+            m_storage(std::move(other.m_storage)) { }
 
-	/// assignment from other SOAContainer
-	self_type& operator=(const self_type& other)
-	{
-	    if (&other != this) m_storage = other.m_storage;
-	    return *this;
-	}
-	/// move-assignment from other SOAContainer
-	self_type& operator=(self_type&& other)
-	{
-	    if (&other != this) m_storage = std::move(other.m_storage);
-	    return *this;
-	}
+        /// assignment from other SOAContainer
+        self_type& operator=(const self_type& other)
+        {
+            if (&other != this) m_storage = other.m_storage;
+            return *this;
+        }
+        /// move-assignment from other SOAContainer
+        self_type& operator=(self_type&& other)
+        {
+            if (&other != this) m_storage = std::move(other.m_storage);
+            return *this;
+        }
 
-	/// return if the container is empty
-	bool empty() const noexcept(noexcept(std::get<0>(m_storage).empty()))
-	{ return std::get<0>(m_storage).empty(); }
-	/// return the size of the container
-	size_type size() const noexcept(noexcept(
-		    std::get<0>(m_storage).size()))
-	{ return std::get<0>(m_storage).size(); }
+        /// return if the container is empty
+        bool empty() const noexcept(noexcept(std::get<0>(m_storage).empty()))
+        { return std::get<0>(m_storage).empty(); }
+        /// return the size of the container
+        size_type size() const noexcept(noexcept(
+                    std::get<0>(m_storage).size()))
+        { return std::get<0>(m_storage).size(); }
 
     private:
-	/// hide implementation details in struct to make doxygen tidier
-	struct impl_detail {
-	    /// little helper for indexing to implement clear()
-	    struct clearHelper {
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(
-			noexcept(obj.clear()))
-	        { obj.clear(); }
-	    };
+        /// hide implementation details in struct to make doxygen tidier
+        struct impl_detail {
+            /// little helper for indexing to implement clear()
+            struct clearHelper {
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(
+                        noexcept(obj.clear()))
+                { obj.clear(); }
+            };
 
-	    /// little helper for indexing to implement pop_back()
-	    struct pop_backHelper {
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(
-	    	    noexcept(obj.pop_back()))
-	        { obj.pop_back(); }
-	    };
+            /// little helper for indexing to implement pop_back()
+            struct pop_backHelper {
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(
+                    noexcept(obj.pop_back()))
+                { obj.pop_back(); }
+            };
 
-	    /// little helper for indexing to implement shrink_to_fit()
-	    struct shrink_to_fitHelper {
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(
-	    	    noexcept(obj.shrink_to_fit()))
-	        { obj.shrink_to_fit(); }
-	    };
+            /// little helper for indexing to implement shrink_to_fit()
+            struct shrink_to_fitHelper {
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(
+                    noexcept(obj.shrink_to_fit()))
+                { obj.shrink_to_fit(); }
+            };
 
-	    /// little helper for indexing to implement reserve()
-	    struct reserveHelper {
-	        size_type m_sz;
-	        reserveHelper(size_type sz) noexcept : m_sz(sz) { }
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(
-	    	    noexcept(obj.reserve(m_sz)))
-	        { obj.reserve(m_sz); }
-	    };
+            /// little helper for indexing to implement reserve()
+            struct reserveHelper {
+                size_type m_sz;
+                reserveHelper(size_type sz) noexcept : m_sz(sz) { }
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(
+                    noexcept(obj.reserve(m_sz)))
+                { obj.reserve(m_sz); }
+            };
 
-	    /// little helper for indexing to implement capacity()
-	    struct capacityHelper {
-	        template <typename T, typename IDX>
-	        size_type operator()(T& obj, IDX) const noexcept(
-	    	    noexcept(obj.capacity()))
-	        { return obj.capacity(); }
-	    };
+            /// little helper for indexing to implement capacity()
+            struct capacityHelper {
+                template <typename T, typename IDX>
+                size_type operator()(T& obj, IDX) const noexcept(
+                    noexcept(obj.capacity()))
+                { return obj.capacity(); }
+            };
 
-	    /// little helper for indexing to implement max_size()
-	    struct max_sizeHelper {
-	        template <typename T, typename IDX>
-	        size_type operator()(T& obj, IDX) const noexcept(
-	    	    noexcept(obj.max_size()))
-	        { return obj.max_size(); }
-	    };
-	    
-	    /// little helper for resize(sz)
-	    struct resizeHelper {
-	        size_type m_sz;
-	        resizeHelper(size_type sz) noexcept : m_sz(sz) { }
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(
-	    	    noexcept(obj.resize(m_sz)))
-	        { obj.resize(m_sz); }
-	    };
+            /// little helper for indexing to implement max_size()
+            struct max_sizeHelper {
+                template <typename T, typename IDX>
+                size_type operator()(T& obj, IDX) const noexcept(
+                    noexcept(obj.max_size()))
+                { return obj.max_size(); }
+            };
 
-	    /// little helper for resize(sz, val)
-	    struct resizeHelper_val {
-	        size_type m_sz;
-	        const value_type& m_val;
-	        resizeHelper_val(size_type sz,
-			const value_type& val) noexcept : m_sz(sz), m_val(val)
-		{ }
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(noexcept(
-	    		obj.resize(m_sz, std::get<IDX::value>(m_val))))
-	        { obj.resize(m_sz, std::get<IDX::value>(m_val)); }
-	    };
+            /// little helper for resize(sz)
+            struct resizeHelper {
+                size_type m_sz;
+                resizeHelper(size_type sz) noexcept : m_sz(sz) { }
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(
+                    noexcept(obj.resize(m_sz)))
+                { obj.resize(m_sz); }
+            };
 
-	    /// little helper for push_back
-	    struct push_backHelper {
-	        const value_type& m_val;
-	        push_backHelper(const value_type& val) noexcept :
-		    m_val(val) { }
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(noexcept(
-	    		obj.push_back(std::get<IDX::value>(m_val))))
-	        { obj.push_back(std::get<IDX::value>(m_val)); }
-	    };
+            /// little helper for resize(sz, val)
+            struct resizeHelper_val {
+                size_type m_sz;
+                const value_type& m_val;
+                resizeHelper_val(size_type sz,
+                        const value_type& val) noexcept : m_sz(sz), m_val(val)
+                { }
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(noexcept(
+                        obj.resize(m_sz, std::get<IDX::value>(m_val))))
+                { obj.resize(m_sz, std::get<IDX::value>(m_val)); }
+            };
 
-	    /// little helper for push_back (move variant)
-	    struct push_backHelper_move {
-	        value_type&& m_val;
-	        push_backHelper_move(value_type&& val) noexcept :
-	    	m_val(std::move(val)) { }
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(noexcept(
-	    		obj.push_back(std::move(std::get<IDX::value>(m_val)))))
-	        { obj.push_back(std::move(std::get<IDX::value>(m_val))); }
-	    };
+            /// little helper for push_back
+            struct push_backHelper {
+                const value_type& m_val;
+                push_backHelper(const value_type& val) noexcept :
+                    m_val(val) { }
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(noexcept(
+                        obj.push_back(std::get<IDX::value>(m_val))))
+                { obj.push_back(std::get<IDX::value>(m_val)); }
+            };
 
-	    /// little helper for insert(it, val)
-	    struct insertHelper {
-	        const value_type& m_val;
-	        size_type m_idx;
-	        insertHelper(const value_type& val, size_type idx) noexcept :
-	    	m_val(val), m_idx(idx) { }
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(noexcept(obj.insert(
-	    		    obj.begin() + m_idx, std::get<IDX::value>(m_val))))
-	        {obj.insert(obj.begin() + m_idx, std::get<IDX::value>(m_val));}
-	    };
+            /// little helper for push_back (move variant)
+            struct push_backHelper_move {
+                value_type&& m_val;
+                push_backHelper_move(value_type&& val) noexcept :
+                m_val(std::move(val)) { }
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(noexcept(
+                        obj.push_back(std::move(std::get<IDX::value>(m_val)))))
+                { obj.push_back(std::move(std::get<IDX::value>(m_val))); }
+            };
 
-	    /// little helper for insert(it, val) - move variant
-	    struct insertHelper_move {
-	        value_type&& m_val;
-	        size_type m_idx;
-	        insertHelper_move(value_type&& val, size_type idx) noexcept :
-	    	m_val(std::move(val)), m_idx(idx) { }
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(noexcept(
-	    		obj.insert(obj.begin() + m_idx,
-	    		    std::move(std::get<IDX::value>(m_val)))))
-	        { obj.insert(obj.begin() + m_idx,
-	    	    std::move(std::get<IDX::value>(m_val))); }
-	    };
+            /// little helper for insert(it, val)
+            struct insertHelper {
+                const value_type& m_val;
+                size_type m_idx;
+                insertHelper(const value_type& val, size_type idx) noexcept :
+                m_val(val), m_idx(idx) { }
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(noexcept(obj.insert(
+                            obj.begin() + m_idx, std::get<IDX::value>(m_val))))
+                {obj.insert(obj.begin() + m_idx, std::get<IDX::value>(m_val));}
+            };
 
-	    /// little helper for insert(it, count, val)
-	    struct insertHelper_count {
-	        const value_type& m_val;
-	        size_type m_idx;
-	        size_type m_cnt;
-	        insertHelper_count( const value_type& val, size_type idx,
-	    	    size_type cnt) noexcept :
-	    	m_val(val), m_idx(idx), m_cnt(cnt) { }
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(noexcept(
-	    		obj.insert(obj.begin() + m_idx, m_cnt,
-	    		    std::get<IDX::value>(m_val))))
-	        {
-	    	obj.insert(obj.begin() + m_idx, m_cnt,
-	    		std::get<IDX::value>(m_val));
-	        }
-	    };
+            /// little helper for insert(it, val) - move variant
+            struct insertHelper_move {
+                value_type&& m_val;
+                size_type m_idx;
+                insertHelper_move(value_type&& val, size_type idx) noexcept :
+                m_val(std::move(val)), m_idx(idx) { }
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(noexcept(
+                        obj.insert(obj.begin() + m_idx,
+                            std::move(std::get<IDX::value>(m_val)))))
+                { obj.insert(obj.begin() + m_idx,
+                    std::move(std::get<IDX::value>(m_val))); }
+            };
 
-	    /// little helper for erase(it)
-	    struct eraseHelper {
-	        size_type m_idx;
-	        eraseHelper(size_type idx) noexcept : m_idx(idx) { }
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(noexcept(
-	    		obj.erase(obj.begin() + m_idx)))
-	        { obj.erase(obj.begin() + m_idx); }
-	    };
+            /// little helper for insert(it, count, val)
+            struct insertHelper_count {
+                const value_type& m_val;
+                size_type m_idx;
+                size_type m_cnt;
+                insertHelper_count( const value_type& val, size_type idx,
+                    size_type cnt) noexcept :
+                m_val(val), m_idx(idx), m_cnt(cnt) { }
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(noexcept(
+                        obj.insert(obj.begin() + m_idx, m_cnt,
+                            std::get<IDX::value>(m_val))))
+                {
+                obj.insert(obj.begin() + m_idx, m_cnt,
+                        std::get<IDX::value>(m_val));
+                }
+            };
 
-	    /// little helper for erase(first, last)
-	    struct eraseHelper_N {
-	        size_type m_idx;
-	        size_type m_sz;
-	        eraseHelper_N(size_type idx, size_type sz) noexcept :
-	    	m_idx(idx), m_sz(sz) { }
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(noexcept(
-	    		obj.erase(obj.begin() + m_idx,
-	    		    obj.begin() + m_idx + m_sz)))
-	        { obj.erase(obj.begin() + m_idx, obj.begin() + m_idx + m_sz); }
-	    };
+            /// little helper for erase(it)
+            struct eraseHelper {
+                size_type m_idx;
+                eraseHelper(size_type idx) noexcept : m_idx(idx) { }
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(noexcept(
+                        obj.erase(obj.begin() + m_idx)))
+                { obj.erase(obj.begin() + m_idx); }
+            };
 
-	    /// little helper for assign(count, val)
-	    struct assignHelper {
-	        const value_type& m_val;
-	        size_type m_cnt;
-	        assignHelper(
-	    	    const value_type& val, size_type cnt) noexcept :
-	    	m_val(val), m_cnt(cnt) { }
-	        template <typename T, typename IDX>
-	        void operator()(T& obj, IDX) const noexcept(noexcept(
-	    		obj.assign(m_cnt, std::get<IDX::value>(m_val))))
-	        { obj.assign(m_cnt, std::get<IDX::value>(m_val)); }
-	    };
+            /// little helper for erase(first, last)
+            struct eraseHelper_N {
+                size_type m_idx;
+                size_type m_sz;
+                eraseHelper_N(size_type idx, size_type sz) noexcept :
+                m_idx(idx), m_sz(sz) { }
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(noexcept(
+                        obj.erase(obj.begin() + m_idx,
+                            obj.begin() + m_idx + m_sz)))
+                { obj.erase(obj.begin() + m_idx, obj.begin() + m_idx + m_sz); }
+            };
 
-	    /// helper for emplace_back
-	    template <size_type IDX>
-	    struct emplace_backHelper {
-	        SOAStorage& m_storage;
-	        emplace_backHelper(SOAStorage& storage) noexcept :
-	    	m_storage(storage) { }
-	        template <typename HEAD, typename... TAIL>
-	        void doIt(HEAD&& head, TAIL&&... tail) const noexcept(noexcept(
-	    		std::get<IDX>(m_storage).emplace_back(
-	    		    std::forward<HEAD>(head))) && noexcept(
-	    		emplace_backHelper<IDX + 1>(m_storage).doIt(
-	    		    std::forward<TAIL>(tail)...)))
-	        {
-		    std::get<IDX>(m_storage).emplace_back(
-			    std::forward<HEAD>(head));
-		    emplace_backHelper<IDX + 1>(m_storage).doIt(
-			    std::forward<TAIL>(tail)...);
-	        }
-	        template <typename HEAD>
-	        void doIt(HEAD&& head) const noexcept(noexcept(
-	    		std::get<IDX>(m_storage).emplace_back(
-	    		    std::forward<HEAD>(head))))
-	        {
-		    std::get<IDX>(m_storage).emplace_back(
-			    std::forward<HEAD>(head));
-	        }
-	    };
+            /// little helper for assign(count, val)
+            struct assignHelper {
+                const value_type& m_val;
+                size_type m_cnt;
+                assignHelper(
+                    const value_type& val, size_type cnt) noexcept :
+                m_val(val), m_cnt(cnt) { }
+                template <typename T, typename IDX>
+                void operator()(T& obj, IDX) const noexcept(noexcept(
+                        obj.assign(m_cnt, std::get<IDX::value>(m_val))))
+                { obj.assign(m_cnt, std::get<IDX::value>(m_val)); }
+            };
 
-	    /// helper for emplace
-	    template <size_type IDX>
-	    struct emplaceHelper {
-	        SOAStorage& m_storage;
-	        size_type m_idx;
-	        emplaceHelper(SOAStorage& storage, size_type idx) noexcept :
-	    	m_storage(storage), m_idx(idx) { }
-	        template <typename HEAD, typename... TAIL>
-	        void doIt(HEAD&& head, TAIL&&... tail) const noexcept(noexcept(
-	    		std::get<IDX>(m_storage).emplace(
-	    		    std::get<IDX>(m_storage).begin() + m_idx,
-	    		    std::forward<HEAD>(head))) && noexcept(
-	    		emplaceHelper<IDX + 1>(m_storage, m_idx).doIt(
-	    		    std::forward<TAIL>(tail)...)))
-	        {
-		    std::get<IDX>(m_storage).emplace(
-			    std::get<IDX>(m_storage).begin() + m_idx,
-			    std::forward<HEAD>(head));
-		    emplaceHelper<IDX + 1>(m_storage, m_idx).doIt(
-			    std::forward<TAIL>(tail)...);
-	        }
-	        template <typename HEAD>
-	        void doIt(HEAD&& head) const noexcept(noexcept(
-	    		std::get<IDX>(m_storage).emplace(
-	    		    std::get<IDX>(m_storage).begin() + m_idx,
-	    		    std::forward<HEAD>(head))))
-	        {
-		    std::get<IDX>(m_storage).emplace(
-			    std::get<IDX>(m_storage).begin() + m_idx,
-			    std::forward<HEAD>(head));
-	        }
-	    };
-	}; // end of struct impl_detail
+            /// helper for emplace_back
+            template <size_type IDX>
+            struct emplace_backHelper {
+                SOAStorage& m_storage;
+                emplace_backHelper(SOAStorage& storage) noexcept :
+                m_storage(storage) { }
+                template <typename HEAD, typename... TAIL>
+                void doIt(HEAD&& head, TAIL&&... tail) const noexcept(noexcept(
+                        std::get<IDX>(m_storage).emplace_back(
+                            std::forward<HEAD>(head))) && noexcept(
+                        emplace_backHelper<IDX + 1>(m_storage).doIt(
+                            std::forward<TAIL>(tail)...)))
+                {
+                    std::get<IDX>(m_storage).emplace_back(
+                            std::forward<HEAD>(head));
+                    emplace_backHelper<IDX + 1>(m_storage).doIt(
+                            std::forward<TAIL>(tail)...);
+                }
+                template <typename HEAD>
+                void doIt(HEAD&& head) const noexcept(noexcept(
+                        std::get<IDX>(m_storage).emplace_back(
+                            std::forward<HEAD>(head))))
+                {
+                    std::get<IDX>(m_storage).emplace_back(
+                            std::forward<HEAD>(head));
+                }
+            };
+
+            /// helper for emplace
+            template <size_type IDX>
+            struct emplaceHelper {
+                SOAStorage& m_storage;
+                size_type m_idx;
+                emplaceHelper(SOAStorage& storage, size_type idx) noexcept :
+                m_storage(storage), m_idx(idx) { }
+                template <typename HEAD, typename... TAIL>
+                void doIt(HEAD&& head, TAIL&&... tail) const noexcept(noexcept(
+                        std::get<IDX>(m_storage).emplace(
+                            std::get<IDX>(m_storage).begin() + m_idx,
+                            std::forward<HEAD>(head))) && noexcept(
+                        emplaceHelper<IDX + 1>(m_storage, m_idx).doIt(
+                            std::forward<TAIL>(tail)...)))
+                {
+                    std::get<IDX>(m_storage).emplace(
+                            std::get<IDX>(m_storage).begin() + m_idx,
+                            std::forward<HEAD>(head));
+                    emplaceHelper<IDX + 1>(m_storage, m_idx).doIt(
+                            std::forward<TAIL>(tail)...);
+                }
+                template <typename HEAD>
+                void doIt(HEAD&& head) const noexcept(noexcept(
+                        std::get<IDX>(m_storage).emplace(
+                            std::get<IDX>(m_storage).begin() + m_idx,
+                            std::forward<HEAD>(head))))
+                {
+                    std::get<IDX>(m_storage).emplace(
+                            std::get<IDX>(m_storage).begin() + m_idx,
+                            std::forward<HEAD>(head));
+                }
+            };
+        }; // end of struct impl_detail
 
     public:
-	/// clear the container
-	void clear() noexcept(noexcept(
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::clearHelper())))
-	{
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::clearHelper());
-       	}
+        /// clear the container
+        void clear() noexcept(noexcept(
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::clearHelper())))
+        {
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::clearHelper());
+        }
 
-	/// pop the last element off the container
-	void pop_back() noexcept(noexcept(
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::pop_backHelper())))
-	{
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::pop_backHelper());
-       	}
+        /// pop the last element off the container
+        void pop_back() noexcept(noexcept(
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::pop_backHelper())))
+        {
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::pop_backHelper());
+        }
 
-	/// shrink the underlying storage of the container to fit its size
-	void shrink_to_fit() noexcept(noexcept(
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::shrink_to_fitHelper())))
-	{
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::shrink_to_fitHelper());
-       	}
+        /// shrink the underlying storage of the container to fit its size
+        void shrink_to_fit() noexcept(noexcept(
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::shrink_to_fitHelper())))
+        {
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::shrink_to_fitHelper());
+        }
 
-	/// reserve space for at least sz elements
-	void reserve(size_type sz) noexcept(noexcept(
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::reserveHelper(sz))))
-	{
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::reserveHelper(sz));
-       	}
+        /// reserve space for at least sz elements
+        void reserve(size_type sz) noexcept(noexcept(
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::reserveHelper(sz))))
+        {
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::reserveHelper(sz));
+        }
 
-	/// return capacity of container
-	size_type capacity() const
-	{
-	    return SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-		    m_storage, typename impl_detail::capacityHelper(),
-		    [] (size_type s1, size_type s2) {
-		    return std::min(s1, s2); }, size_type(-1));
-       	}
+        /// return capacity of container
+        size_type capacity() const
+        {
+            return SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+                    m_storage, typename impl_detail::capacityHelper(),
+                    [] (size_type s1, size_type s2) {
+                    return std::min(s1, s2); }, size_type(-1));
+        }
 
-	/// return maximal size of container
-	size_type max_size() const
-	{
-	    return SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-		    m_storage, typename impl_detail::max_sizeHelper(),
-		    [] (size_type s1, size_type s2) {
-		    return std::min(s1, s2); }, size_type(-1));
-       	}
+        /// return maximal size of container
+        size_type max_size() const
+        {
+            return SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+                    m_storage, typename impl_detail::max_sizeHelper(),
+                    [] (size_type s1, size_type s2) {
+                    return std::min(s1, s2); }, size_type(-1));
+        }
 
-	/// access specified element
-	reference operator[](size_type idx) noexcept
-	{ return { &m_storage, idx }; }
-	/// access specified element (read access only)
-	const_reference operator[](size_type idx) const noexcept
-	{ return { &const_cast<SOAStorage&>(m_storage), idx }; }
-	/// access specified element with out of bounds checking
-	reference at(size_type idx)
-	{
-	    if (idx < size()) return operator[](idx);
-	    else throw std::out_of_range("out of bounds");
-	}
-	/// access specified element with out of bounds checking (read-only)
-	const_reference at(size_type idx) const
-	{
-	    if (idx < size()) return operator[](idx);
-	    else throw std::out_of_range("out of bounds");
-	}
+        /// access specified element
+        reference operator[](size_type idx) noexcept
+        { return { &m_storage, idx }; }
+        /// access specified element (read access only)
+        const_reference operator[](size_type idx) const noexcept
+        { return { &const_cast<SOAStorage&>(m_storage), idx }; }
+        /// access specified element with out of bounds checking
+        reference at(size_type idx)
+        {
+            if (idx < size()) return operator[](idx);
+            else throw std::out_of_range("out of bounds");
+        }
+        /// access specified element with out of bounds checking (read-only)
+        const_reference at(size_type idx) const
+        {
+            if (idx < size()) return operator[](idx);
+            else throw std::out_of_range("out of bounds");
+        }
 
-	/// access first element (non-empty container)
-	reference front() noexcept { return operator[](0); }
-	/// access first element (non-empty container, read-only)
-	const_reference front() const noexcept { return operator[](0); }
-	/// access last element (non-empty container)
-	reference back() noexcept(noexcept(
-		    static_cast<self_type*>(nullptr)->size()))
-	{ return operator[](size() - 1); }
-	/// access last element (non-empty container, read-only)
-	const_reference back() const noexcept(noexcept(
-		    static_cast<self_type*>(nullptr)->size()))
-	{ return operator[](size() - 1); }
+        /// access first element (non-empty container)
+        reference front() noexcept { return operator[](0); }
+        /// access first element (non-empty container, read-only)
+        const_reference front() const noexcept { return operator[](0); }
+        /// access last element (non-empty container)
+        reference back() noexcept(noexcept(
+                    static_cast<self_type*>(nullptr)->size()))
+        { return operator[](size() - 1); }
+        /// access last element (non-empty container, read-only)
+        const_reference back() const noexcept(noexcept(
+                    static_cast<self_type*>(nullptr)->size()))
+        { return operator[](size() - 1); }
 
-	/// iterator pointing to first element
-	iterator begin() noexcept { return { &m_storage, 0 }; }
-	/// const iterator pointing to first element
-	const_iterator begin() const noexcept
-	{ return { const_cast<SOAStorage*>(&m_storage), 0 }; }
-	/// const iterator pointing to first element
-	const_iterator cbegin() const noexcept { return begin(); }
+        /// iterator pointing to first element
+        iterator begin() noexcept { return { &m_storage, 0 }; }
+        /// const iterator pointing to first element
+        const_iterator begin() const noexcept
+        { return { const_cast<SOAStorage*>(&m_storage), 0 }; }
+        /// const iterator pointing to first element
+        const_iterator cbegin() const noexcept { return begin(); }
 
-	/// iterator pointing one element behind the last element
-	iterator end() noexcept { return { &m_storage, size() }; }
-	/// const iterator pointing one element behind the last element
-	const_iterator end() const noexcept
-	{ return { const_cast<SOAStorage*>(&m_storage), size() }; }
-	/// const iterator pointing one element behind the last element
-	const_iterator cend() const noexcept { return end(); }
+        /// iterator pointing one element behind the last element
+        iterator end() noexcept { return { &m_storage, size() }; }
+        /// const iterator pointing one element behind the last element
+        const_iterator end() const noexcept
+        { return { const_cast<SOAStorage*>(&m_storage), size() }; }
+        /// const iterator pointing one element behind the last element
+        const_iterator cend() const noexcept { return end(); }
 
-	/// get begin iterator of storage vector for member MEMBERNO
-	template <size_type MEMBERNO>
-	auto begin() noexcept -> decltype(
-		std::get<MEMBERNO>(m_storage).begin())
-	{ return std::get<MEMBERNO>(m_storage).begin(); }
+        /// get begin iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto begin() noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).begin())
+        { return std::get<MEMBERNO>(m_storage).begin(); }
 
-	/// get begin iterator of storage vector for member with tag MEMBER
-	template <typename MEMBER>
-	auto begin() noexcept -> decltype(
-		std::get<SOATypelist::find<fields_typelist,
-		MEMBER>::index>(m_storage).begin())
-	{ return std::get<SOATypelist::find<fields_typelist,
-	    MEMBER>::index>(m_storage).begin(); }
-	
-	/// get begin iterator of storage vector for member MEMBERNO
-	template <size_type MEMBERNO>
-	auto begin() const noexcept -> decltype(
-		std::get<MEMBERNO>(m_storage).begin())
-	{ return std::get<MEMBERNO>(m_storage).begin(); }
-	
-	/// get begin iterator of storage vector for member with tag MEMBER
-	template <typename MEMBER>
-	auto begin() const noexcept -> decltype(
-		std::get<SOATypelist::find<fields_typelist,
-		MEMBER>::index>(m_storage).begin())
-	{ return std::get<SOATypelist::find<fields_typelist,
-	    MEMBER>::index>(m_storage).begin(); }
-	
-	/// get begin iterator of storage vector for member MEMBERNO
-	template <size_type MEMBERNO>
-	auto cbegin() const noexcept -> decltype(
-		std::get<MEMBERNO>(m_storage).cbegin())
-	{ return std::get<MEMBERNO>(m_storage).cbegin(); }
-	
-	/// get begin iterator of storage vector for member with tag MEMBER
-	template <typename MEMBER>
-	auto cbegin() const noexcept -> decltype(
-		std::get<SOATypelist::find<fields_typelist,
-		MEMBER>::index>(m_storage).cbegin())
-	{ return std::get<SOATypelist::find<fields_typelist,
-	    MEMBER>::index>(m_storage).cbegin(); }
-	
-	/// get end iterator of storage vector for member MEMBERNO
-	template <size_type MEMBERNO>
-	auto end() noexcept -> decltype(
-		std::get<MEMBERNO>(m_storage).end())
-	{ return std::get<MEMBERNO>(m_storage).end(); }
-	
-	/// get end iterator of storage vector for member with tag MEMBER
-	template <typename MEMBER>
-	auto end() noexcept -> decltype(
-		std::get<SOATypelist::find<fields_typelist,
-		MEMBER>::index>(m_storage).end())
-	{ return std::get<SOATypelist::find<fields_typelist,
-	    MEMBER>::index>(m_storage).end(); }
-	
-	/// get end iterator of storage vector for member MEMBERNO
-	template <size_type MEMBERNO>
-	auto end() const noexcept -> decltype(
-		std::get<MEMBERNO>(m_storage).end())
-	{ return std::get<MEMBERNO>(m_storage).end(); }
-	
-	/// get end iterator of storage vector for member with tag MEMBER
-	template <typename MEMBER>
-	auto end() const noexcept -> decltype(
-		std::get<SOATypelist::find<fields_typelist,
-		MEMBER>::index>(m_storage).end())
-	{ return std::get<SOATypelist::find<fields_typelist,
-	    MEMBER>::index>(m_storage).end(); }
-	
-	/// get cend iterator of storage vector for member MEMBERNO
-	template <size_type MEMBERNO>
-	auto cend() const noexcept -> decltype(
-		std::get<MEMBERNO>(m_storage).cend())
-	{ return std::get<MEMBERNO>(m_storage).cend(); }
-	
-	/// get cend iterator of storage vector for member with tag MEMBER
-	template <typename MEMBER>
-	auto cend() const noexcept -> decltype(
-		std::get<SOATypelist::find<fields_typelist,
-		MEMBER>::index>(m_storage).cend())
-	{ return std::get<SOATypelist::find<fields_typelist,
-	    MEMBER>::index>(m_storage).cend(); }
+        /// get begin iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto begin() noexcept -> decltype(
+                std::get<SOATypelist::find<fields_typelist,
+                MEMBER>::index>(m_storage).begin())
+        { return std::get<SOATypelist::find<fields_typelist,
+            MEMBER>::index>(m_storage).begin(); }
 
-	/// iterator pointing to first element in reverse order
-	reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
-	/// const iterator pointing to first element in reverse order
-	const_reverse_iterator rbegin() const noexcept
-	{ return const_reverse_iterator(end()); }
-	/// const iterator pointing to first element in reverse order
-	const_reverse_iterator crbegin() const noexcept { return rbegin(); }
+        /// get begin iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto begin() const noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).begin())
+        { return std::get<MEMBERNO>(m_storage).begin(); }
 
-	/// iterator pointing one element behind the last element in reverse order
-	reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
-	/// const iterator pointing one element behind the last element in reverse order
-	const_reverse_iterator rend() const noexcept
-	{ return const_reverse_iterator(begin()); }
-	/// const iterator pointing one element behind the last element in reverse order
-	const_reverse_iterator crend() const noexcept { return rend(); }
+        /// get begin iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto begin() const noexcept -> decltype(
+                std::get<SOATypelist::find<fields_typelist,
+                MEMBER>::index>(m_storage).begin())
+        { return std::get<SOATypelist::find<fields_typelist,
+            MEMBER>::index>(m_storage).begin(); }
 
-	/// get rbegin iterator of storage vector for member MEMBERNO
-	template <size_type MEMBERNO>
-	auto rbegin() noexcept -> decltype(
-		std::get<MEMBERNO>(m_storage).rbegin())
-	{ return std::get<MEMBERNO>(m_storage).rbegin(); }
-	
-	/// get rbegin iterator of storage vector for member with tag MEMBER
-	template <typename MEMBER>
-	auto rbegin() noexcept -> decltype(
-		std::get<SOATypelist::find<fields_typelist,
-		MEMBER>::index>(m_storage).rbegin())
-	{ return std::get<SOATypelist::find<fields_typelist,
-	    MEMBER>::index>(m_storage).rbegin(); }
-	
-	/// get rbegin iterator of storage vector for member MEMBERNO
-	template <size_type MEMBERNO>
-	auto rbegin() const noexcept -> decltype(
-		std::get<MEMBERNO>(m_storage).rbegin())
-	{ return std::get<MEMBERNO>(m_storage).rbegin(); }
-	
-	/// get rbegin iterator of storage vector for member with tag MEMBER
-	template <typename MEMBER>
-	auto rbegin() const noexcept -> decltype(
-		std::get<SOATypelist::find<fields_typelist,
-		MEMBER>::index>(m_storage).rbegin())
-	{ return std::get<SOATypelist::find<fields_typelist,
-	    MEMBER>::index>(m_storage).rbegin(); }
-	
-	/// get rbegin iterator of storage vector for member MEMBERNO
-	template <size_type MEMBERNO>
-	auto crbegin() const noexcept -> decltype(
-		std::get<MEMBERNO>(m_storage).crbegin())
-	{ return std::get<MEMBERNO>(m_storage).crbegin(); }
-	
-	/// get rbegin iterator of storage vector for member with tag MEMBER
-	template <typename MEMBER>
-	auto crbegin() const noexcept -> decltype(
-		std::get<SOATypelist::find<fields_typelist,
-		MEMBER>::index>(m_storage).crbegin())
-	{ return std::get<SOATypelist::find<fields_typelist,
-	    MEMBER>::index>(m_storage).crbegin(); }
-	
-	/// get rend iterator of storage vector for member MEMBERNO
-	template <size_type MEMBERNO>
-	auto rend() noexcept -> decltype(
-		std::get<MEMBERNO>(m_storage).rend())
-	{ return std::get<MEMBERNO>(m_storage).rend(); }
-	
-	/// get rend iterator of storage vector for member with tag MEMBER
-	template <typename MEMBER>
-	auto rend() noexcept -> decltype(
-		std::get<SOATypelist::find<fields_typelist,
-		MEMBER>::index>(m_storage).rend())
-	{ return std::get<SOATypelist::find<fields_typelist,
-	    MEMBER>::index>(m_storage).rend(); }
-	
-	/// get rend iterator of storage vector for member MEMBERNO
-	template <size_type MEMBERNO>
-	auto rend() const noexcept -> decltype(
-		std::get<MEMBERNO>(m_storage).rend())
-	{ return std::get<MEMBERNO>(m_storage).rend(); }
-	
-	/// get rend iterator of storage vector for member with tag MEMBER
-	template <typename MEMBER>
-	auto rend() const noexcept -> decltype(
-		std::get<SOATypelist::find<fields_typelist,
-		MEMBER>::index>(m_storage).rend())
-	{ return std::get<SOATypelist::find<fields_typelist,
-	    MEMBER>::index>(m_storage).rend(); }
-	
-	/// get crend iterator of storage vector for member MEMBERNO
-	template <size_type MEMBERNO>
-	auto crend() const noexcept -> decltype(
-		std::get<MEMBERNO>(m_storage).crend())
-	{ return std::get<MEMBERNO>(m_storage).crend(); }
-	
-	/// get crend iterator of storage vector for member with tag MEMBER
-	template <typename MEMBER>
-	auto crend() const noexcept -> decltype(
-		std::get<SOATypelist::find<fields_typelist,
-		MEMBER>::index>(m_storage).crend())
-	{ return std::get<SOATypelist::find<fields_typelist,
-	    MEMBER>::index>(m_storage).crend(); }
+        /// get begin iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto cbegin() const noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).cbegin())
+        { return std::get<MEMBERNO>(m_storage).cbegin(); }
 
-	/// resize container (use default-constructed values if container grows)
-	void resize(size_type sz) noexcept(noexcept(
-		    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-			m_storage, typename impl_detail::resizeHelper(sz))))
-	{
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::resizeHelper(sz));
-	}
+        /// get begin iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto cbegin() const noexcept -> decltype(
+                std::get<SOATypelist::find<fields_typelist,
+                MEMBER>::index>(m_storage).cbegin())
+        { return std::get<SOATypelist::find<fields_typelist,
+            MEMBER>::index>(m_storage).cbegin(); }
 
-	/// resize the container (append val if the container grows)
-	void resize(size_type sz, const value_type& val) noexcept(noexcept(
-		    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-			m_storage,
-			typename impl_detail::resizeHelper_val(sz, val))))
-	{
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::resizeHelper_val(sz, val));
-	}
+        /// get end iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto end() noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).end())
+        { return std::get<MEMBERNO>(m_storage).end(); }
 
-	/// push an element at the back of the array
-	void push_back(const value_type& val) noexcept(noexcept(
-		    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-			m_storage,
-			typename impl_detail::push_backHelper(val))))
-	{
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::push_backHelper(val));
-	}
+        /// get end iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto end() noexcept -> decltype(
+                std::get<SOATypelist::find<fields_typelist,
+                MEMBER>::index>(m_storage).end())
+        { return std::get<SOATypelist::find<fields_typelist,
+            MEMBER>::index>(m_storage).end(); }
 
-	/// push an element at the back of the array (move variant)
-	void push_back(value_type&& val) noexcept(noexcept(
-		    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-			m_storage, typename impl_detail::push_backHelper_move(
-			    std::move(val)))))
-	{
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::push_backHelper_move(std::move(val)));
-	}
+        /// get end iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto end() const noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).end())
+        { return std::get<MEMBERNO>(m_storage).end(); }
 
-	/// insert a value at the given position
-	iterator insert(const_iterator pos, const value_type& val) noexcept(
-		noexcept(SOAUtils::recursive_apply_tuple<
-		    sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::insertHelper(
-			val, pos.m_proxy.m_index))))
-	{
-	    assert((*pos).m_storage == &m_storage);
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::insertHelper(
-			val, pos.m_proxy.m_index));
-	    return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
-	}
+        /// get end iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto end() const noexcept -> decltype(
+                std::get<SOATypelist::find<fields_typelist,
+                MEMBER>::index>(m_storage).end())
+        { return std::get<SOATypelist::find<fields_typelist,
+            MEMBER>::index>(m_storage).end(); }
 
-	/// insert a value at the given position (move variant)
-	iterator insert(const_iterator pos, value_type&& val) noexcept(
-		noexcept(SOAUtils::recursive_apply_tuple<
-		    sizeof...(FIELDS)>()(m_storage,
-			typename impl_detail::insertHelper_move(
-			    std::move(val), pos.m_proxy.m_index))))
-	{
-	    assert((*pos).m_storage == &m_storage);
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::insertHelper_move(
-			std::move(val), pos.m_proxy.m_index));
-	    return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
-	}
+        /// get cend iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto cend() const noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).cend())
+        { return std::get<MEMBERNO>(m_storage).cend(); }
 
-	/// insert count copies of value at the given position
-	iterator insert(const_iterator pos, size_type count, const
-		value_type& val) noexcept(noexcept(
-			SOAUtils::recursive_apply_tuple<
-			sizeof...(FIELDS)>()(m_storage,
-			    typename impl_detail::insertHelper_count(
-				val, pos.m_proxy.m_index, count))))
-	{
-	    assert((*pos).m_storage == &m_storage);
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::insertHelper_count(
-			val, pos.m_proxy.m_index, count));
-	    return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
-	}
+        /// get cend iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto cend() const noexcept -> decltype(
+                std::get<SOATypelist::find<fields_typelist,
+                MEMBER>::index>(m_storage).cend())
+        { return std::get<SOATypelist::find<fields_typelist,
+            MEMBER>::index>(m_storage).cend(); }
 
-	/// insert elements between first and last at position pos
-	template <typename IT>
-	iterator insert(const_iterator pos, IT first, IT last)
-	{
-	    // FIXME: terrible implementation!!!
-	    // for iterators which support multiple passes over the data, this
-	    // should fill field by field
-	    // moreover, if we can determine the distance between first and
-	    // last, we should make a hole of the right size to avoid moving
-	    // data more than once
-	    iterator retVal(pos.m_proxy.m_storage, pos.m_proxy.m_index);
-	    while (first != last) { insert(pos, *first); ++first; ++pos; }
-	    return retVal;
-	}
+        /// iterator pointing to first element in reverse order
+        reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+        /// const iterator pointing to first element in reverse order
+        const_reverse_iterator rbegin() const noexcept
+        { return const_reverse_iterator(end()); }
+        /// const iterator pointing to first element in reverse order
+        const_reverse_iterator crbegin() const noexcept { return rbegin(); }
 
-	/// erase an element at the given position
-	iterator erase(const_iterator pos) noexcept(noexcept(
-		    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-			m_storage, typename impl_detail::eraseHelper(
-			    pos.m_proxy.m_index))))
-	{
-	    assert((*pos).m_storage == &m_storage);
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::eraseHelper(pos.m_proxy.m_index));
-	    return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
-	}
+        /// iterator pointing one element behind the last element in reverse order
+        reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+        /// const iterator pointing one element behind the last element in reverse order
+        const_reverse_iterator rend() const noexcept
+        { return const_reverse_iterator(begin()); }
+        /// const iterator pointing one element behind the last element in reverse order
+        const_reverse_iterator crend() const noexcept { return rend(); }
 
-	/// erase elements from first to last
-	iterator erase(const_iterator first, const_iterator last) noexcept(
-		noexcept(
-		    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-			m_storage, typename impl_detail::eraseHelper_N(
-			    first.m_proxy.m_index,
-			    last.m_proxy.m_index - first.m_proxy.m_index))))
-	{
-	    assert((*first).m_storage == &m_storage);
-	    assert((*last).m_storage == &m_storage);
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::eraseHelper_N(first.m_proxy.m_index,
-			last.m_proxy.m_index - first.m_proxy.m_index));
-	    return { first.m_proxy.m_storage, first.m_proxy.m_index };
-	}
+        /// get rbegin iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto rbegin() noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).rbegin())
+        { return std::get<MEMBERNO>(m_storage).rbegin(); }
 
-	/// assign the vector to contain count copies of val
-	void assign(size_type count, const value_type& val) noexcept(noexcept(
-		    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-			m_storage,
-			typename impl_detail::assignHelper(val, count))))
-	{
-	    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-		    typename impl_detail::assignHelper(val, count));
-	}
+        /// get rbegin iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto rbegin() noexcept -> decltype(
+                std::get<SOATypelist::find<fields_typelist,
+                MEMBER>::index>(m_storage).rbegin())
+        { return std::get<SOATypelist::find<fields_typelist,
+            MEMBER>::index>(m_storage).rbegin(); }
 
-	/// assign the vector from a range of elements in another container
-	template <typename IT>
-	void assign(IT first, IT last) noexcept(
-		noexcept(empty()) && noexcept(clear()) &&
-	       	noexcept(insert(begin(), first, last)))
-	{
-	    if (!empty()) clear();
-	    // naively, one would use a reserve(distance(first, last)) here,
-	    // but I'm not sure how this will work for various kinds of
-	    // special iterators - callers are expected to reserve beforehand
-	    // if the required size is known
-	    insert(begin(), first, last);
-	}
+        /// get rbegin iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto rbegin() const noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).rbegin())
+        { return std::get<MEMBERNO>(m_storage).rbegin(); }
 
-	/// construct new element at end of container (in-place) from args
-	template <typename... ARGS>
-	void emplace_back(ARGS&&... args) noexcept(noexcept(
-		    typename impl_detail::template emplace_backHelper<0>(
-			m_storage).doIt(std::forward<ARGS>(args)...)))
-	{
-	    static_assert(sizeof...(ARGS) == sizeof...(FIELDS),
-		    "Wrong number of arguments to emplace_back.");
-	    typename impl_detail::template emplace_backHelper<0>(
-		    m_storage).doIt(std::forward<ARGS>(args)...);
-	}
+        /// get rbegin iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto rbegin() const noexcept -> decltype(
+                std::get<SOATypelist::find<fields_typelist,
+                MEMBER>::index>(m_storage).rbegin())
+        { return std::get<SOATypelist::find<fields_typelist,
+            MEMBER>::index>(m_storage).rbegin(); }
 
-	/// construct new element at position pos (in-place) from args
-	template <typename... ARGS>
-	iterator emplace(const_iterator pos, ARGS&&... args) noexcept(
-		noexcept(typename impl_detail::template emplaceHelper<0>(
-			m_storage, pos.m_proxy.m_index).doIt(
-			    std::forward<ARGS>(args)...)))
-	{
-	    static_assert(sizeof...(ARGS) == sizeof...(FIELDS),
-		    "Wrong number of arguments to emplace_back.");
-	    assert(&m_storage == (*pos).m_storage);
-	    typename impl_detail::template emplaceHelper<0>(
-		    m_storage, pos.m_proxy.m_index).doIt(
-			std::forward<ARGS>(args)...);
-	    return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
-	}
+        /// get rbegin iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto crbegin() const noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).crbegin())
+        { return std::get<MEMBERNO>(m_storage).crbegin(); }
 
-	/// swap contents of two containers
-	void swap(self_type& other) noexcept(
-		noexcept(std::swap(m_storage, other.m_storage)))
-	{ std::swap(m_storage, other.m_storage); }
+        /// get rbegin iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto crbegin() const noexcept -> decltype(
+                std::get<SOATypelist::find<fields_typelist,
+                MEMBER>::index>(m_storage).crbegin())
+        { return std::get<SOATypelist::find<fields_typelist,
+            MEMBER>::index>(m_storage).crbegin(); }
+
+        /// get rend iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto rend() noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).rend())
+        { return std::get<MEMBERNO>(m_storage).rend(); }
+
+        /// get rend iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto rend() noexcept -> decltype(
+                std::get<SOATypelist::find<fields_typelist,
+                MEMBER>::index>(m_storage).rend())
+        { return std::get<SOATypelist::find<fields_typelist,
+            MEMBER>::index>(m_storage).rend(); }
+
+        /// get rend iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto rend() const noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).rend())
+        { return std::get<MEMBERNO>(m_storage).rend(); }
+
+        /// get rend iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto rend() const noexcept -> decltype(
+                std::get<SOATypelist::find<fields_typelist,
+                MEMBER>::index>(m_storage).rend())
+        { return std::get<SOATypelist::find<fields_typelist,
+            MEMBER>::index>(m_storage).rend(); }
+
+        /// get crend iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto crend() const noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).crend())
+        { return std::get<MEMBERNO>(m_storage).crend(); }
+
+        /// get crend iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto crend() const noexcept -> decltype(
+                std::get<SOATypelist::find<fields_typelist,
+                MEMBER>::index>(m_storage).crend())
+        { return std::get<SOATypelist::find<fields_typelist,
+            MEMBER>::index>(m_storage).crend(); }
+
+        /// resize container (use default-constructed values if container grows)
+        void resize(size_type sz) noexcept(noexcept(
+                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+                        m_storage, typename impl_detail::resizeHelper(sz))))
+        {
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::resizeHelper(sz));
+        }
+
+        /// resize the container (append val if the container grows)
+        void resize(size_type sz, const value_type& val) noexcept(noexcept(
+                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+                        m_storage,
+                        typename impl_detail::resizeHelper_val(sz, val))))
+        {
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::resizeHelper_val(sz, val));
+        }
+
+        /// push an element at the back of the array
+        void push_back(const value_type& val) noexcept(noexcept(
+                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+                        m_storage,
+                        typename impl_detail::push_backHelper(val))))
+        {
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::push_backHelper(val));
+        }
+
+        /// push an element at the back of the array (move variant)
+        void push_back(value_type&& val) noexcept(noexcept(
+                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+                        m_storage, typename impl_detail::push_backHelper_move(
+                            std::move(val)))))
+        {
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::push_backHelper_move(std::move(val)));
+        }
+
+        /// insert a value at the given position
+        iterator insert(const_iterator pos, const value_type& val) noexcept(
+                noexcept(SOAUtils::recursive_apply_tuple<
+                    sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::insertHelper(
+                        val, pos.m_proxy.m_index))))
+        {
+            assert((*pos).m_storage == &m_storage);
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::insertHelper(
+                        val, pos.m_proxy.m_index));
+            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
+        }
+
+        /// insert a value at the given position (move variant)
+        iterator insert(const_iterator pos, value_type&& val) noexcept(
+                noexcept(SOAUtils::recursive_apply_tuple<
+                    sizeof...(FIELDS)>()(m_storage,
+                        typename impl_detail::insertHelper_move(
+                            std::move(val), pos.m_proxy.m_index))))
+        {
+            assert((*pos).m_storage == &m_storage);
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::insertHelper_move(
+                        std::move(val), pos.m_proxy.m_index));
+            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
+        }
+
+        /// insert count copies of value at the given position
+        iterator insert(const_iterator pos, size_type count, const
+                value_type& val) noexcept(noexcept(
+                        SOAUtils::recursive_apply_tuple<
+                        sizeof...(FIELDS)>()(m_storage,
+                            typename impl_detail::insertHelper_count(
+                                val, pos.m_proxy.m_index, count))))
+        {
+            assert((*pos).m_storage == &m_storage);
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::insertHelper_count(
+                        val, pos.m_proxy.m_index, count));
+            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
+        }
+
+        /// insert elements between first and last at position pos
+        template <typename IT>
+        iterator insert(const_iterator pos, IT first, IT last)
+        {
+            // FIXME: terrible implementation!!!
+            // for iterators which support multiple passes over the data, this
+            // should fill field by field
+            // moreover, if we can determine the distance between first and
+            // last, we should make a hole of the right size to avoid moving
+            // data more than once
+            iterator retVal(pos.m_proxy.m_storage, pos.m_proxy.m_index);
+            while (first != last) { insert(pos, *first); ++first; ++pos; }
+            return retVal;
+        }
+
+        /// erase an element at the given position
+        iterator erase(const_iterator pos) noexcept(noexcept(
+                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+                        m_storage, typename impl_detail::eraseHelper(
+                            pos.m_proxy.m_index))))
+        {
+            assert((*pos).m_storage == &m_storage);
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::eraseHelper(pos.m_proxy.m_index));
+            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
+        }
+
+        /// erase elements from first to last
+        iterator erase(const_iterator first, const_iterator last) noexcept(
+                noexcept(
+                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+                        m_storage, typename impl_detail::eraseHelper_N(
+                            first.m_proxy.m_index,
+                            last.m_proxy.m_index - first.m_proxy.m_index))))
+        {
+            assert((*first).m_storage == &m_storage);
+            assert((*last).m_storage == &m_storage);
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::eraseHelper_N(first.m_proxy.m_index,
+                        last.m_proxy.m_index - first.m_proxy.m_index));
+            return { first.m_proxy.m_storage, first.m_proxy.m_index };
+        }
+
+        /// assign the vector to contain count copies of val
+        void assign(size_type count, const value_type& val) noexcept(noexcept(
+                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
+                        m_storage,
+                        typename impl_detail::assignHelper(val, count))))
+        {
+            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
+                    typename impl_detail::assignHelper(val, count));
+        }
+
+        /// assign the vector from a range of elements in another container
+        template <typename IT>
+        void assign(IT first, IT last) noexcept(
+                noexcept(empty()) && noexcept(clear()) &&
+                noexcept(insert(begin(), first, last)))
+        {
+            if (!empty()) clear();
+            // naively, one would use a reserve(distance(first, last)) here,
+            // but I'm not sure how this will work for various kinds of
+            // special iterators - callers are expected to reserve beforehand
+            // if the required size is known
+            insert(begin(), first, last);
+        }
+
+        /// construct new element at end of container (in-place) from args
+        template <typename... ARGS>
+        void emplace_back(ARGS&&... args) noexcept(noexcept(
+                    typename impl_detail::template emplace_backHelper<0>(
+                        m_storage).doIt(std::forward<ARGS>(args)...)))
+        {
+            static_assert(sizeof...(ARGS) == sizeof...(FIELDS),
+                    "Wrong number of arguments to emplace_back.");
+            typename impl_detail::template emplace_backHelper<0>(
+                    m_storage).doIt(std::forward<ARGS>(args)...);
+        }
+
+        /// construct new element at position pos (in-place) from args
+        template <typename... ARGS>
+        iterator emplace(const_iterator pos, ARGS&&... args) noexcept(
+                noexcept(typename impl_detail::template emplaceHelper<0>(
+                        m_storage, pos.m_proxy.m_index).doIt(
+                            std::forward<ARGS>(args)...)))
+        {
+            static_assert(sizeof...(ARGS) == sizeof...(FIELDS),
+                    "Wrong number of arguments to emplace_back.");
+            assert(&m_storage == (*pos).m_storage);
+            typename impl_detail::template emplaceHelper<0>(
+                    m_storage, pos.m_proxy.m_index).doIt(
+                        std::forward<ARGS>(args)...);
+            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
+        }
+
+        /// swap contents of two containers
+        void swap(self_type& other) noexcept(
+                noexcept(std::swap(m_storage, other.m_storage)))
+        { std::swap(m_storage, other.m_storage); }
 };
 
 namespace std {
     /// specialise std::swap
     template <template <typename...> class CONTAINER,
-	     template <typename> class SKIN,
-	     typename... FIELDS>
+             template <typename> class SKIN,
+             typename... FIELDS>
     void swap(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
-	    const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
-		noexcept(a.swap(b)))
+            const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+                noexcept(a.swap(b)))
     { a.swap(b); }
 }
 
@@ -1024,56 +1082,56 @@ namespace std {
 namespace SOAContainerImpl {
     /// helper class to compare SOAContainers (field by field)
     template <template <typename> class COMP, std::size_t N> class compare {
-	private:
-	    /// compare field N - 1 element by element
-	    template <typename T>
-	    static bool doit(const T& a, const T& b) noexcept(noexcept(
-			COMP<decltype(a.front().template get<N - 1>())>()(
-				a.front().template get<N - 1>(),
-				b.front().template get<N - 1>())))
-	    {
-		auto last = std::min(a.size(), b.size());
-		for (auto it = a.template cbegin<N - 1>(),
-			jt = a.template cbegin<N - 1>() + last,
-			kt = b.template cbegin<N - 1>();
-			jt != it; ++it, ++kt) {
-		    if (!COMP<decltype(*it)>()(*it, *kt)) return false;
-		}
-		return true;
-	    }
-	public:
-	    /// trigger comparison of fields 0, ..., N - 1
-	    template <typename T>
-	    bool operator()(const T& a, const T& b) const noexcept(noexcept(
-			compare<COMP, N - 1>()(a, b)) && noexcept(doit(a, b)))
-	    { return compare<COMP, N - 1>()(a, b) && doit(a, b); }
+        private:
+            /// compare field N - 1 element by element
+            template <typename T>
+            static bool doit(const T& a, const T& b) noexcept(noexcept(
+                        COMP<decltype(a.front().template get<N - 1>())>()(
+                                a.front().template get<N - 1>(),
+                                b.front().template get<N - 1>())))
+            {
+                auto last = std::min(a.size(), b.size());
+                for (auto it = a.template cbegin<N - 1>(),
+                        jt = a.template cbegin<N - 1>() + last,
+                        kt = b.template cbegin<N - 1>();
+                        jt != it; ++it, ++kt) {
+                    if (!COMP<decltype(*it)>()(*it, *kt)) return false;
+                }
+                return true;
+            }
+        public:
+            /// trigger comparison of fields 0, ..., N - 1
+            template <typename T>
+            bool operator()(const T& a, const T& b) const noexcept(noexcept(
+                        compare<COMP, N - 1>()(a, b)) && noexcept(doit(a, b)))
+            { return compare<COMP, N - 1>()(a, b) && doit(a, b); }
     };
 
     /// helper class to compare SOAContainers, specialised N = 1
     template <template <typename> class COMP> class compare<COMP, 1> {
-	private:
-	    /// compare field 0 element by element
-	    template <typename T>
-	    static bool doit(const T& a, const T& b) noexcept(noexcept(
-			COMP<decltype(a.front().template get<0>())>()(
-				a.front().template get<0>(),
-				b.front().template get<0>())))
-	    {
-		auto last = std::min(a.size(), b.size());
-		for (auto it = a.template cbegin<0>(),
-			jt = a.template cbegin<0>() + last,
-			kt = b.template cbegin<0>();
-			jt != it; ++it, ++kt) {
-		    if (!COMP<decltype(*it)>()(*it, *kt)) return false;
-		}
-		return true;
-	    }
-	public:
-	    /// trigger comparison of field 0
-	    template <typename T>
-	    bool operator()(const T& a, const T& b) const
-	        noexcept(noexcept(doit(a, b)))
-	    { return doit(a, b); }
+        private:
+            /// compare field 0 element by element
+            template <typename T>
+            static bool doit(const T& a, const T& b) noexcept(noexcept(
+                        COMP<decltype(a.front().template get<0>())>()(
+                                a.front().template get<0>(),
+                                b.front().template get<0>())))
+            {
+                auto last = std::min(a.size(), b.size());
+                for (auto it = a.template cbegin<0>(),
+                        jt = a.template cbegin<0>() + last,
+                        kt = b.template cbegin<0>();
+                        jt != it; ++it, ++kt) {
+                    if (!COMP<decltype(*it)>()(*it, *kt)) return false;
+                }
+                return true;
+            }
+        public:
+            /// trigger comparison of field 0
+            template <typename T>
+            bool operator()(const T& a, const T& b) const
+                noexcept(noexcept(doit(a, b)))
+            { return doit(a, b); }
     };
 }
 
@@ -1081,87 +1139,72 @@ namespace SOAContainerImpl {
 template < template <typename...> class CONTAINER,
     template <typename> class SKIN, typename... FIELDS>
 bool operator==(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
-	const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
-	    noexcept(a.size()) && noexcept(
-		SOAContainerImpl::compare<std::equal_to,
-		SOAContainer<CONTAINER, SKIN, FIELDS...
-		>::fields_typelist::size()>()(a, b)))
+        const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+            noexcept(a.size()) && noexcept(
+                SOAContainerImpl::compare<std::equal_to,
+                SOAContainer<CONTAINER, SKIN, FIELDS...
+                >::fields_typelist::size()>()(a, b)))
 {
     if (a.size() != b.size()) return false;
     // compare one field at a time
     return SOAContainerImpl::compare<std::equal_to,
-	   SOAContainer<CONTAINER, SKIN, FIELDS...
-	       >::fields_typelist::size()>()(a, b);
+           SOAContainer<CONTAINER, SKIN, FIELDS...
+               >::fields_typelist::size()>()(a, b);
 }
 
 /// compare two SOAContainers for inequality
 template < template <typename...> class CONTAINER,
     template <typename> class SKIN, typename... FIELDS>
 bool operator!=(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
-	const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
-	    noexcept(a.size()) && noexcept(
-		SOAContainerImpl::compare<std::not_equal_to,
-		SOAContainer<CONTAINER, SKIN, FIELDS...
-		>::fields_typelist::size()>()(a, b)))
+        const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+            noexcept(a.size()) && noexcept(
+                SOAContainerImpl::compare<std::not_equal_to,
+                SOAContainer<CONTAINER, SKIN, FIELDS...
+                >::fields_typelist::size()>()(a, b)))
 {
     if (a.size() != b.size()) return true;
     // compare one field at a time
     return SOAContainerImpl::compare<std::not_equal_to,
-	   SOAContainer<CONTAINER, SKIN, FIELDS...
-	       >::fields_typelist::size()>()(a, b);
+           SOAContainer<CONTAINER, SKIN, FIELDS...
+               >::fields_typelist::size()>()(a, b);
 }
 
 /// compare two SOAContainers lexicographically using <
 template < template <typename...> class CONTAINER,
     template <typename> class SKIN, typename... FIELDS>
 bool operator<(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
-	const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
-	    noexcept(std::lexicographical_compare(a.cbegin(), a.cend(),
-		    b.cbegin(), b.cend(),
-		    std::less<decltype(a.front())>())))
+        const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+            noexcept(std::lexicographical_compare(a.cbegin(), a.cend(),
+                    b.cbegin(), b.cend(),
+                    std::less<decltype(a.front())>())))
 {
     return std::lexicographical_compare(a.cbegin(), a.cend(),
-	    b.cbegin(), b.cend(), std::less<decltype(a.front())>());
-}
-
-/// compare two SOAContainers lexicographically using <=
-template < template <typename...> class CONTAINER,
-    template <typename> class SKIN, typename... FIELDS>
-bool operator<=(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
-	const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
-	    noexcept(std::lexicographical_compare(a.cbegin(), a.cend(),
-		    b.cbegin(), b.cend(),
-		    std::less_equal<decltype(a.front())>())))
-{
-    return std::lexicographical_compare(a.cbegin(), a.cend(),
-	    b.cbegin(), b.cend(), std::less_equal<decltype(a.front())>());
+            b.cbegin(), b.cend(), std::less<decltype(a.front())>());
 }
 
 /// compare two SOAContainers lexicographically using >
 template < template <typename...> class CONTAINER,
     template <typename> class SKIN, typename... FIELDS>
 bool operator>(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
-	const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
-	    noexcept(std::lexicographical_compare(a.cbegin(), a.cend(),
-		    b.cbegin(), b.cend(),
-		    std::greater<decltype(a.front())>())))
-{
-    return std::lexicographical_compare(a.cbegin(), a.cend(),
-	    b.cbegin(), b.cend(), std::greater<decltype(a.front())>());
-}
+        const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+            noexcept(b < a))
+{ return b < a; }
+
+/// compare two SOAContainers lexicographically using <=
+template < template <typename...> class CONTAINER,
+    template <typename> class SKIN, typename... FIELDS>
+bool operator<=(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
+        const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+            noexcept(!(a > b)))
+{ return !(a > b); }
 
 /// compare two SOAContainers lexicographically using >=
 template < template <typename...> class CONTAINER,
     template <typename> class SKIN, typename... FIELDS>
 bool operator>=(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
-	const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
-	    noexcept(std::lexicographical_compare(a.cbegin(), a.cend(),
-		    b.cbegin(), b.cend(), std::greater_equal<
-		    decltype(a.front())>())))
-{
-    return std::lexicographical_compare(a.cbegin(), a.cend(),
-	    b.cbegin(), b.cend(), std::greater_equal<decltype(a.front())>());
-}
+        const SOAContainer<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+            noexcept(!(a < b)))
+{ return !(a < b); }
 
 #endif // SOACONTAINER_H
 
