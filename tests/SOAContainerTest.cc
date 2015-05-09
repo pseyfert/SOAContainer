@@ -226,15 +226,6 @@ static void test()
                 [] (decltype(c)::value_type a,
                     decltype(c)::value_type b)
                 { return std::get<1>(a) < std::get<1>(b); }));
-        for (unsigned i = 0; i < temp.size(); ++i) {
-            auto tmp = temp[i];
-            std::printf("%2d temp (%f, %2d, %2d) ", i,
-                    std::get<0>(tmp), std::get<1>(tmp), std::get<2>(tmp));
-            tmp = c[i];
-            std::printf("c (%f, %2d, %2d)\n",
-                    std::get<0>(tmp), std::get<1>(tmp), std::get<2>(tmp));
-        }
-        std::printf("\n");
         std::sort(c.begin(), c.end(),
                 [] (decltype(c)::value_type a,
                     decltype(c)::value_type b)
@@ -250,15 +241,6 @@ static void test()
                 [] (decltype(temp.front()) a, decltype(temp.front()) b)
                 { return std::get<1>(a) > std::get<1>(b); }));
         do_test(c.size() == temp.size());
-        for (unsigned i = 0; i < temp.size(); ++i) {
-            auto tmp = temp[i];
-            std::printf("%2d temp (%f, %2d, %2d) ", i,
-                    std::get<0>(tmp), std::get<1>(tmp), std::get<2>(tmp));
-            tmp = c[i];
-            std::printf("c (%f, %2d, %2d)\n",
-                    std::get<0>(tmp), std::get<1>(tmp), std::get<2>(tmp));
-        }
-        std::printf("\n");
         do_test(temp.size() == std::inner_product(
                     c.begin(), c.end(), temp.begin(), size_type(0),
                     [] (size_type a, size_type b) { return a + b; },

@@ -245,11 +245,13 @@ class SOAObjectProxy {
 	{ return std::get<MEMBERNO>(*m_storage)[m_index]; }
 	/// access to member by "member tag"
 	template <typename MEMBER>
-        auto get() noexcept -> decltype(std::get<SOATypelist::find<
-		fields_typelist, MEMBER>::index>(*m_storage)[m_index])
+	auto get() noexcept -> decltype(std::get<
+		PARENTCONTAINER::template memberno<MEMBER>()>(
+		    *m_storage)[m_index])
 	{
-	    return std::get<SOATypelist::find<fields_typelist,
-	        MEMBER>::index>(*m_storage)[m_index];
+	    return std::get<
+		PARENTCONTAINER::template memberno<MEMBER>()>(
+			*m_storage)[m_index];
 	}
 	/// access to member by number (read-only)
 	template <size_type MEMBERNO>
@@ -257,11 +259,13 @@ class SOAObjectProxy {
 	{ return std::get<MEMBERNO>(*m_storage)[m_index]; }
 	/// access to member by "member tag" (read-only)
 	template <typename MEMBER>
-	auto get() const noexcept -> decltype(std::get<SOATypelist::find<
-		    fields_typelist, MEMBER>::index>(*m_storage)[m_index])
+	auto get() const noexcept -> decltype(std::get<
+		PARENTCONTAINER::template memberno<MEMBER>()>(
+		    *m_storage)[m_index])
 	{
-	    return std::get<SOATypelist::find<fields_typelist,
-	        MEMBER>::index>(*m_storage)[m_index];
+	    return std::get<
+		PARENTCONTAINER::template memberno<MEMBER>()>(
+			*m_storage)[m_index];
 	}
 
 	/// swap the contents of two SOAObjectProxy instances

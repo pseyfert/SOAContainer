@@ -269,6 +269,11 @@ class SOAContainer {
         /// typedef holding a typelist with the given fields
         typedef SOATypelist::typelist<FIELDS...> fields_typelist;
 
+	/// convenience function to return member number given member tag type
+	template <typename MEMBER>
+	static constexpr size_type memberno() noexcept
+	{ return SOATypelist::find<fields_typelist, MEMBER>::index; }
+
     private:
         /// type of the storage backend
         typedef typename SOATypelist::typelist_to_tuple_of_containers<
@@ -709,10 +714,8 @@ class SOAContainer {
         /// get begin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto begin() noexcept -> decltype(
-                std::get<SOATypelist::find<fields_typelist,
-                MEMBER>::index>(m_storage).begin())
-        { return std::get<SOATypelist::find<fields_typelist,
-            MEMBER>::index>(m_storage).begin(); }
+		std::get<memberno<MEMBER>()>(m_storage).begin())
+	{ return std::get<memberno<MEMBER>()>(m_storage).begin(); }
 
         /// get begin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -723,10 +726,8 @@ class SOAContainer {
         /// get begin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto begin() const noexcept -> decltype(
-                std::get<SOATypelist::find<fields_typelist,
-                MEMBER>::index>(m_storage).begin())
-        { return std::get<SOATypelist::find<fields_typelist,
-            MEMBER>::index>(m_storage).begin(); }
+		std::get<memberno<MEMBER>()>(m_storage).begin())
+	{ return std::get<memberno<MEMBER>()>(m_storage).begin(); }
 
         /// get begin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -737,10 +738,8 @@ class SOAContainer {
         /// get begin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto cbegin() const noexcept -> decltype(
-                std::get<SOATypelist::find<fields_typelist,
-                MEMBER>::index>(m_storage).cbegin())
-        { return std::get<SOATypelist::find<fields_typelist,
-            MEMBER>::index>(m_storage).cbegin(); }
+                std::get<memberno<MEMBER>()>(m_storage).cbegin())
+        { return std::get<memberno<MEMBER>()>(m_storage).cbegin(); }
 
         /// get end iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -751,10 +750,8 @@ class SOAContainer {
         /// get end iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto end() noexcept -> decltype(
-                std::get<SOATypelist::find<fields_typelist,
-                MEMBER>::index>(m_storage).end())
-        { return std::get<SOATypelist::find<fields_typelist,
-            MEMBER>::index>(m_storage).end(); }
+		std::get<memberno<MEMBER>()>(m_storage).end())
+	{ return std::get<memberno<MEMBER>()>(m_storage).end(); }
 
         /// get end iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -765,10 +762,8 @@ class SOAContainer {
         /// get end iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto end() const noexcept -> decltype(
-                std::get<SOATypelist::find<fields_typelist,
-                MEMBER>::index>(m_storage).end())
-        { return std::get<SOATypelist::find<fields_typelist,
-            MEMBER>::index>(m_storage).end(); }
+		std::get<memberno<MEMBER>()>(m_storage).end())
+	{ return std::get<memberno<MEMBER>()>(m_storage).end(); }
 
         /// get cend iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -779,10 +774,8 @@ class SOAContainer {
         /// get cend iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto cend() const noexcept -> decltype(
-                std::get<SOATypelist::find<fields_typelist,
-                MEMBER>::index>(m_storage).cend())
-        { return std::get<SOATypelist::find<fields_typelist,
-            MEMBER>::index>(m_storage).cend(); }
+		std::get<memberno<MEMBER>()>(m_storage).cend())
+	{ return std::get<memberno<MEMBER>()>(m_storage).cend(); }
 
         /// iterator pointing to first element in reverse order
         reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
@@ -809,10 +802,8 @@ class SOAContainer {
         /// get rbegin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto rbegin() noexcept -> decltype(
-                std::get<SOATypelist::find<fields_typelist,
-                MEMBER>::index>(m_storage).rbegin())
-        { return std::get<SOATypelist::find<fields_typelist,
-            MEMBER>::index>(m_storage).rbegin(); }
+		std::get<memberno<MEMBER>()>(m_storage).rbegin())
+	{ return std::get<memberno<MEMBER>()>(m_storage).rbegin(); }
 
         /// get rbegin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -823,10 +814,8 @@ class SOAContainer {
         /// get rbegin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto rbegin() const noexcept -> decltype(
-                std::get<SOATypelist::find<fields_typelist,
-                MEMBER>::index>(m_storage).rbegin())
-        { return std::get<SOATypelist::find<fields_typelist,
-            MEMBER>::index>(m_storage).rbegin(); }
+		std::get<memberno<MEMBER>()>(m_storage).rbegin())
+	{ return std::get<memberno<MEMBER>()>(m_storage).rbegin(); }
 
         /// get rbegin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -837,10 +826,8 @@ class SOAContainer {
         /// get rbegin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto crbegin() const noexcept -> decltype(
-                std::get<SOATypelist::find<fields_typelist,
-                MEMBER>::index>(m_storage).crbegin())
-        { return std::get<SOATypelist::find<fields_typelist,
-            MEMBER>::index>(m_storage).crbegin(); }
+		std::get<memberno<MEMBER>()>(m_storage).crbegin())
+	{ return std::get<memberno<MEMBER>()>(m_storage).crbegin(); }
 
         /// get rend iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -851,10 +838,8 @@ class SOAContainer {
         /// get rend iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto rend() noexcept -> decltype(
-                std::get<SOATypelist::find<fields_typelist,
-                MEMBER>::index>(m_storage).rend())
-        { return std::get<SOATypelist::find<fields_typelist,
-            MEMBER>::index>(m_storage).rend(); }
+		std::get<memberno<MEMBER>()>(m_storage).rend())
+	{ return std::get<memberno<MEMBER>()>(m_storage).rend(); }
 
         /// get rend iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -865,10 +850,8 @@ class SOAContainer {
         /// get rend iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto rend() const noexcept -> decltype(
-                std::get<SOATypelist::find<fields_typelist,
-                MEMBER>::index>(m_storage).rend())
-        { return std::get<SOATypelist::find<fields_typelist,
-            MEMBER>::index>(m_storage).rend(); }
+		std::get<memberno<MEMBER>()>(m_storage).rend())
+	{ return std::get<memberno<MEMBER>()>(m_storage).rend(); }
 
         /// get crend iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -879,10 +862,8 @@ class SOAContainer {
         /// get crend iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto crend() const noexcept -> decltype(
-                std::get<SOATypelist::find<fields_typelist,
-                MEMBER>::index>(m_storage).crend())
-        { return std::get<SOATypelist::find<fields_typelist,
-            MEMBER>::index>(m_storage).crend(); }
+		std::get<memberno<MEMBER>()>(m_storage).crend())
+	{ return std::get<memberno<MEMBER>()>(m_storage).crend(); }
 
         /// resize container (use default-constructed values if container grows)
         void resize(size_type sz) noexcept(noexcept(
