@@ -223,22 +223,24 @@ static void test()
 
         // test sort (and swap)
         do_test(std::is_sorted(c.begin(), c.end(),
-                [] (decltype(c)::value_type a,
-                    decltype(c)::value_type b)
-                { return std::get<1>(a) < std::get<1>(b); }));
+                [] (decltype(c)::value_const_reference a,
+                    decltype(c)::value_const_reference b)
+                { return a.get<1>() < b.get<1>(); }));
         std::sort(c.begin(), c.end(),
-                [] (decltype(c)::value_type a,
-                    decltype(c)::value_type b)
-                { return std::get<1>(a) > std::get<1>(b); });
+                [] (decltype(c)::value_const_reference a,
+                    decltype(c)::value_const_reference b)
+                { return a.get<1>() > b.get<1>(); });
         std::sort(temp.begin(), temp.end(),
-                [] (decltype(temp.front()) a, decltype(temp.front()) b)
+                [] (const decltype(temp)::value_type& a,
+		    const decltype(temp)::value_type& b)
                 { return std::get<1>(a) > std::get<1>(b); });
         do_test(std::is_sorted(c.begin(), c.end(),
-                [] (decltype(c)::value_type a,
-                    decltype(c)::value_type b)
-                { return std::get<1>(a) > std::get<1>(b); }));
+                [] (decltype(c)::value_const_reference a,
+                    decltype(c)::value_const_reference b)
+                { return a.get<1>() > b.get<1>(); }));
         do_test(std::is_sorted(temp.begin(), temp.end(),
-                [] (decltype(temp.front()) a, decltype(temp.front()) b)
+                [] (const decltype(temp)::value_type& a,
+		    const decltype(temp)::value_type& b)
                 { return std::get<1>(a) > std::get<1>(b); }));
         do_test(c.size() == temp.size());
         do_test(temp.size() == std::inner_product(

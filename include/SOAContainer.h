@@ -14,6 +14,7 @@
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
 #include "SOAObjectProxy.h"
+#include "SOADressedTuple.h"
 #include "SOAIterator.h"
 #include "SOAUtils.h"
 
@@ -198,27 +199,35 @@ class NullSkin : public NAKEDPROXY
  * considerations), the class tries to follow the example of the interface of
  * std::vector as closely as possible.
  *
- * There is one point worthy of note: Only the proxy objects are dressed up
- * with a SKIN. This has an impact on routines like std::sort which internally
- * store single elements (of type value_type) while moving them around. Since
- * value_type is internally an instantiation of std::tuple, the raw std::tuple
- * interface applies, not the SKINned one. To give an example, consider the
- * case where a SOAPoints container is to be sorted by y:
+ * When using the SOAContainer class, one must distinguish between elements
+ * (and references to elements) which are stored outside the container and
+ * those that are stored inside the container:
+ *
+ * - When stored inside the container, the element itself does not exist as
+ *   such because of the SOA storage constraint; (const) references and
+ *   pointers are implemented with instances of SKINned SOAObjectProxy and
+ *   SOA(Const)Ptr. On the outside, these classes look and feel like
+ *   references and pointers, but set up memory access to members/fields such
+ *   that the SOA memory layout is preserved.
+ * - When a single element is stored outside of the container (a temporary),
+ *   the SOA layout doesn't make sense (it's just a single element, after
+ *   all), and it is stored as a SKINned std::tuple with the right members.
+ *   The value_type, value_reference and const_value_reference typedefs name
+ *   the type of these objects.
+ *
+ * This distinction becomes important when using or implementing generic
+ * algorithms (like types in the functor passed to std::sort) which sometimes
+ * create a temporary holding a single element outside the container. For
+ * illustration, here's how one would sort by increasing y in the SOAPoint
+ * example from above:
  *
  * @code
- * SOAPoints& points = get_points_from_somewhere();
- * std::sort(points.begin(), points.end(),
- *     [] (std::tuple<float, float> a, std::tuple<float, float> b) {
- *         return std::get<1>(a) < std::get<1>(b); });
+ * SOAPoints& c = get_points_from_elsewhere();
+ * std::sort(c.begin(), c.end(),
+ *     [] (decltype(c)::value_const_reference a,
+ *         decltype(c)::value_const_reference b)
+ *     { return a.y() < b.y(); });
  * @endcode
- *
- * In the example above, it is neccessary to force conversion to the tuple
- * type, since std::sort may internally compare to a single point that is not
- * stored inside the points container, and must therefore be of type
- * value_type (i.e. a std::tuple<...>). Hence, in the comparison functor (the
- * lambda in the third argument), the use of the convenient SKINned proxies is
- * impossible, and the raw std::tuple interface, i.e. std::get<FIELDNO>(tuple)
- * needs to be used.
  */
 template < template <typename...> class CONTAINER,
     template <typename> class SKIN, typename... FIELDS>
@@ -283,15 +292,26 @@ class SOAContainer {
         /// storage backend
         SOAStorage m_storage;
 
-        /// tuple type used as values
+        /// (naked) tuple type used as values
         typedef typename SOATypelist::typelist_to_tuple<
-            fields_typelist>::type value_tuple_type;
-        /// tuple type used as reference
+            fields_typelist>::type naked_value_tuple_type;
+        /// (naked) tuple type used as reference
         typedef typename SOATypelist::typelist_to_reftuple<
-            fields_typelist>::type reference_tuple_type;
-        /// tuple type used as const reference
+            fields_typelist>::type naked_reference_tuple_type;
+        /// (naked) tuple type used as const reference
         typedef typename SOATypelist::typelist_to_creftuple<
-            fields_typelist>::type const_reference_tuple_type;
+            fields_typelist>::type naked_const_reference_tuple_type;
+
+    public:
+        /// (notion of) type of the contained objects
+	typedef SKIN<DressedTuple<naked_value_tuple_type, self_type> >
+	    value_type;
+	/// (notion of) reference to value_type (outside container)
+	typedef SKIN<DressedTuple<naked_reference_tuple_type, self_type> >
+	    value_reference;
+	/// (notion of) const reference to value_type (outside container)
+	typedef SKIN<DressedTuple<naked_const_reference_tuple_type,
+		self_type> > value_const_reference;
 
     public:
         /// naked proxy type (to be given a "skin" later)
@@ -305,8 +325,6 @@ class SOAContainer {
         friend pointer;
         /// iterator type
         typedef pointer iterator;
-        /// (notion of) type of the contained objects
-        typedef typename proxy::value_type value_type;
         /// reference to contained objects
         typedef proxy reference;
         /// reference to contained objects

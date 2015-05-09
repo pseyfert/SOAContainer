@@ -45,12 +45,11 @@ class SOAObjectProxy {
 	/// type to hold the size of a container
 	typedef typename parent_type::size_type size_type;
 	/// type to which SOAObjectProxy converts and can be assigned from
-	typedef typename parent_type::value_tuple_type value_type;
+	typedef typename parent_type::value_type value_type;
 	/// typedef for tuple of references to members
-	typedef typename parent_type::reference_tuple_type reference;
+	typedef typename parent_type::value_reference reference;
 	/// typedef for tuple of const references to members
-	typedef typename parent_type::const_reference_tuple_type
-	    const_reference;
+	typedef typename parent_type::value_const_reference const_reference;
 	/// typedef to identify the type of a pointer
 	typedef SOAIterator<typename parent_type::proxy> pointer;
 	/// typedef to identify the type of a const pointer
