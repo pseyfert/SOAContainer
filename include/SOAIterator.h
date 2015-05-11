@@ -84,10 +84,10 @@ class SOAConstIterator
 	const_reference operator*() const noexcept
 	{ return m_proxy; }
 	/// deference pointer (p->blah)
-	const reference* operator->() noexcept
+	const_reference* operator->() noexcept
 	{ return std::addressof(m_proxy); }
 	/// deference pointer (p->blah)
-	const const_reference* operator->() const noexcept
+	const_reference* operator->() const noexcept
 	{ return std::addressof(m_proxy); }
 
 	/// (pre-)increment
@@ -291,10 +291,10 @@ class SOAIterator : public SOAConstIterator<PROXY>
 	const_reference operator*() const noexcept
 	{ return SOAConstIterator<proxy>::m_proxy; }
 	/// deference pointer (p->blah)
-	const reference* operator->() noexcept
+	reference* operator->() noexcept
 	{ return std::addressof(SOAConstIterator<proxy>::m_proxy); }
 	/// deference pointer (p->blah)
-	const const_reference* operator->() const noexcept
+	const_reference* operator->() const noexcept
 	{ return std::addressof(SOAConstIterator<proxy>::m_proxy); }
 
 	/// (pre-)increment
