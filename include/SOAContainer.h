@@ -1038,8 +1038,8 @@ class SOAContainer {
                     typename impl_detail::template emplace_backHelper<0>(
                         m_storage).doIt(std::forward<ARGS>(args)...)))
         {
-            static_assert(sizeof...(ARGS) == sizeof...(FIELDS),
-                    "Wrong number of arguments to emplace_back.");
+            static_assert(std::is_constructible<value_type, ARGS...>::value,
+                    "Wrong arguments to emplace_back.");
             typename impl_detail::template emplace_backHelper<0>(
                     m_storage).doIt(std::forward<ARGS>(args)...);
         }
@@ -1051,8 +1051,8 @@ class SOAContainer {
                         m_storage, pos.m_proxy.m_index).doIt(
                             std::forward<ARGS>(args)...)))
         {
-            static_assert(sizeof...(ARGS) == sizeof...(FIELDS),
-                    "Wrong number of arguments to emplace_back.");
+            static_assert(std::is_constructible<value_type, ARGS...>::value,
+                    "Wrong arguments to emplace.");
             assert(&m_storage == (*pos).m_storage);
             typename impl_detail::template emplaceHelper<0>(
                     m_storage, pos.m_proxy.m_index).doIt(
