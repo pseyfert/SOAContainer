@@ -315,6 +315,10 @@ static void test()
         c.resize(64, std::make_tuple(3.14, 78, 17));
         do_test(64 == c.size());
         do_test(c.back() == std::make_tuple(3.14, 78, 17));
+	c.emplace_back(std::make_tuple(42., 42, 42));
+        do_test(c.back() == std::make_tuple(42., 42, 42));
+	c.emplace(c.begin(), std::make_tuple(17., 42, 42));
+        do_test(c.front() == std::make_tuple(17., 42, 42));
         c.resize(0);
         do_test(c.empty());
         c.resize(32);

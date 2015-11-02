@@ -618,6 +618,30 @@ class SOAContainer {
                             std::forward<HEAD>(head));
                 }
             };
+
+            /// helper for emplace_back
+            struct emplaceBackHelper2 {
+                self_type* m_obj;
+                emplaceBackHelper2(self_type* obj) : m_obj(obj) {}
+
+                template <typename... ARGS>
+                void operator()(ARGS&&... args) const noexcept(noexcept(
+                    m_obj->emplace_back(std::forward<ARGS>(args)...)))
+                { m_obj->emplace_back(std::forward<ARGS>(args)...); }
+            };
+
+            // helper for emplace
+            struct emplaceHelper2 {
+                self_type* m_obj;
+                const_iterator m_it;
+                emplaceHelper2(self_type* obj, const_iterator it) :
+                    m_obj(obj), m_it(it) {}
+
+                template <typename... ARGS>
+                iterator operator()(ARGS&&... args) const noexcept(noexcept(
+                    m_obj->emplace(m_it, std::forward<ARGS>(args)...)))
+                { return m_obj->emplace(m_it, std::forward<ARGS>(args)...); }
+            };
         }; // end of struct impl_detail
 
     public:
@@ -1044,6 +1068,16 @@ class SOAContainer {
                     m_storage).doIt(std::forward<ARGS>(args)...);
         }
 
+        /// construct a new element at the end of container from value_type
+        void emplace_back(naked_value_tuple_type&& val) noexcept(noexcept(
+            SOAUtils::call(typename impl_detail::emplaceBackHelper2(nullptr),
+                std::forward<naked_value_tuple_type>(val))))
+        {
+            return SOAUtils::call(
+                typename impl_detail::emplaceBackHelper2(this),
+                std::forward<naked_value_tuple_type>(val));
+        }
+
         /// construct new element at position pos (in-place) from args
         template <typename... ARGS>
         iterator emplace(const_iterator pos, ARGS&&... args) noexcept(
@@ -1060,6 +1094,19 @@ class SOAContainer {
             return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
         }
 
+        /// construct a new element at position pos from value_type
+        iterator emplace(const_iterator pos,
+            naked_value_tuple_type&& val) noexcept(noexcept(
+                SOAUtils::call(typename impl_detail::emplaceHelper2(
+                nullptr, pos), std::forward<naked_value_tuple_type>(val))))
+        {
+            return SOAUtils::call(
+                typename impl_detail::emplaceHelper2(this, pos),
+                std::forward<naked_value_tuple_type>(val));
+        }
+
+        /// construct new element at position pos (in-place) from args
+        template <typename... ARGS>
         /// swap contents of two containers
         void swap(self_type& other) noexcept(
                 noexcept(std::swap(m_storage, other.m_storage)))

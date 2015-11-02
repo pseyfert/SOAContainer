@@ -56,6 +56,66 @@ namespace SOAUtils {
 	{ }
     };
 
+    /// little tool to call a callable using the arguments given in a tuple
+    template <typename F, typename T, size_t sz = std::tuple_size<T>::value>
+    struct caller {
+        const F& m_fn; ///< callable
+        /// constructor
+        caller(const F& fn) : m_fn(fn) { }
+
+        /// call operator (unpacks tuple one by one, perfect forwarding)
+        template <typename... ARGS>
+        auto operator()(T&& tuple, ARGS&&... args) -> decltype(
+            caller<F, T, sz - 1>(m_fn)(std::forward<T>(tuple),
+                std::move(std::get<sz - 1>(tuple)), std::forward<ARGS>(args)...))
+        {
+            return caller<F, T, sz - 1>(m_fn)(std::forward<T>(tuple),
+                std::move(std::get<sz - 1>(tuple)), std::forward<ARGS>(args)...);
+        }
+
+        /// call operator (unpacks tuple one by one)
+        template <typename... ARGS>
+        auto operator()(const T& tuple, const ARGS&... args) -> decltype(
+            caller<F, T, sz - 1>(m_fn)(tuple,
+                std::get<sz - 1>(tuple), args...))
+        {
+            return caller<F, T, sz - 1>(m_fn)(tuple,
+                std::get<sz - 1>(tuple), args...);
+        }
+    };
+
+    /// little tool to call using unpacked tuple arguments (specialisation)
+    template <typename F, typename T>
+    struct caller<F, T, size_t(0)> {
+        const F& m_fn; ///< callable
+        /// constructor
+        caller(const F& fn) : m_fn(fn) { }
+
+        /// call operator (unpacks tuple one by one, perfect forwarding)
+        template <typename... ARGS>
+        auto operator()(T&& /* tuple */, ARGS&&... args) -> decltype(
+            m_fn(std::forward<ARGS>(args)...))
+        { return m_fn(std::forward<ARGS>(args)...); }
+
+        /// call operator (unpacks tuple one by one)
+        template <typename... ARGS>
+        auto operator()(const T& /* tuple */,
+            const ARGS&... args) -> decltype(m_fn(args...))
+        { return m_fn(args...); }
+    };
+
+    /// little helper to call callable f with contents of t as arguments (perfect forwarding)
+    template<typename F, typename T>
+    auto call(const F& f, T&& t) -> decltype(
+        caller<F, typename std::decay<T>::type>(f)(std::forward<T>(t)))
+    { return caller<F, typename std::decay<T>::type>(f)(std::forward<T>(t)); }
+
+    /// little helper to call callable f with contents of t as arguments
+    template<typename F, typename T>
+    auto call(const F& f, const T& t) -> decltype(
+        caller<F, typename std::decay<T>::type>(f)(t))
+    { return caller<F, typename std::decay<T>::type>(f)(t); }
+
 #if 0
     // C++14 Compile-time integer sequences -- this can go once we use C++14...
     // #include <utility> // defines (in C++14) std::make_index_sequence and std::index_sequence
