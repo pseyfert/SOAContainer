@@ -1068,7 +1068,7 @@ class SOAContainer {
                     m_storage).doIt(std::forward<ARGS>(args)...);
         }
 
-        /// construct a new element at the end of container from value_type
+        /// construct a new element at the end of container from naked_value_tuple_type
         void emplace_back(naked_value_tuple_type&& val) noexcept(noexcept(
             SOAUtils::call(typename impl_detail::emplaceBackHelper2(nullptr),
                 std::forward<naked_value_tuple_type>(val))))
@@ -1076,6 +1076,18 @@ class SOAContainer {
             return SOAUtils::call(
                 typename impl_detail::emplaceBackHelper2(this),
                 std::forward<naked_value_tuple_type>(val));
+        }
+
+        /// construct a new element at the end of container from value_type
+        void emplace_back(value_type&& val) noexcept(noexcept(
+            SOAUtils::call(typename impl_detail::emplaceBackHelper2(nullptr),
+                std::forward<naked_value_tuple_type>(
+                    static_cast<naked_value_tuple_type>(val)))))
+        {
+            return SOAUtils::call(
+                typename impl_detail::emplaceBackHelper2(this),
+                std::forward<naked_value_tuple_type>(
+                    static_cast<naked_value_tuple_type>(val)));
         }
 
         /// construct new element at position pos (in-place) from args
@@ -1094,7 +1106,7 @@ class SOAContainer {
             return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
         }
 
-        /// construct a new element at position pos from value_type
+        /// construct a new element at position pos from naked_value_tuple_type
         iterator emplace(const_iterator pos,
             naked_value_tuple_type&& val) noexcept(noexcept(
                 SOAUtils::call(typename impl_detail::emplaceHelper2(
@@ -1103,6 +1115,19 @@ class SOAContainer {
             return SOAUtils::call(
                 typename impl_detail::emplaceHelper2(this, pos),
                 std::forward<naked_value_tuple_type>(val));
+        }
+
+        /// construct a new element at position pos from value_type
+        iterator emplace(const_iterator pos,
+            value_type&& val) noexcept(noexcept(
+                SOAUtils::call(typename impl_detail::emplaceHelper2(
+                nullptr, pos), std::forward<naked_value_tuple_type>(
+                    static_cast<naked_value_tuple_type>(val)))))
+        {
+            return SOAUtils::call(
+                typename impl_detail::emplaceHelper2(this, pos),
+                std::forward<naked_value_tuple_type>(
+                    static_cast<naked_value_tuple_type>(val)));
         }
 
         /// construct new element at position pos (in-place) from args
