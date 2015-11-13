@@ -10,6 +10,12 @@
 #include <tuple>
 #include <iterator>
 
+// forward decls
+template <typename PROXY>
+class SOAConstIterator;
+template<typename OS, typename T>
+OS& operator<<(OS&, const SOAConstIterator<T>&);
+
 /** @brief class mimicking a const pointer to pointee inidicated by PROXY
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
@@ -219,6 +225,17 @@ class SOAConstIterator
 	    return m_proxy.m_storage &&
 		m_proxy.m_index < std::get<0>(*m_proxy.m_storage).size();
 	}
+
+    protected:
+	/// give access to underlying storage pointer
+	auto storage() const noexcept -> decltype(&*m_proxy.m_storage)
+	{ return &*m_proxy.m_storage; }
+	/// give access to index into storage
+	auto index() const noexcept -> decltype(m_proxy.m_index)
+	{ return m_proxy.m_index; }
+	/// make operator<< friend to allow calling storage() and index()
+	template <typename OS, typename T>
+	friend OS& operator<<(OS&, const SOAConstIterator<T>&);
 };
 
 /** @brief class mimicking a pointer to pointee inidicated by PROXY
@@ -387,6 +404,14 @@ typename std::enable_if<
     SOAConstIterator<PROXY> >::type
     operator+(T dist, const SOAConstIterator<PROXY>& other) noexcept
 { return other + dist; }
+
+/// operator<< for supporting idioms like "std::cout << it" (mostly debugging)
+template<typename OS, typename T>
+OS& operator<<(OS& os, const SOAConstIterator<T>& it)
+{
+    os << "(" << it.storage() << ", " << it.index() << ")";
+    return os;
+}
 
 #endif // SOAITERATOR_H
 
