@@ -63,6 +63,9 @@ class SOAConstIterator
 		size_type index) noexcept : m_proxy(storage, index) { }
 
     public:
+	/// default constructor (nullptr equivalent)
+	SOAConstIterator() noexcept : SOAConstIterator(nullptr, 0) { }
+
 	/// copy constructor
 	SOAConstIterator(const self_type& other) noexcept :
 	    m_proxy(other.m_proxy) { }
@@ -269,6 +272,9 @@ class SOAIterator : public SOAConstIterator<PROXY>
 	    SOAConstIterator<proxy>(storage, index) { }
 
     public:
+	/// default constructor (nullptr equivalent)
+	SOAIterator() noexcept : SOAIterator(nullptr, 0) { }
+
 	/// copy constructor
 	SOAIterator(const self_type& other) noexcept :
 	    SOAConstIterator<proxy>(other) { }
