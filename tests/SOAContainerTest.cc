@@ -8,6 +8,7 @@
 
 #include <cstdio>
 #include <numeric>
+#include <array>
 
 #include "SOAContainer.h"
 
@@ -501,12 +502,56 @@ static void realistic_test_aos()
     for (unsigned i = 0; i < 512; ++i) updateHits_v(ahits, 300.f, -0.01f);
 }
 
+namespace stdarraytest_fields {
+    typedef std::array<unsigned, 16> Array;
+    typedef SOATypelist::wrap_type<Array> f_array;
+
+    template <typename NAKEDPROXY>
+    class ContainerSkin : public NAKEDPROXY {
+	public:
+	    typedef ContainerSkin<NAKEDPROXY> self_type;
+	    typedef stdarraytest_fields::Array Array;
+
+	    /// forward constructor to underlying type
+	    template <typename... ARGS>
+	    ContainerSkin(ARGS&&... args) : NAKEDPROXY(
+		    std::forward<ARGS>(args)...) { }
+
+	    /// forward (copy) assignment to underlying type
+	    template <typename ARG>
+	    self_type& operator=(const ARG& other)
+	    { NAKEDPROXY::operator=(other); return *this; }
+
+	    /// forward (move) assignment to underlying type
+	    template <typename ARG>
+	    self_type& operator=(ARG&& other)
+	    { NAKEDPROXY::operator=(std::move(other)); return *this; }
+
+	    /// stupid constructor from an (ignored) bool
+	    ContainerSkin(bool) : ContainerSkin(Array())
+	    { }
+    };
+
+    typedef SOAContainer<std::vector, ContainerSkin, f_array> SOAArray;
+
+    void test()
+    {
+	SOAArray a;
+	a.push_back(SOAArray::value_type(true));
+	a.emplace_back(SOAArray::value_type(true));
+	// this won't work since we currently have no way to "dress" an
+	// emplace_back with a skin (may be possible in the future)
+	//a.emplace_back(true);
+    }
+}
+
 /// main program of unit test
 int main()
 {
     test();
     realistic_test();
     realistic_test_aos();
+    stdarraytest_fields::test();
     std::printf("\n");
     if (0 == ntestsfail) std::printf("All tests passed.\n");
     else std::printf("Number of failed tests: %u\n", ntestsfail);
