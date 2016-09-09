@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <numeric>
 #include <array>
+#include <tuple>
 
 #include "SOAContainer.h"
 

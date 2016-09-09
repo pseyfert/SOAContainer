@@ -10,6 +10,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <algorithm>
+#include <functional>
 
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
