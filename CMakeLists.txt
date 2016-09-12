@@ -21,7 +21,7 @@ project(${META_PROJECT_NAME} CXX)
 file(GLOB headers include/*)
 
 add_executable(soa_container_test tests/SOAContainerTest.cc ${headers})
-add_executable(soa_container_example tests/SOAContainerExample.cc ${headers})
+add_executable(soa_points examples/Points.cc ${headers})
 
 # CMAKE 3
 #target_include_directories(soa_container_test PUBLIC include)

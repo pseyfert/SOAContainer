@@ -7,7 +7,7 @@
 #include "SOAContainer.h"
 
 
-namespace classic {
+namespace AOS {
 
 class Point {
     private:
@@ -27,12 +27,12 @@ std::ostream& operator<<(std::ostream& os, const Point& point) {
     return os << "[" << point.x() << ", " << point.y() << "]";
 }
 
-typedef std::vector<Point> AOSPoints;
+typedef std::vector<Point> Points;
 typedef Point& AOSPoint; 
 
 };
 
-namespace modern {
+namespace SOA {
 namespace PointFields {
     using namespace SOATypelist;
     // since we can have more than one member of the same type in our
@@ -40,6 +40,8 @@ namespace PointFields {
     // can tell them apart
     typedef struct : public wrap_type<float> { } x;
     typedef struct : public wrap_type<float> { } y;
+    // The previous line could be written:
+    //struct y : public wrap_type<float> {};
 };
 
 
@@ -79,9 +81,9 @@ typedef SOAContainer<
         std::vector, // underlying type for each field
         SOAPointProxy,    // skin to "dress" the tuple of fields with
         // one or more wrapped types which each tag a member/field
-        PointFields::x, PointFields::y> SOAPoints;
+        PointFields::x, PointFields::y> Points;
 // define the SOAPoint itself
-typedef typename SOAPoints::proxy Point;
+typedef typename Points::proxy Point;
 
 std::ostream& operator<<(std::ostream& os, const Point& point) {
     return os << "[" << point.x() << ", " << point.y() << "]";
@@ -91,9 +93,9 @@ std::ostream& operator<<(std::ostream& os, const Point& point) {
 int main() {
     using namespace std;
     {   
-        using namespace classic;
+        using namespace AOS;
         cout << "This is a normal array of structures" << endl;
-        AOSPoints list_of_points = {Point(1,2), Point(2,3), Point(3,4)};
+        Points list_of_points = {Point(1,2), Point(2,3), Point(3,4)};
 
         cout << list_of_points.at(0) << endl;
         cout << list_of_points.at(1) << endl;
@@ -103,15 +105,16 @@ int main() {
     }
 
     {   
-        using namespace modern;
+        using namespace SOA;
 
         cout << endl << "This is a SOA wrapper:" << endl;
 
-        SOAPoints list_of_points;
+        //Points list_of_points;
+        Points list_of_points = {std::tuple<float,float>(1,2), std::tuple<float,float>(2,3), std::tuple<float,float>(3,4)};
 
-        list_of_points.push_back(std::make_tuple(1.,2.));
-        list_of_points.push_back(std::make_tuple(2.,3.));
-        list_of_points.push_back(std::make_tuple(3.,4.));
+        //list_of_points.push_back(std::make_tuple(1.,2.));
+        //list_of_points.push_back(std::make_tuple(2.,3.));
+        //list_of_points.push_back({3.0f,4.0f});
 
         cout << list_of_points.at(0) << endl;
         cout << list_of_points.at(1) << endl;
