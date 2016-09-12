@@ -82,6 +82,10 @@ typedef SOAContainer<
         PointFields::x, PointFields::y> SOAPoints;
 // define the SOAPoint itself
 typedef typename SOAPoints::proxy Point;
+
+std::ostream& operator<<(std::ostream& os, const Point& point) {
+    return os << "[" << point.x() << ", " << point.y() << "]";
+}
 };
 
 int main() {
@@ -103,16 +107,15 @@ int main() {
 
         cout << endl << "This is a SOA wrapper:" << endl;
 
-        //SOAPoints list_of_points = {Point(1,2), Point(2,3), Point(3,4)};
-        //SOAPoints list_of_points = {{1,2}, {2, 3}, {3, 4}};
-
         SOAPoints list_of_points;
 
-        //list_of_points.push_back(Point(1,2));
-        //list_of_points.push_back(Point(1,2));
-        //cout << list_of_points.at(0) << endl;
-        //cout << list_of_points.at(1) << endl;
-        //cout << list_of_points.at(2) << endl;
+        list_of_points.push_back(std::make_tuple(1.,2.));
+        list_of_points.push_back(std::make_tuple(2.,3.));
+        list_of_points.push_back(std::make_tuple(3.,4.));
+
+        cout << list_of_points.at(0) << endl;
+        cout << list_of_points.at(1) << endl;
+        cout << list_of_points.at(2) << endl;
         
         cout << "we can access using list_of_points.at(1).x(): " << list_of_points.at(1).x() << endl;
 
