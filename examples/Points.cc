@@ -46,22 +46,12 @@ namespace PointFields {
 
 
 template <typename NAKEDPROXY>
-class SOAPointProxy : public NAKEDPROXY {
+class SOAPointProxy : public NullSkin<NAKEDPROXY> {
     public:
-        /// forward constructor to NAKEDPROXY's constructor
+        
         template <typename... ARGS>
-        SOAPointProxy(ARGS&&... args) :
-            NAKEDPROXY(std::forward<ARGS>(args)...) { }
-
-        /// assignment operator - forward to underlying proxy
-        template <typename ARG>
-        SOAPointProxy<NAKEDPROXY>& operator=(const ARG& arg)
-        { NAKEDPROXY::operator=(arg); return *this; }
-
-        /// move assignment operator - forward to underlying proxy
-        template <typename ARG>
-        SOAPointProxy<NAKEDPROXY>& operator=(ARG&& arg)
-        { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+        SOAPointProxy(ARGS&&... args)
+            : NullSkin<NAKEDPROXY>(std::forward<ARGS>(args)...) { }
 
         float x() const noexcept
         { return this-> template get<PointFields::x>(); }
@@ -95,7 +85,7 @@ int main() {
     {   
         using namespace AOS;
         cout << "This is a normal array of structures" << endl;
-        Points list_of_points = {Point(1,2), Point(2,3), Point(3,4)};
+        Points list_of_points = {Points::value_type(1,2), Point(2,3), Point(3,4)};
 
         cout << list_of_points.at(0) << endl;
         cout << list_of_points.at(1) << endl;
