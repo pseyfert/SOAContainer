@@ -1,11 +1,9 @@
-
 #include <iostream>
 #include <array>
 #include <vector>
 #include <tuple>
 
 #include "SOAContainer.h"
-
 
 namespace AOS {
 
@@ -100,7 +98,7 @@ int main() {
         cout << endl << "This is a SOA wrapper:" << endl;
 
         //Points list_of_points;
-        Points list_of_points = {std::tuple<float,float>(1,2), std::tuple<float,float>(2,3), std::tuple<float,float>(3,4)};
+        Points list_of_points = {Points::value_type(1,2), std::tuple<float,float>(2,3), std::tuple<float,float>(3,4)};
 
         //list_of_points.push_back(std::make_tuple(1.,2.));
         //list_of_points.push_back(std::make_tuple(2.,3.));
