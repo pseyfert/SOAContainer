@@ -307,23 +307,10 @@ namespace HitNamespace {
     }
 
     template <typename NAKEDPROXY>
-    class HitSkin : public NAKEDPROXY {
+    class HitSkin : public NullSkin<NAKEDPROXY> {
         public:
             template <typename... ARGS>
-            HitSkin(ARGS&&... args) : NAKEDPROXY(std::forward<ARGS>(args)...) { }
-
-            /// assignment operator - forward to underlying proxy
-            template <typename ARG>
-            HitSkin<NAKEDPROXY>& operator=(const ARG& arg) noexcept(noexcept(
-                    static_cast<NAKEDPROXY*>(nullptr)->operator=(arg)))
-            { NAKEDPROXY::operator=(arg); return *this; }
-
-            /// move assignment operator - forward to underlying proxy
-            template <typename ARG>
-            HitSkin<NAKEDPROXY>& operator=(ARG&& arg) noexcept(noexcept(
-                    static_cast<NAKEDPROXY*>(nullptr)->operator=(
-                        std::move(arg))))
-            { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+            HitSkin(ARGS&&... args) : NullSkin<NAKEDPROXY>(std::forward<ARGS>(args)...) { }
 
             auto xAtYEq0() const noexcept -> decltype(this->template get<Fields::xAtYEq0>())
             { return this->template get<Fields::xAtYEq0>(); }
@@ -471,25 +458,16 @@ namespace stdarraytest_fields {
     typedef SOATypelist::wrap_type<Array> f_array;
 
     template <typename NAKEDPROXY>
-    class ContainerSkin : public NAKEDPROXY {
+    class ContainerSkin : public NullSkin<NAKEDPROXY> {
 	public:
 	    typedef ContainerSkin<NAKEDPROXY> self_type;
 	    typedef stdarraytest_fields::Array Array;
 
 	    /// forward constructor to underlying type
 	    template <typename... ARGS>
-	    ContainerSkin(ARGS&&... args) : NAKEDPROXY(
+	    ContainerSkin(ARGS&&... args) : NullSkin<NAKEDPROXY>(
 		    std::forward<ARGS>(args)...) { }
 
-	    /// forward (copy) assignment to underlying type
-	    template <typename ARG>
-	    self_type& operator=(const ARG& other)
-	    { NAKEDPROXY::operator=(other); return *this; }
-
-	    /// forward (move) assignment to underlying type
-	    template <typename ARG>
-	    self_type& operator=(ARG&& other)
-	    { NAKEDPROXY::operator=(std::move(other)); return *this; }
 
 	    /// stupid constructor from an (ignored) bool
 	    ContainerSkin(bool) : ContainerSkin(Array())

@@ -81,10 +81,10 @@ int main() {
         using namespace AOS;
         cout << "This is a normal array of structures" << endl;
         Points list_of_points = {Points::value_type(1,2), Point(2,3), Point(3,4)};
+        list_of_points.emplace_back(4,5);
 
-        cout << list_of_points.at(0) << endl;
-        cout << list_of_points.at(1) << endl;
-        cout << list_of_points.at(2) << endl;
+        for(const auto& item : list_of_points)
+            cout << item << endl;
         
         cout << "we can access using list_of_points.at(1).x(): " << list_of_points.at(1).x() << endl;
     }
@@ -96,14 +96,14 @@ int main() {
 
         //Points list_of_points;
         Points list_of_points = {Points::value_type(1,2), std::tuple<float,float>(2,3), std::tuple<float,float>(3,4)};
+        list_of_points.emplace_back(4,5);
 
         //list_of_points.push_back(std::make_tuple(1.,2.));
         //list_of_points.push_back(std::make_tuple(2.,3.));
         //list_of_points.push_back({3.0f,4.0f});
 
-        cout << list_of_points.at(0) << endl;
-        cout << list_of_points.at(1) << endl;
-        cout << list_of_points.at(2) << endl;
+        for(const auto& item : list_of_points)
+            cout << item << endl;
         
         cout << "we can access using list_of_points.at(1).x(): " << list_of_points.at(1).x() << endl;
 
