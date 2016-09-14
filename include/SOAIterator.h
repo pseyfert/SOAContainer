@@ -9,12 +9,13 @@
 
 #include <tuple>
 #include <iterator>
+#include <ostream>
 
 // forward decls
 template <typename PROXY>
 class SOAConstIterator;
-template<typename OS, typename T>
-OS& operator<<(OS&, const SOAConstIterator<T>&);
+template<typename T>
+std::ostream& operator<<(std::ostream&, const SOAConstIterator<T>&);
 
 /** @brief class mimicking a const pointer to pointee inidicated by PROXY
  *
@@ -234,8 +235,8 @@ class SOAConstIterator
 	auto index() const noexcept -> decltype(m_proxy.m_index)
 	{ return m_proxy.m_index; }
 	/// make operator<< friend to allow calling storage() and index()
-	template <typename OS, typename T>
-	friend OS& operator<<(OS&, const SOAConstIterator<T>&);
+	template <typename T>
+	friend std::ostream& operator<<(std::ostream&, const SOAConstIterator<T>&);
 };
 
 /** @brief class mimicking a pointer to pointee inidicated by PROXY
@@ -406,9 +407,8 @@ typename std::enable_if<
 { return other + dist; }
 
 /// operator<< for supporting idioms like "std::cout << it" (mostly debugging)
-template<typename OS, typename T>
-OS& operator<<(OS& os, const SOAConstIterator<T>& it)
-{
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const SOAConstIterator<T>& it) {
     os << "(" << it.storage() << ", " << it.index() << ")";
     return os;
 }

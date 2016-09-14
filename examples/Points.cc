@@ -22,7 +22,7 @@ class Point {
 };
 
 std::ostream& operator<<(std::ostream& os, const Point& point) {
-    return os << "[" << point.x() << ", " << point.y() << "]";
+    return os << "{" << point.x() << ", " << point.y() << "}";
 }
 
 typedef std::vector<Point> Points;
@@ -73,9 +73,6 @@ typedef SOAContainer<
 // define the SOAPoint itself
 typedef typename Points::proxy Point;
 
-std::ostream& operator<<(std::ostream& os, const Point& point) {
-    return os << "[" << point.x() << ", " << point.y() << "]";
-}
 };
 
 int main() {

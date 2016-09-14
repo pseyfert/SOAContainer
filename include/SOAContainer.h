@@ -59,6 +59,13 @@ class NullSkin : public NAKEDPROXY
         { NAKEDPROXY::operator=(std::move(arg)); return *this; }
 };
 
+template <typename NAKEDPROXY>
+std::ostream& operator<< (std::ostream& os, const NullSkin<NAKEDPROXY>& item) {
+    
+    const NAKEDPROXY& val = dynamic_cast<const NAKEDPROXY&>(item); 
+    return os << val;
+};
+
 /** @brief container class for objects with given fields (SOA storage)
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>

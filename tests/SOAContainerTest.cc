@@ -6,171 +6,144 @@
  * unit test for SOAContainer class
  */
 
-#include <cstdio>
 #include <numeric>
 #include <array>
 #include <tuple>
+#include <cmath>
 
 #include "SOAContainer.h"
-
-static unsigned ntestsfail = 0;
-
-/// implementation of an assert-like framework (keeps working with -DNDEBUG)
-#define do_test_impl(cond, condstr, line, file, func) \
-        { if (!(cond)) { \
-            ++ntestsfail; \
-            std::printf("In routine \"%s\" (line %u in %s): " \
-                    "test failed, condition\n\t\"%s\"\n", \
-                    func, line, file, condstr); \
-        } }
-#if defined(__GNUC__)
-/// test entry point (variant for gcc-like compilers with __PRETTY_FUNCTION__)
-#define do_test(cond) do_test_impl((cond), #cond, \
-        __LINE__, __FILE__, __PRETTY_FUNCTION__)
-#else
-/// test entry point (generic variant for compilers with __func__)
-#define do_test(cond) do_test_impl((cond), #cond, \
-        __LINE__, __FILE__, __func__)
-#endif
+#include "gtest/gtest.h"
 
 /// unit test SOAContainer class
-static void test()
-{
+TEST (BasicTest, SimpleTests) {
     SOAContainer<std::vector, NullSkin, double, int, int> c;
     const SOAContainer<std::vector, NullSkin, double, int, int>& cc = c;
     // check basic properties
-    do_test(c.empty());
-    do_test(0 == c.size());
+    EXPECT_TRUE(c.empty());
+    EXPECT_EQ(0, c.size());
     c.clear();
-    do_test(1 <= c.max_size());
-    do_test(0 <= c.capacity());
+    EXPECT_LE(1, c.max_size());
+    EXPECT_LE(0, c.capacity());
     // reserve space
     c.reserve(64);
-    do_test(64 <= c.capacity());
-    do_test(c.capacity() <= c.max_size());
+    EXPECT_LE(64, c.capacity());
+    EXPECT_LE(c.capacity(), c.max_size());
     // check iterators
-    do_test(!c.begin());
-    do_test(c.begin() == c.end());
-    do_test(cc.begin() == cc.end());
-    do_test(c.begin() == cc.begin());
-    do_test(c.begin() <= c.end());
-    do_test(cc.begin() <= cc.end());
-    do_test(c.begin() <= cc.begin());
-    do_test(c.begin() >= c.end());
-    do_test(cc.begin() >= cc.end());
+    EXPECT_FALSE(c.begin());
+    EXPECT_EQ(c.begin(), c.end());
+    EXPECT_EQ(cc.begin(), cc.end());
+    EXPECT_EQ(c.begin(), cc.begin());
+    EXPECT_LE(c.begin(), c.end());
+    EXPECT_LE(cc.begin(), cc.end());
+    EXPECT_LE(c.begin(), cc.begin());
+    EXPECT_GE(c.begin(), c.end());
+    EXPECT_GE(cc.begin(), cc.end());
     // check reverse iterators
-    do_test(c.rbegin() >= cc.rbegin());
-    do_test(c.rbegin() == c.rend());
-    do_test(cc.rbegin() == cc.rend());
-    do_test(c.rbegin() == cc.rbegin());
-    do_test(c.rbegin() <= c.rend());
-    do_test(cc.rbegin() <= cc.rend());
-    do_test(c.rbegin() <= cc.rbegin());
-    do_test(c.rbegin() >= c.rend());
-    do_test(cc.rbegin() >= cc.rend());
-    do_test(c.rbegin() >= cc.rbegin());
+    EXPECT_GE(c.rbegin(), cc.rbegin());
+    EXPECT_EQ(c.rbegin(), c.rend());
+    EXPECT_EQ(cc.rbegin(), cc.rend());
+    EXPECT_EQ(c.rbegin(), cc.rbegin());
+    EXPECT_LE(c.rbegin(), c.rend());
+    EXPECT_LE(cc.rbegin(), cc.rend());
+    EXPECT_LE(c.rbegin(), cc.rbegin());
+    EXPECT_GE(c.rbegin(), c.rend());
+    EXPECT_GE(cc.rbegin(), cc.rend());
+    EXPECT_GE(c.rbegin(), cc.rbegin());
     // test at
-    {
-        bool exception = false;
-        try {
-            c.at(0);
-        } catch (const std::out_of_range&) {
-            exception = true;
-        }
-        do_test(exception);
-    }
+    EXPECT_THROW(c.at(0), std::out_of_range);
+
     {
         std::tuple<double, int, int> val(3.14, 17, 42);
         // standard push_back by const reference
         c.push_back(val);
-        do_test(!c.empty());
-        do_test(1 == c.size());
-        do_test(c.front() == c.back());
-        do_test(c.end() == 1 + c.begin());
-        do_test(c.rend() == 1 + c.rbegin());
-        do_test(&c.front() == c.begin());
-        do_test(&cc.front() == c.cbegin());
+        EXPECT_FALSE(c.empty());
+        EXPECT_EQ(1, c.size());
+        EXPECT_EQ(c.front(), c.back());
+        EXPECT_EQ(c.end(), 1 + c.begin());
+        EXPECT_EQ(c.rend(), 1 + c.rbegin());
+        EXPECT_EQ(&c.front(), c.begin());
+        EXPECT_EQ(&cc.front(), c.cbegin());
         const decltype(val) val2(c.front());
-        do_test(val == val2);
+        EXPECT_EQ(val, val2);
         // trigger the move-variant of push_back
         c.push_back(std::make_tuple(2.79, 42, 17));
-        do_test(2 == c.size());
-        do_test(c.front() != c.back());
-        do_test(c.end() == 2 + c.begin());
-        do_test(c.rend() == 2 + c.rbegin());
+        EXPECT_EQ(2, c.size());
+        EXPECT_NE(c.front(), c.back());
+        EXPECT_EQ(c.end(), 2 + c.begin());
+        EXPECT_EQ(c.rend(), 2 + c.rbegin());
         // test pop_back
         c.pop_back();
-        do_test(1 == c.size());
+        EXPECT_EQ(1, c.size());
         // start testing plain and simple insert
         std::tuple<double, int, int> val3(2.79, 42, 17);
         auto it = c.insert(c.begin(), val3);
-        do_test(2 == c.size());
-        do_test(it == c.begin());
+        EXPECT_EQ(2, c.size());
+        EXPECT_EQ(it, c.begin());
         const decltype(val) val4(c.front()), val5(c.back());
-        do_test(val3 == val4);
-        do_test(val == val5);
+        EXPECT_EQ(val3, val4);
+        EXPECT_EQ(val, val5);
         c.insert(1 + c.cbegin(), std::make_tuple(2.79, 42, 17));
-        do_test(3 == c.size());
+        EXPECT_EQ(3, c.size());
         const decltype(val) val6(c[0]), val7(c[1]);
-        do_test(val3 == val6);
-        do_test(val3 == val7);
+        EXPECT_EQ(val3, val6);
+        EXPECT_EQ(val3, val7);
     }
     {
-        do_test(!c.empty());
+        EXPECT_FALSE(c.empty());
         auto oldcap = c.capacity();
-        do_test(oldcap > 0);
+        EXPECT_GT(oldcap, 0);
         c.clear();
-        do_test(c.empty());
-        do_test(oldcap = c.capacity());
+        EXPECT_TRUE(c.empty());
+        EXPECT_EQ(oldcap, c.capacity()); // Used to be a bug!
         c.insert(c.begin(), oldcap, std::make_tuple(3.14, 42, 17));
-        do_test(oldcap == c.size());
+        EXPECT_EQ(oldcap, c.size());
         // check if they're all the same
-        do_test(oldcap == static_cast<decltype(oldcap)>(
+        EXPECT_EQ(oldcap, static_cast<decltype(oldcap)>(
                     std::count_if(std::begin(c), std::end(c),
                         [] (decltype(c)::const_reference obj) {
                         return (obj == std::make_tuple(3.14, 42, 17)); })));
         // check the other variants of comparison operators
-        do_test(oldcap == static_cast<decltype(oldcap)>(
+        EXPECT_EQ(oldcap, static_cast<decltype(oldcap)>(
                     std::count_if(std::begin(c), std::end(c),
                         [] (decltype(c)::const_reference obj) {
                         return (std::make_tuple(3.14, 42, 17) == obj); })));
         // check if they're all >=
-        do_test(oldcap == static_cast<decltype(oldcap)>(
+        EXPECT_EQ(oldcap, static_cast<decltype(oldcap)>(
                     std::count_if(std::begin(c), std::end(c),
                         [] (decltype(c)::const_reference obj) {
                         return (obj >= std::make_tuple(3.14, 42, 17)); })));
         // check the other variants of comparison operators
-        do_test(oldcap == static_cast<decltype(oldcap)>(
+        EXPECT_EQ(oldcap, static_cast<decltype(oldcap)>(
                     std::count_if(std::begin(c), std::end(c),
                         [] (decltype(c)::const_reference obj) {
                         return (std::make_tuple(3.14, 42, 17) >= obj); })));
         // check if they're all <=
-        do_test(oldcap == static_cast<decltype(oldcap)>(
+        EXPECT_EQ(oldcap, static_cast<decltype(oldcap)>(
                     std::count_if(std::begin(c), std::end(c),
                         [] (decltype(c)::const_reference obj) {
                         return (obj <= std::make_tuple(3.14, 42, 17)); })));
         // check the other variants of comparison operators
-        do_test(oldcap == static_cast<decltype(oldcap)>(
+        EXPECT_EQ(oldcap, static_cast<decltype(oldcap)>(
                     std::count_if(std::begin(c), std::end(c),
                         [] (decltype(c)::const_reference obj) {
                         return (std::make_tuple(3.14, 42, 17) <= obj); })));
         // check if none are <
-        do_test(0 == static_cast<decltype(oldcap)>(
+        EXPECT_EQ(0, static_cast<decltype(oldcap)>(
                     std::count_if(std::begin(c), std::end(c),
                         [] (decltype(c)::const_reference obj) {
                         return (obj < std::make_tuple(3.14, 42, 17)); })));
         // check the other variants of comparison operators
-        do_test(0 == static_cast<decltype(oldcap)>(
+        EXPECT_EQ(0, static_cast<decltype(oldcap)>(
                     std::count_if(std::begin(c), std::end(c),
                         [] (decltype(c)::const_reference obj) {
                         return (std::make_tuple(3.14, 42, 17) < obj); })));
         // check if none are >
-        do_test(0 == static_cast<decltype(oldcap)>(
+        EXPECT_EQ(0, static_cast<decltype(oldcap)>(
                     std::count_if(std::begin(c), std::end(c),
                         [] (decltype(c)::const_reference obj) {
                         return (obj > std::make_tuple(3.14, 42, 17)); })));
         // check the other variants of comparison operators
-        do_test(0 == static_cast<decltype(oldcap)>(
+        EXPECT_EQ(0, static_cast<decltype(oldcap)>(
                     std::count_if(std::begin(c), std::end(c),
                         [] (decltype(c)::const_reference obj) {
                         return (std::make_tuple(3.14, 42, 17) > obj); })));
@@ -180,7 +153,7 @@ static void test()
         // by comparing to an array-of-structures in a std::vector
         typedef std::size_t size_type;
         c.clear();
-        do_test(c.empty());
+        EXPECT_TRUE(c.empty());
         std::tuple<double, int, int> val(3.14, 0, 63);
         std::vector<std::tuple<double, int, int> > temp;
         temp.reserve(64);
@@ -190,10 +163,10 @@ static void test()
             temp.push_back(val);
         }
         auto it = c.insert(c.begin(), temp.cbegin(), temp.cend());
-        do_test(c.begin() == it);
-        do_test(64 == c.size());
-        do_test(c.size() == temp.size());
-        do_test(temp.size() == std::inner_product(
+        EXPECT_EQ(c.begin(), it);
+        EXPECT_EQ(64, c.size());
+        EXPECT_EQ(c.size(), temp.size());
+        EXPECT_EQ(temp.size(), std::inner_product(
                     c.begin(), c.end(), temp.begin(), size_type(0),
                     [] (size_type a, size_type b) { return a + b; },
                     [] (const decltype(val)& a, const decltype(val)& b) {
@@ -201,11 +174,11 @@ static void test()
 
         // erase(pos)
         auto jt = temp.erase(temp.begin() + 3);
-        do_test(temp.begin() + 3 == jt);
+        EXPECT_EQ(temp.begin() + 3, jt);
         auto kt = c.erase(c.begin() + 3);
-        do_test(c.begin() + 3 == kt);
-        do_test(c.size() == temp.size());
-        do_test(temp.size() == std::inner_product(
+        EXPECT_EQ(c.begin() + 3, kt);
+        EXPECT_EQ(c.size(), temp.size());
+        EXPECT_EQ(temp.size(), std::inner_product(
                     c.begin(), c.end(), temp.begin(), size_type(0),
                     [] (size_type a, size_type b) { return a + b; },
                     [] (const decltype(val)& a, const decltype(val)& b) {
@@ -213,18 +186,18 @@ static void test()
 
         // erase(first, last)
         auto lt = temp.erase(temp.begin() + 5, temp.begin() + 10);
-        do_test(temp.begin() + 5 == lt);
+        EXPECT_EQ(temp.begin() + 5, lt);
         auto mt = c.erase(c.begin() + 5, c.begin() + 10);
-        do_test(c.begin() + 5 == mt);
-        do_test(c.size() == temp.size());
-        do_test(temp.size() == std::inner_product(
+        EXPECT_EQ(c.begin() + 5, mt);
+        EXPECT_EQ(c.size(), temp.size());
+        EXPECT_EQ(temp.size(), std::inner_product(
                     c.begin(), c.end(), temp.begin(), size_type(0),
                     [] (size_type a, size_type b) { return a + b; },
                     [] (const decltype(val)& a, const decltype(val)& b) {
                         return size_type(a == b); }));
 
         // test sort (and swap)
-        do_test(std::is_sorted(c.begin(), c.end(),
+        EXPECT_TRUE(std::is_sorted(c.begin(), c.end(),
                 [] (decltype(c)::value_const_reference a,
                     decltype(c)::value_const_reference b)
                 { return a.get<1>() < b.get<1>(); }));
@@ -236,69 +209,61 @@ static void test()
                 [] (const decltype(temp)::value_type& a,
 		    const decltype(temp)::value_type& b)
                 { return std::get<1>(a) > std::get<1>(b); });
-        do_test(std::is_sorted(c.begin(), c.end(),
+        EXPECT_TRUE(std::is_sorted(c.begin(), c.end(),
                 [] (decltype(c)::value_const_reference a,
                     decltype(c)::value_const_reference b)
                 { return a.get<1>() > b.get<1>(); }));
-        do_test(std::is_sorted(temp.begin(), temp.end(),
+        EXPECT_TRUE(std::is_sorted(temp.begin(), temp.end(),
                 [] (const decltype(temp)::value_type& a,
 		    const decltype(temp)::value_type& b)
                 { return std::get<1>(a) > std::get<1>(b); }));
-        do_test(c.size() == temp.size());
-        do_test(temp.size() == std::inner_product(
+        EXPECT_EQ(c.size(), temp.size());
+        EXPECT_EQ(temp.size(), std::inner_product(
                     c.begin(), c.end(), temp.begin(), size_type(0),
                     [] (size_type a, size_type b) { return a + b; },
                     [] (const decltype(val)& a, const decltype(val)& b) {
                         return size_type(a == b); }));
 
         // test the begin<fieldno> and end<fieldno> calls
-        do_test(&(*c.begin<0>()) == &(c.begin()->get<0>()));
-        do_test(&(*cc.begin<0>()) == &(cc.begin()->get<0>()));
-        do_test(&(*c.cbegin<0>()) == &(c.cbegin()->get<0>()));
-        do_test(&(*c.end<0>()) == &(c.end()->get<0>()));
-        do_test(&(*cc.end<0>()) == &(cc.end()->get<0>()));
-        do_test(&(*c.cend<0>()) == &(c.cend()->get<0>()));
+        EXPECT_EQ(&(*c.begin<0>()), &(c.begin()->get<0>()));
+        EXPECT_EQ(&(*cc.begin<0>()), &(cc.begin()->get<0>()));
+        EXPECT_EQ(&(*c.cbegin<0>()), &(c.cbegin()->get<0>()));
+        EXPECT_EQ(&(*c.end<0>()), &(c.end()->get<0>()));
+        EXPECT_EQ(&(*cc.end<0>()), &(cc.end()->get<0>()));
+        EXPECT_EQ(&(*c.cend<0>()), &(c.cend()->get<0>()));
         // test (some of) the rbegin<fieldno> and rend<fieldno> calls
-        do_test(&(*c.rbegin<0>()) == &(c.rbegin()->get<0>()));
-        do_test(&(*c.rend<0>()) == &(c.rend()->get<0>()));
+        EXPECT_EQ(&(*c.rbegin<0>()), &(c.rbegin()->get<0>()));
+        EXPECT_EQ(&(*c.rend<0>()), &(c.rend()->get<0>()));
         // test the begin<fieldtag> and end<fieldtag> calls
-        do_test(&(*c.begin<double>()) == &(c.begin()->get<double>()));
-        do_test(&(*cc.begin<double>()) == &(cc.begin()->get<double>()));
-        do_test(&(*c.cbegin<double>()) == &(c.cbegin()->get<double>()));
-        do_test(&(*c.end<double>()) == &(c.end()->get<double>()));
-        do_test(&(*cc.end<double>()) == &(cc.end()->get<double>()));
-        do_test(&(*c.cend<double>()) == &(c.cend()->get<double>()));
+        EXPECT_EQ(&(*c.begin<double>()), &(c.begin()->get<double>()));
+        EXPECT_EQ(&(*cc.begin<double>()), &(cc.begin()->get<double>()));
+        EXPECT_EQ(&(*c.cbegin<double>()), &(c.cbegin()->get<double>()));
+        EXPECT_EQ(&(*c.end<double>()), &(c.end()->get<double>()));
+        EXPECT_EQ(&(*cc.end<double>()), &(cc.end()->get<double>()));
+        EXPECT_EQ(&(*c.cend<double>()), &(c.cend()->get<double>()));
         // test (some of) the rbegin<fieldno> and rend<fieldno> calls
-        do_test(&(*c.rbegin<double>()) == &(c.rbegin()->get<double>()));
-        do_test(&(*c.rend<double>()) == &(c.rend()->get<double>()));
+        EXPECT_EQ(&(*c.rbegin<double>()), &(c.rbegin()->get<double>()));
+        EXPECT_EQ(&(*c.rend<double>()), &(c.rend()->get<double>()));
 
         // rudimentary tests of comparison of containers
         decltype(c) d;
         decltype(temp) temp2;
-        do_test(c == c);
-        do_test(temp == temp);
-        do_test(!(c != c));
-        do_test(!(temp != temp));
-        do_test(c != d);
-        do_test(temp != temp2);
-        do_test(!(c < c));
-        do_test(!(temp < temp));
-        do_test(d < c);
-        do_test(temp2 < temp);
-        do_test(!(c > c));
-        do_test(!(temp > temp));
-        do_test(!(d > c));
-        do_test(!(temp2 > temp));
-        do_test(c <= c);
-        do_test(temp <= temp);
-        do_test(c >= c);
-        do_test(temp >= temp);
+        EXPECT_EQ(c, c);
+        EXPECT_EQ(temp, temp);
+        EXPECT_NE(c, d);
+        EXPECT_NE(temp, temp2);
+        EXPECT_LT(d, c);
+        EXPECT_LT(temp2, temp);
+        EXPECT_LE(c, c);
+        EXPECT_LE(temp, temp);
+        EXPECT_GE(c, c);
+        EXPECT_GE(temp, temp);
     }
     {
         // test assign(count, val)
         c.assign(42, std::make_tuple(3.14, 0, -1));
-        do_test(42u == c.size());
-        do_test(c.size() == std::size_t(std::count(std::begin(c), std::end(c),
+        EXPECT_EQ(42u, c.size());
+        EXPECT_EQ(c.size(), std::size_t(std::count(std::begin(c), std::end(c),
                         std::make_tuple(3.14, 0, -1))));
         // assign(first, last) is just a frontend for clear(); insert(front,
         // end); - therefore, no test here
@@ -307,26 +272,26 @@ static void test()
         // test emplace, emplace_back, resize
         c.clear();
         c.emplace_back(2.79, 42, 17);
-        do_test(1 == c.size());
-        do_test(c.front() == std::make_tuple(2.79, 42, 17));
+        EXPECT_EQ(1, c.size());
+        EXPECT_EQ(c.front(), std::make_tuple(2.79, 42, 17));
         auto it = c.emplace(c.begin(), 2.79, 17, 42);
-        do_test(2 == c.size());
-        do_test(c.begin() == it);
-        do_test(c.front() == std::make_tuple(2.79, 17, 42));
-        do_test(c.back() == std::make_tuple(2.79, 42, 17));
+        EXPECT_EQ(2, c.size());
+        EXPECT_EQ(c.begin(), it);
+        EXPECT_EQ(c.front(), std::make_tuple(2.79, 17, 42));
+        EXPECT_EQ(c.back(), std::make_tuple(2.79, 42, 17));
         c.resize(64, std::make_tuple(3.14, 78, 17));
-        do_test(64 == c.size());
-        do_test(c.back() == std::make_tuple(3.14, 78, 17));
+        EXPECT_EQ(64, c.size());
+        EXPECT_EQ(c.back(), std::make_tuple(3.14, 78, 17));
 	c.emplace_back(std::make_tuple(42., 42, 42));
-        do_test(c.back() == std::make_tuple(42., 42, 42));
+        EXPECT_EQ(c.back(), std::make_tuple(42., 42, 42));
 	c.emplace(c.begin(), std::make_tuple(17., 42, 42));
-        do_test(c.front() == std::make_tuple(17., 42, 42));
+        EXPECT_EQ(c.front(), std::make_tuple(17., 42, 42));
         c.resize(0);
-        do_test(c.empty());
+        EXPECT_TRUE(c.empty());
         c.resize(32);
-        do_test(32 == c.size());
+        EXPECT_EQ(32, c.size());
         const std::tuple<double, int, int> defaultval;
-        do_test(c.back() == defaultval);
+        EXPECT_EQ(c.back(), defaultval);
     }
 }
 
@@ -476,9 +441,8 @@ static void updateHits_v(AOSHits& hits, float y0, float ySl)
     for (auto& hit: hits) hit.setY(hit.y(y0, ySl));
     for (auto& hit: hits) { const auto y = hit.y(); hit.setZ(hit.z(y)), hit.setX(hit.x(y)); }
 }
-#include <cmath>
-static void realistic_test() __attribute__((noinline));
-static void realistic_test()
+
+TEST(RealisticTest, Simple)
 {
     using namespace HitNamespace;
     Hits hits;
@@ -490,8 +454,7 @@ static void realistic_test()
     for (unsigned i = 0; i < 512; ++i) updateHits_v(hits, 300.f, -0.01f);
 }
 
-static void realistic_test_aos() __attribute__((noinline));
-static void realistic_test_aos()
+TEST(RealisticTest, Aos)
 {
     using namespace HitNamespace;
     AOSHits ahits;
@@ -534,27 +497,14 @@ namespace stdarraytest_fields {
     };
 
     typedef SOAContainer<std::vector, ContainerSkin, f_array> SOAArray;
-
-    void test()
-    {
+}
+TEST(RealisticTest, Proxy) {
+    using namespace stdarraytest_fields;
 	SOAArray a;
 	a.push_back(SOAArray::value_type(true));
 	a.emplace_back(SOAArray::value_type(true));
 	// this won't work since we currently have no way to "dress" an
 	// emplace_back with a skin (may be possible in the future)
 	//a.emplace_back(true);
-    }
 }
 
-/// main program of unit test
-int main()
-{
-    test();
-    realistic_test();
-    realistic_test_aos();
-    stdarraytest_fields::test();
-    std::printf("\n");
-    if (0 == ntestsfail) std::printf("All tests passed.\n");
-    else std::printf("Number of failed tests: %u\n", ntestsfail);
-    return ntestsfail;
-}
