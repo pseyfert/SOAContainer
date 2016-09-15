@@ -300,22 +300,22 @@ class SOAObjectProxy {
 
 	/// comparison (equality)
 	bool operator==(const self_type& other) const noexcept
-	{ return *this == const_reference(other); }
+	{ return const_reference(*this) == const_reference(other); }
 	/// comparison (inequality)
 	bool operator!=(const self_type& other) const noexcept
-	{ return *this != const_reference(other); }
+	{ return const_reference(*this) != const_reference(other); }
 	/// comparison (less than)
 	bool operator<(const self_type& other) const noexcept
-	{ return *this < const_reference(other); }
+	{ return const_reference(*this) < const_reference(other); }
 	/// comparison (greater than)
 	bool operator>(const self_type& other) const noexcept
-	{ return *this > const_reference(other); }
+	{ return const_reference(*this) > const_reference(other); }
 	/// comparison (less than or equal to)
 	bool operator<=(const self_type& other) const noexcept
-	{ return *this <= const_reference(other); }
+	{ return const_reference(*this) <= const_reference(other); }
 	/// comparison (greater than or equal to)
 	bool operator>=(const self_type& other) const noexcept
-	{ return *this >= const_reference(other); }
+	{ return const_reference(*this) >= const_reference(other); }
 
 	/// return pointer to element pointed to be this proxy
 	pointer operator&() noexcept;

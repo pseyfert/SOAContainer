@@ -155,9 +155,8 @@ TEST (BasicTest, More)  {
                     [] (decltype(c)::const_reference obj) {
                     return (std::make_tuple(3.14, 42, 17) > obj); })));
 };
- 
- 
- TEST (BasicTest, EvenMore) {
+
+TEST (BasicTest, EvenMore) {
    SOAContainer<std::vector, NullSkin, double, int, int> c;
    const SOAContainer<std::vector, NullSkin, double, int, int>& cc = c;
     // test insert(pos, first, last), erase(pos) and erase(first, last)
@@ -211,14 +210,21 @@ TEST (BasicTest, More)  {
             [] (decltype(c)::value_const_reference a,
                 decltype(c)::value_const_reference b)
             { return a.get<1>() < b.get<1>(); }));
+
+    
     std::sort(c.begin(), c.end(),
             [] (decltype(c)::value_const_reference a,
                 decltype(c)::value_const_reference b)
             { return a.get<1>() > b.get<1>(); });
+  
+    
+    // CONSTRUCTOR PROBLEMS - CLANG ONLY
     std::sort(temp.begin(), temp.end(),
             [] (const decltype(temp)::value_type& a,
         const decltype(temp)::value_type& b)
             { return std::get<1>(a) > std::get<1>(b); });
+    // END CONSTRUCTOR PROBLEMS
+    
     EXPECT_TRUE(std::is_sorted(c.begin(), c.end(),
             [] (decltype(c)::value_const_reference a,
                 decltype(c)::value_const_reference b)
@@ -227,6 +233,7 @@ TEST (BasicTest, More)  {
             [] (const decltype(temp)::value_type& a,
         const decltype(temp)::value_type& b)
             { return std::get<1>(a) > std::get<1>(b); }));
+ 
     EXPECT_EQ(c.size(), temp.size());
     EXPECT_EQ(temp.size(), std::inner_product(
                 c.begin(), c.end(), temp.begin(), size_type(0),
@@ -234,16 +241,22 @@ TEST (BasicTest, More)  {
                 [] (const decltype(val)& a, const decltype(val)& b) {
                     return size_type(a == b); }));
 
+
     // test the begin<fieldno> and end<fieldno> calls
     EXPECT_EQ(&(*c.begin<0>()), &(c.begin()->get<0>()));
     EXPECT_EQ(&(*cc.begin<0>()), &(cc.begin()->get<0>()));
     EXPECT_EQ(&(*c.cbegin<0>()), &(c.cbegin()->get<0>()));
+    
     EXPECT_EQ(&(*c.end<0>()), &(c.end()->get<0>()));
     EXPECT_EQ(&(*cc.end<0>()), &(cc.end()->get<0>()));
     EXPECT_EQ(&(*c.cend<0>()), &(c.cend()->get<0>()));
+    
+    // ADDRESS OF COMPILER ERROR - CLANG ONLY
     // test (some of) the rbegin<fieldno> and rend<fieldno> calls
     EXPECT_EQ(&(*c.rbegin<0>()), &(c.rbegin()->get<0>()));
     EXPECT_EQ(&(*c.rend<0>()), &(c.rend()->get<0>()));
+    // END ADDRESS OF COMPILER ERROR
+    
     // test the begin<fieldtag> and end<fieldtag> calls
     EXPECT_EQ(&(*c.begin<double>()), &(c.begin()->get<double>()));
     EXPECT_EQ(&(*cc.begin<double>()), &(cc.begin()->get<double>()));
@@ -251,10 +264,13 @@ TEST (BasicTest, More)  {
     EXPECT_EQ(&(*c.end<double>()), &(c.end()->get<double>()));
     EXPECT_EQ(&(*cc.end<double>()), &(cc.end()->get<double>()));
     EXPECT_EQ(&(*c.cend<double>()), &(c.cend()->get<double>()));
+    
+    // ADDRESS OF COMPILER ERROR - CLANG ONLY
     // test (some of) the rbegin<fieldno> and rend<fieldno> calls
     EXPECT_EQ(&(*c.rbegin<double>()), &(c.rbegin()->get<double>()));
     EXPECT_EQ(&(*c.rend<double>()), &(c.rend()->get<double>()));
-
+    // END ADDRESS OF COMPILER ERROR
+    
     // rudimentary tests of comparison of containers
     decltype(c) d;
     decltype(temp) temp2;
@@ -303,7 +319,9 @@ TEST (BasicTest, More)  {
         const std::tuple<double, int, int> defaultval;
         EXPECT_EQ(c.back(), defaultval);
     }
+ 
 }
+
 
 namespace HitNamespace {
     namespace Fields {
@@ -495,4 +513,4 @@ TEST(RealisticTest, Proxy) {
 	// emplace_back with a skin (may be possible in the future)
 	//a.emplace_back(true);
 }
- 
+

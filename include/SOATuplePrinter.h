@@ -1,3 +1,11 @@
+/** @file SOATuplePrinter.h
+ *
+ * @author Henry Schreiner <Henry.Schreiner@cern.ch>
+ * @date 2016-09-15
+ */
+
+// Based on recomendation of cppreference
+
 #ifndef SOATUPLEPRINTER_H
 #define SOATUPLEPRINTER_H
 
@@ -38,3 +46,4 @@ std::ostream& operator<< (std::ostream& os, const std::tuple<T...> &a_tuple) {
 }
 
 #endif // SOATUPLEPRINTER_H
+// vim: sw=4:tw=78:ft=cpp

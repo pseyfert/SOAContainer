@@ -14,12 +14,13 @@ int main() {
     const NullSkin<DressedTuple<std::tuple<const double &, const int &, const int &>, SOAContainer<std::vector, NullSkin, double, int, int> > > val1 = c.front();
     const NullSkin<DressedTuple<std::tuple<const double &, const int &, const int &>, SOAContainer<std::vector, NullSkin, double, int, int> > > val2 = c.back();
     
-    //std::tuple<double, int, int> tup(val);
     val1 == val2;
     
-    const NullSkin<SOAObjectProxy<SOAContainer<std::vector, NullSkin, double, int, int> > > val3 = c.front();
-    const NullSkin<SOAObjectProxy<SOAContainer<std::vector, NullSkin, double, int, int> > > val4 = c.back();
-    val3 == val4;
+    const SOAObjectProxy<SOAContainer<std::vector, NullSkin, double, int, int> >  val3 = c.front();
+    const SOAObjectProxy<SOAContainer<std::vector, NullSkin, double, int, int> >  val4 = c.back();
+    
+    val4 == val3;
+    
     
     return 0;
 }

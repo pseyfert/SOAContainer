@@ -94,7 +94,7 @@ class SOAConstIterator
 	const_reference operator*() const noexcept
 	{ return m_proxy; }
 	/// deference pointer (p->blah)
-	const_reference* operator->() noexcept
+	reference* operator->() noexcept
 	{ return std::addressof(m_proxy); }
 	/// deference pointer (p->blah)
 	const_reference* operator->() const noexcept
