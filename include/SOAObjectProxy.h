@@ -10,6 +10,7 @@
 #include <tuple>
 #include <memory>
 
+#include "SOATuplePrinter.h"
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
 #include "SOAUtils.h"
@@ -367,34 +368,14 @@ typename SOAObjectProxy<PARENTCONTAINER>::const_pointer
 SOAObjectProxy<PARENTCONTAINER>::operator&() const noexcept
 { return { m_storage, m_index }; }
 
-// helper function to print a tuple of any size
-template<class Tuple, std::size_t N>
-struct TuplePrinter {
-    static void print(std::ostream& os, const Tuple& t) {
-        TuplePrinter<Tuple, N-1>::print(os, t);
-        os << ", " << std::get<N-1>(t);
-    }
-};
- 
-template<class Tuple>
-struct TuplePrinter<Tuple, 1> {
-    static void print(std::ostream& os, const Tuple& t) {
-        os << std::get<0>(t);
-    }
-};
- 
-template<class... Args>
-void print_tuple(std::ostream& os, const std::tuple<Args...>& t) {
-    os << "{";
-    TuplePrinter<decltype(t), sizeof...(Args)>::print(os, t);
-    os << "}";
-}
+    
+//using TupleHelper::operator<<;
 
 template <typename T>
 std::ostream& operator<< (std::ostream& os, const SOAObjectProxy<T> &prox) {
     const typename SOAObjectProxy<T>::value_type as_tuple = prox;
-    print_tuple(os, as_tuple);
-    return os;
+    TupleHelper::print_tuple(os, as_tuple);
+    return os; // << prox;
 };
 
 #endif // SOAOBJECTPROXY_H
