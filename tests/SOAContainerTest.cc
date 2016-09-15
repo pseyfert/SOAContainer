@@ -211,19 +211,19 @@ TEST (BasicTest, EvenMore) {
                 decltype(c)::value_const_reference b)
             { return a.get<1>() < b.get<1>(); }));
 
-    
+    // CONSTRUCTOR PROBLEMS - CLANG ONLY
     std::sort(c.begin(), c.end(),
             [] (decltype(c)::value_const_reference a,
                 decltype(c)::value_const_reference b)
             { return a.get<1>() > b.get<1>(); });
-  
+    // END CONSTRUCTOR PROBLEMS
     
-    // CONSTRUCTOR PROBLEMS - CLANG ONLY
+    
     std::sort(temp.begin(), temp.end(),
             [] (const decltype(temp)::value_type& a,
-        const decltype(temp)::value_type& b)
+                const decltype(temp)::value_type& b)
             { return std::get<1>(a) > std::get<1>(b); });
-    // END CONSTRUCTOR PROBLEMS
+    
     
     EXPECT_TRUE(std::is_sorted(c.begin(), c.end(),
             [] (decltype(c)::value_const_reference a,
