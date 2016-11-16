@@ -10,6 +10,8 @@
 #include <cassert>
 #include <stdexcept>
 #include <algorithm>
+#include <functional>
+#include <initializer_list>
 
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
@@ -55,6 +57,13 @@ class NullSkin : public NAKEDPROXY
                     static_cast<NAKEDPROXY*>(nullptr)->operator=(
                         std::move(arg))))
         { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+};
+
+template <typename NAKEDPROXY>
+std::ostream& operator<< (std::ostream& os, const NullSkin<NAKEDPROXY>& item) {
+    
+    const NAKEDPROXY& val = dynamic_cast<const NAKEDPROXY&>(item); 
+    return os << val;
 };
 
 /** @brief container class for objects with given fields (SOA storage)
@@ -358,6 +367,13 @@ class SOAContainer {
         /// move constructor
         SOAContainer(self_type&& other) :
             m_storage(std::move(other.m_storage)) { }
+
+        /// std::initializer_list constructor
+        SOAContainer(std::initializer_list<naked_value_tuple_type> listing) {
+            reserve(listing.size());
+            for(const auto &items : listing)
+                push_back(items);
+        }
 
         /// assignment from other SOAContainer
         self_type& operator=(const self_type& other)

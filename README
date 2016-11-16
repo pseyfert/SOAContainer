@@ -13,7 +13,7 @@ To illustrate, I'll bring a very short example here (something more
 realistic is in the test code in git). Consider a minimal point with an x
 and a y coordinate. In the AOS case, you'd code:
 
-class Point {
+class AOSPoint {
     private:
         float m_x;
         float m_y;
@@ -27,7 +27,7 @@ class Point {
 	float r2() const noexcept { return m_x * m_x + m_y * m_y; }
 };
 
-typedef std::vector<Point> AOSPoints;
+typedef std::vector<AOSPoint> AOSPoints;
 typedef Point& AOSPoint;
 
 Then we can all use Points and Point as we know it. Unfortunately, the
@@ -50,22 +50,12 @@ SOA layout is fairly easy, though:
 // define the "skin", i.e. the outer guise that the naked members "wear"
 // to make interaction with the class nice
 template <typename NAKEDPROXY>
-class SOAPoint : public NAKEDPROXY {
+class SOAPoint : public NullSkin<NAKEDPROXY> {
     public:
-        /// forward constructor to NAKEDPROXY's constructor
+        /// forward constructor
         template <typename... ARGS>
         SOAPoint(ARGS&&... args) :
-            NAKEDPROXY(std::forward<ARGS>(args)...) { }
-
-        /// assignment operator - forward to underlying proxy
-        template <typename ARG>
-        SOAPoint<NAKEDPROXY>& operator=(const ARG& arg)
-        { NAKEDPROXY::operator=(arg); return *this; }
-
-        /// move assignment operator - forward to underlying proxy
-        template <typename ARG>
-        SOAPoint<NAKEDPROXY>& operator=(ARG&& arg)
-        { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+            NullSkin<NAKEDPROXY>(std::forward<ARGS>(args)...) { }
 
         float x() const noexcept
         { return this-> template get<PointFields::x>(); }

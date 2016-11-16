@@ -10,6 +10,7 @@
 #include <tuple>
 #include <memory>
 
+#include "SOATuplePrinter.h"
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
 #include "SOAUtils.h"
@@ -299,22 +300,22 @@ class SOAObjectProxy {
 
 	/// comparison (equality)
 	bool operator==(const self_type& other) const noexcept
-	{ return *this == const_reference(other); }
+	{ return const_reference(*this) == const_reference(other); }
 	/// comparison (inequality)
 	bool operator!=(const self_type& other) const noexcept
-	{ return *this != const_reference(other); }
+	{ return const_reference(*this) != const_reference(other); }
 	/// comparison (less than)
 	bool operator<(const self_type& other) const noexcept
-	{ return *this < const_reference(other); }
+	{ return const_reference(*this) < const_reference(other); }
 	/// comparison (greater than)
 	bool operator>(const self_type& other) const noexcept
-	{ return *this > const_reference(other); }
+	{ return const_reference(*this) > const_reference(other); }
 	/// comparison (less than or equal to)
 	bool operator<=(const self_type& other) const noexcept
-	{ return *this <= const_reference(other); }
+	{ return const_reference(*this) <= const_reference(other); }
 	/// comparison (greater than or equal to)
 	bool operator>=(const self_type& other) const noexcept
-	{ return *this >= const_reference(other); }
+	{ return const_reference(*this) >= const_reference(other); }
 
 	/// return pointer to element pointed to be this proxy
 	pointer operator&() noexcept;
@@ -366,6 +367,16 @@ template <typename PARENTCONTAINER>
 typename SOAObjectProxy<PARENTCONTAINER>::const_pointer
 SOAObjectProxy<PARENTCONTAINER>::operator&() const noexcept
 { return { m_storage, m_index }; }
+
+    
+//using TupleHelper::operator<<;
+
+template <typename T>
+std::ostream& operator<< (std::ostream& os, const SOAObjectProxy<T> &prox) {
+    const typename SOAObjectProxy<T>::value_type as_tuple = prox;
+    TupleHelper::print_tuple(os, as_tuple);
+    return os; // << prox;
+};
 
 #endif // SOAOBJECTPROXY_H
 
