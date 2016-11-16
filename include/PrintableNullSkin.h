@@ -13,15 +13,13 @@
 
 /// hide implementation details
 namespace {
-    /// print a tuple, LEN is tuple size
-    template <std::size_t LEN>
-    struct printer {
+    template <std::size_t LEN> struct printer;
+    /// print a tuple, recursion anchor
+    template <>
+    struct printer<std::size_t(0)> {
 	template <typename T>
-	void operator()(std::ostringstream& os, const T& t) const
-	{
-	    printer<LEN - 1>()(os, t);
-	    os << ", " << t.template get<LEN - 1>();
-	}
+	void operator()(std::ostringstream&, const T&) const
+	{ }
     };
     /// print a tuple, specialisation for size 1
     template <>
@@ -33,12 +31,15 @@ namespace {
 	    os << t.template get<0>();
 	}
     };
-    /// print a tuple, recursion anchor
-    template <>
-    struct printer<std::size_t(0)> {
+    /// print a tuple, LEN is tuple size
+    template <std::size_t LEN>
+    struct printer {
 	template <typename T>
-	void operator()(std::ostringstream&, const T&) const
-	{ }
+	void operator()(std::ostringstream& os, const T& t) const
+	{
+	    printer<LEN - 1>()(os, t);
+	    os << ", " << t.template get<LEN - 1>();
+	}
     };
 }
 
