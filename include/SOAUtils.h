@@ -115,28 +115,6 @@ namespace SOAUtils {
     auto call(const F& f, const T& t) -> decltype(
         caller<F, typename std::decay<T>::type>(f)(t))
     { return caller<F, typename std::decay<T>::type>(f)(t); }
-
-#if 0
-    // C++14 Compile-time integer sequences -- this can go once we use C++14...
-    // #include <utility> // defines (in C++14) std::make_index_sequence and std::index_sequence
-	
-    /// C++14-like index sequence
-    template<std::size_t... indexes> struct index_sequence {
-	static std::size_t size() { return sizeof...(indexes); }
-    };
-
-    template<std::size_t currentIndex, std::size_t...indexes> struct make_index_sequence_helper;
-
-    template<std::size_t...indexes> struct make_index_sequence_helper<0, indexes...> {
-	typedef index_sequence<indexes...> type;
-    };
-
-    template<std::size_t currentIndex, std::size_t...indexes> struct make_index_sequence_helper {
-	typedef typename make_index_sequence_helper<currentIndex - 1, currentIndex - 1, indexes...>::type type;
-    };
-
-    template<std::size_t N> struct make_index_sequence : public make_index_sequence_helper<N>::type { };
-#endif
 }
 
 #endif // SOAUTILS_H
