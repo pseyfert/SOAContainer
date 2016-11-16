@@ -8,7 +8,6 @@
 #define SOADRESSEDTUPLE_H
 
 #include <tuple>
-#include "SOATuplePrinter.h"
 
 /** @brief dress std::tuple with the get interface of SOAObjectProxy
  *
@@ -67,14 +66,6 @@ class DressedTuple : public TUPLE
                     *static_cast<const self_type*>(nullptr)))
         { return std::get<CONTAINER::template memberno<MEMBER>()>(*this); }
 };
-
-template <typename TUPLE, typename CONTAINER>
-std::ostream& operator<< (std::ostream& os, const DressedTuple<TUPLE, CONTAINER>& input) {
-    
-    TupleHelper::print_tuple(os, dynamic_cast<const TUPLE&>(input));
-    
-    return os;
-}
 
 #endif // SOADRESSEDTUPLE_H
 

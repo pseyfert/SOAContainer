@@ -10,7 +10,6 @@
 #include <tuple>
 #include <memory>
 
-#include "SOATuplePrinter.h"
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
 #include "SOAUtils.h"
@@ -369,15 +368,6 @@ SOAObjectProxy<PARENTCONTAINER>::operator&() const noexcept
 { return { m_storage, m_index }; }
 
     
-//using TupleHelper::operator<<;
-
-template <typename T>
-std::ostream& operator<< (std::ostream& os, const SOAObjectProxy<T> &prox) {
-    const typename SOAObjectProxy<T>::value_type as_tuple = prox;
-    TupleHelper::print_tuple(os, as_tuple);
-    return os; // << prox;
-};
-
 #endif // SOAOBJECTPROXY_H
 
 // vim: sw=4:tw=78:ft=cpp
