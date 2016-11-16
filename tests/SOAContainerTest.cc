@@ -12,21 +12,22 @@
 #include <cmath>
 
 #include "SOAContainer.h"
+#include "PrintableNullSkin.h"
 #include "gtest/gtest.h"
 
 /// unit test SOAContainer class
 TEST (BasicTest, SimpleTests) {
-    SOAContainer<std::vector, NullSkin, double, int, int> c;
-    const SOAContainer<std::vector, NullSkin, double, int, int>& cc = c;
+    SOAContainer<std::vector, PrintableNullSkin, double, int, int> c;
+    const SOAContainer<std::vector, PrintableNullSkin, double, int, int>& cc = c;
     // check basic properties
     EXPECT_TRUE(c.empty());
-    EXPECT_EQ(0, c.size());
+    EXPECT_EQ(0u, c.size());
     c.clear();
-    EXPECT_LE(1, c.max_size());
-    EXPECT_LE(0, c.capacity());
+    EXPECT_LE(1u, c.max_size());
+    EXPECT_LE(0u, c.capacity());
     // reserve space
     c.reserve(64);
-    EXPECT_LE(64, c.capacity());
+    EXPECT_LE(64u, c.capacity());
     EXPECT_LE(c.capacity(), c.max_size());
     // check iterators
     EXPECT_FALSE(c.begin());
@@ -54,13 +55,13 @@ TEST (BasicTest, SimpleTests) {
 }
 
 TEST (BasicTest, More)  {
-    SOAContainer<std::vector, NullSkin, double, int, int> c;
-    const SOAContainer<std::vector, NullSkin, double, int, int>& cc = c;
+    SOAContainer<std::vector, PrintableNullSkin, double, int, int> c;
+    const SOAContainer<std::vector, PrintableNullSkin, double, int, int>& cc = c;
     std::tuple<double, int, int> val(3.14, 17, 42);
     // standard push_back by const reference
     c.push_back(val);
     EXPECT_FALSE(c.empty());
-    EXPECT_EQ(1, c.size());
+    EXPECT_EQ(1u, c.size());
     
     // After this, Clang fails
     EXPECT_EQ(c.front(), c.back());
@@ -75,30 +76,30 @@ TEST (BasicTest, More)  {
     c.push_back(std::make_tuple(2.79, 42, 17));
 
     
-    EXPECT_EQ(2, c.size());
+    EXPECT_EQ(2u, c.size());
     EXPECT_NE(c.front(), c.back());
     EXPECT_EQ(c.end(), 2 + c.begin());
     EXPECT_EQ(c.rend(), 2 + c.rbegin());
     // test pop_back
     c.pop_back();
-    EXPECT_EQ(1, c.size());
+    EXPECT_EQ(1u, c.size());
     // start testing plain and simple insert
     std::tuple<double, int, int> val3(2.79, 42, 17);
     auto it = c.insert(c.begin(), val3);
-    EXPECT_EQ(2, c.size());
+    EXPECT_EQ(2u, c.size());
     EXPECT_EQ(it, c.begin());
     const decltype(val) val4(c.front()), val5(c.back());
     EXPECT_EQ(val3, val4);
     EXPECT_EQ(val, val5);
     c.insert(1 + c.cbegin(), std::make_tuple(2.79, 42, 17));
-    EXPECT_EQ(3, c.size());
+    EXPECT_EQ(3u, c.size());
     const decltype(val) val6(c[0]), val7(c[1]);
     EXPECT_EQ(val3, val6);
     EXPECT_EQ(val3, val7);
 
     EXPECT_FALSE(c.empty());
     auto oldcap = c.capacity();
-    EXPECT_GT(oldcap, 0);
+    EXPECT_GT(oldcap, 0u);
     c.clear();
     EXPECT_TRUE(c.empty());
     EXPECT_EQ(oldcap, c.capacity()); // Used to be a bug!
@@ -135,30 +136,30 @@ TEST (BasicTest, More)  {
                     [] (decltype(c)::const_reference obj) {
                     return (std::make_tuple(3.14, 42, 17) <= obj); })));
     // check if none are <
-    EXPECT_EQ(0, static_cast<decltype(oldcap)>(
+    EXPECT_EQ(0u, static_cast<decltype(oldcap)>(
                 std::count_if(std::begin(c), std::end(c),
                     [] (decltype(c)::const_reference obj) {
                     return (obj < std::make_tuple(3.14, 42, 17)); })));
     // check the other variants of comparison operators
-    EXPECT_EQ(0, static_cast<decltype(oldcap)>(
+    EXPECT_EQ(0u, static_cast<decltype(oldcap)>(
                 std::count_if(std::begin(c), std::end(c),
                     [] (decltype(c)::const_reference obj) {
                     return (std::make_tuple(3.14, 42, 17) < obj); })));
     // check if none are >
-    EXPECT_EQ(0, static_cast<decltype(oldcap)>(
+    EXPECT_EQ(0u, static_cast<decltype(oldcap)>(
                 std::count_if(std::begin(c), std::end(c),
                     [] (decltype(c)::const_reference obj) {
                     return (obj > std::make_tuple(3.14, 42, 17)); })));
     // check the other variants of comparison operators
-    EXPECT_EQ(0, static_cast<decltype(oldcap)>(
+    EXPECT_EQ(0u, static_cast<decltype(oldcap)>(
                 std::count_if(std::begin(c), std::end(c),
                     [] (decltype(c)::const_reference obj) {
                     return (std::make_tuple(3.14, 42, 17) > obj); })));
-};
+}
 
 TEST (BasicTest, EvenMore) {
-   SOAContainer<std::vector, NullSkin, double, int, int> c;
-   const SOAContainer<std::vector, NullSkin, double, int, int>& cc = c;
+   SOAContainer<std::vector, PrintableNullSkin, double, int, int> c;
+   const SOAContainer<std::vector, PrintableNullSkin, double, int, int>& cc = c;
     // test insert(pos, first, last), erase(pos) and erase(first, last)
     // by comparing to an array-of-structures in a std::vector
     typedef std::size_t size_type;
@@ -173,7 +174,7 @@ TEST (BasicTest, EvenMore) {
     }
     auto it = c.insert(c.begin(), temp.cbegin(), temp.cend());
     EXPECT_EQ(c.begin(), it);
-    EXPECT_EQ(64, c.size());
+    EXPECT_EQ(64u, c.size());
     EXPECT_EQ(c.size(), temp.size());
     EXPECT_EQ(temp.size(), std::inner_product(
                 c.begin(), c.end(), temp.begin(), size_type(0),
@@ -298,15 +299,15 @@ TEST (BasicTest, EvenMore) {
         // test emplace, emplace_back, resize
         c.clear();
         c.emplace_back(2.79, 42, 17);
-        EXPECT_EQ(1, c.size());
+        EXPECT_EQ(1u, c.size());
         EXPECT_EQ(c.front(), std::make_tuple(2.79, 42, 17));
         auto it = c.emplace(c.begin(), 2.79, 17, 42);
-        EXPECT_EQ(2, c.size());
+        EXPECT_EQ(2u, c.size());
         EXPECT_EQ(c.begin(), it);
         EXPECT_EQ(c.front(), std::make_tuple(2.79, 17, 42));
         EXPECT_EQ(c.back(), std::make_tuple(2.79, 42, 17));
         c.resize(64, std::make_tuple(3.14, 78, 17));
-        EXPECT_EQ(64, c.size());
+        EXPECT_EQ(64u, c.size());
         EXPECT_EQ(c.back(), std::make_tuple(3.14, 78, 17));
 	c.emplace_back(std::make_tuple(42., 42, 42));
         EXPECT_EQ(c.back(), std::make_tuple(42., 42, 42));
@@ -315,7 +316,7 @@ TEST (BasicTest, EvenMore) {
         c.resize(0);
         EXPECT_TRUE(c.empty());
         c.resize(32);
-        EXPECT_EQ(32, c.size());
+        EXPECT_EQ(32u, c.size());
         const std::tuple<double, int, int> defaultval;
         EXPECT_EQ(c.back(), defaultval);
     }
@@ -335,10 +336,10 @@ namespace HitNamespace {
     }
 
     template <typename NAKEDPROXY>
-    class HitSkin : public NullSkin<NAKEDPROXY> {
+    class HitSkin : public PrintableNullSkin<NAKEDPROXY> {
         public:
             template <typename... ARGS>
-            HitSkin(ARGS&&... args) : NullSkin<NAKEDPROXY>(std::forward<ARGS>(args)...) { }
+            HitSkin(ARGS&&... args) : PrintableNullSkin<NAKEDPROXY>(std::forward<ARGS>(args)...) { }
 
             auto xAtYEq0() const noexcept -> decltype(this->template get<Fields::xAtYEq0>())
             { return this->template get<Fields::xAtYEq0>(); }
@@ -486,14 +487,14 @@ namespace stdarraytest_fields {
     typedef SOATypelist::wrap_type<Array> f_array;
 
     template <typename NAKEDPROXY>
-    class ContainerSkin : public NullSkin<NAKEDPROXY> {
+    class ContainerSkin : public PrintableNullSkin<NAKEDPROXY> {
 	public:
 	    typedef ContainerSkin<NAKEDPROXY> self_type;
 	    typedef stdarraytest_fields::Array Array;
 
 	    /// forward constructor to underlying type
 	    template <typename... ARGS>
-	    ContainerSkin(ARGS&&... args) : NullSkin<NAKEDPROXY>(
+	    ContainerSkin(ARGS&&... args) : PrintableNullSkin<NAKEDPROXY>(
 		    std::forward<ARGS>(args)...) { }
 
 
