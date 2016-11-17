@@ -2,18 +2,20 @@ cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
 # C++11 without GNU extensions
 # Requires CMAKE 3.1+ for Mac
-if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.1)
+if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} LESS 3.1)
+    add_compile_options(-std=c++11)
+else()
     cmake_policy(VERSION 3.1) # Needed for Mac
     set(CMAKE_CXX_STANDARD 14)
     set(CMAKE_CXX_EXTENSIONS OFF)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pedantic -Wall -Wextra")
 endif()
+# be moderately paranoid with flags
+add_compile_options(-pedantic -Wall -Wextra)
 
 # CMAKE 2
 include_directories(include)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -ffast-math -ftree-vectorize -march=native")
+add_compile_options(-g -O2 -ffast-math -ftree-vectorize -march=native)
 
 project(SOAContainer CXX)
 
