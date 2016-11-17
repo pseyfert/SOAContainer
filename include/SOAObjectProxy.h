@@ -13,6 +13,7 @@
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
 #include "SOAUtils.h"
+#include "c++14_compat.h"
 
 template <typename PROXY>
 class SOAConstIterator;
@@ -79,33 +80,26 @@ class SOAObjectProxy {
 
     private:
 	/// little helper to implement conversion to tuple
-	struct to_valueHelper {
+	struct helper {
 	    size_type m_idx;
-	    template <typename T, typename Idx>
-	    std::tuple<typename T::value_type>
-	    operator()(const T& obj, Idx) const noexcept(noexcept(
-			std::tuple<typename T::value_type>(obj[m_idx])))
-	    { return std::tuple<typename T::value_type>(obj[m_idx]); }
-	};
-
-	/// little helper to implement conversion to tuple of references
-	struct to_referenceHelper {
-	    size_type m_idx;
-	    template <typename T, typename Idx>
-	    std::tuple<typename T::reference>
-	    operator()(T& obj, Idx) const noexcept(noexcept(
-			    std::tuple<typename T::reference>(obj[m_idx])))
-	    { return std::tuple<typename T::reference>(obj[m_idx]); }
-	};
-
-	/// little helper to implement conversion to tuple of const references
-	struct to_const_referenceHelper {
-	    size_type m_idx;
-	    template <typename T, typename Idx>
-	    std::tuple<typename T::const_reference>
-	    operator()(const T& obj, Idx) const noexcept(noexcept(
-			std::tuple<const typename T::const_reference>(obj[m_idx])))
-	    { return std::tuple<const typename T::const_reference>(obj[m_idx]); }
+	    /// convert to tuple of values
+	    template <typename T, std::size_t... IDX>
+	    auto to_value(const T& obj, std::index_sequence<IDX...>) const
+		noexcept(noexcept(std::make_tuple(std::get<IDX>(obj)[m_idx]...)))
+		-> decltype(std::make_tuple(std::get<IDX>(obj)[m_idx]...))
+	    { return std::make_tuple(std::get<IDX>(obj)[m_idx]...); }
+	    /// convert to tuple of references
+	    template <typename T, std::size_t... IDX>
+	    auto to_reference(T& obj, std::index_sequence<IDX...>) const
+		noexcept(noexcept(std::tie(std::get<IDX>(obj)[m_idx]...)))
+		-> decltype(std::tie(std::get<IDX>(obj)[m_idx]...))
+	    { return std::tie(std::get<IDX>(obj)[m_idx]...); }
+	    /// convert to tuple of const references
+	    template <typename T, std::size_t... IDX>
+	    auto to_const_reference(const T& obj, std::index_sequence<IDX...>) const
+		noexcept(noexcept(std::tie(std::get<IDX>(obj)[m_idx]...)))
+		-> decltype(std::tie(std::get<IDX>(obj)[m_idx]...))
+	    { return std::tie(std::get<IDX>(obj)[m_idx]...); }
 	};
 
 	/// little helper to implement concatenation of tuples
@@ -142,41 +136,27 @@ class SOAObjectProxy {
 
 	/// convert to tuple of member contents
 	operator value_type() const noexcept(noexcept(
-		    SOAUtils::recursive_apply_tuple<
-		    fields_typelist::size()>()(
-			*m_storage, to_valueHelper({ m_index }),
-			tuplecatHelper(), std::tuple<>())))
+		    helper{ m_index }.to_value(*m_storage,
+			std::make_index_sequence<fields_typelist::size()>())))
 	{
-	    return SOAUtils::recursive_apply_tuple<
-		fields_typelist::size()>()(
-		    *m_storage, to_valueHelper({ m_index }),
-		    tuplecatHelper(), std::tuple<>());
+	    return helper{ m_index }.to_value(*m_storage,
+		    std::make_index_sequence<fields_typelist::size()>());
 	}
-
-	/// convert to tuple of references member contents
+	/// convert to tuple of references to members
 	operator reference() noexcept(noexcept(
-		    SOAUtils::recursive_apply_tuple<
-		    fields_typelist::size()>()(
-			*m_storage, to_referenceHelper({ m_index }),
-			tuplecatHelper(), std::tuple<>())))
+		    helper{ m_index }.to_reference(*m_storage,
+			std::make_index_sequence<fields_typelist::size()>())))
 	{
-	    return SOAUtils::recursive_apply_tuple<
-		fields_typelist::size()>()(
-		    *m_storage, to_referenceHelper({ m_index }),
-		    tuplecatHelper(), std::tuple<>());
+	    return helper{ m_index }.to_reference(*m_storage,
+		    std::make_index_sequence<fields_typelist::size()>());
 	}
-
-	/// convert to tuple of const references member contents
+	/// convert to tuple of const references to members
 	operator const_reference() const noexcept(noexcept(
-		    SOAUtils::recursive_apply_tuple<
-		    fields_typelist::size()>()(
-			*m_storage, to_const_referenceHelper({ m_index }),
-			tuplecatHelper(), std::tuple<>())))
+		    helper{ m_index }.to_const_reference(*m_storage,
+			std::make_index_sequence<fields_typelist::size()>())))
 	{
-	    return SOAUtils::recursive_apply_tuple<
-		fields_typelist::size()>()(
-		    *m_storage, to_const_referenceHelper({ m_index }),
-		    tuplecatHelper(), std::tuple<>());
+	    return helper{ m_index }.to_const_reference(*m_storage,
+		    std::make_index_sequence<fields_typelist::size()>());
 	}
 
 	/// assign from tuple of member contents
