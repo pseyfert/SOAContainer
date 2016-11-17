@@ -29,7 +29,7 @@ namespace SOATypelist {
         };
         /// specialisation (NEEDLE not found): find NEEDLE in typelist
         template <std::size_t N, typename TL2>
-        struct find_impl<N, TL2, null_type> {
+        struct find_impl<N, TL2, typelist_impl::empty_typelist> {
             enum { index = -1 };
         };
 
