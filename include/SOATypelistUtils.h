@@ -15,30 +15,10 @@
 namespace SOATypelist {
     /// find index of type NEEDLE in typelist TL (returns -1 if not found)
     template <typename TL, typename NEEDLE>
-    struct find {
-    /// imlpementation: find first occurrence of type NEEDLE in typelist
-        template <std::size_t N, typename TL2, typename HEAD>
-        struct find_impl {
-            enum { index = find_impl<N + 1, typename TL2::tail_types,
-        	typename TL2::head_type>::index };
-        };
-        /// specialisation (NEEDLE found): find NEEDLE in typelist
-        template <std::size_t N, typename TL2>
-        struct find_impl<N, TL2, NEEDLE> {
-            enum { index = N };
-        };
-        /// specialisation (NEEDLE not found): find NEEDLE in typelist
-        template <std::size_t N, typename TL2>
-        struct find_impl<N, TL2, typelist_impl::empty_typelist> {
-            enum { index = -1 };
-        };
-
-        enum { index = find_impl<0, typename TL::tail_types,
-	    typename TL::head_type>::index };
-    };
+    struct find { enum { index = TL::template find<NEEDLE>() }; };
 
     // compile-time test find
-    static_assert(-1 == find<typelist<>, int>::index,
+    static_assert(std::size_t(-1) == find<typelist<>, int>::index,
 	    "find on empty typelist broken");
     static_assert(0 == find<typelist<int>, int>::index,
 	    "find on one element typelist broken");
@@ -54,7 +34,7 @@ namespace SOATypelist {
 	    "find on four element typelist broken");
     static_assert(3 == find<typelist<double, float, bool, int>, int>::index,
 	    "find on four element typelist broken");
-    static_assert(-1 == find<typelist<double, float, bool, int>, char>::index,
+    static_assert(std::size_t(-1) == find<typelist<double, float, bool, int>, char>::index,
 	    "find on four element typelist broken");
 
     /// type to "wrap" other types (to  "distinguish" instances of same type)

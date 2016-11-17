@@ -31,6 +31,10 @@ namespace SOATypelist {
         constexpr static std::size_t size() noexcept { return 0; }
         /// no types at any indices!
         template <std::size_t IDX> struct at {};
+	/// find a type, return its index, or -1 if not found
+	template <typename T, std::size_t = 0>
+	constexpr static std::size_t find() noexcept
+	{ return -1; }
     };
 
     /// little switch for typelist
@@ -68,6 +72,13 @@ namespace SOATypelist {
         /// specialisation: specialisation for reading types at valid indices
         template <int DUMMY> struct at<0, false, DUMMY>
         { typedef head_type type; };
+	/// find a type, return its index, or -1 if not found
+	template <typename T, std::size_t OFS = 0>
+	constexpr static std::size_t find() noexcept
+	{
+	    return std::is_same<T, head_type>::value ? OFS :
+		tail_types::template find<T, OFS + 1>();
+	}
         // make sure we construct only valid typelists
         static_assert(!empty() || (empty() && 0 == size()),
                 "typelist: head empty_typelist with non-empty tail not allowed!");
@@ -76,18 +87,24 @@ namespace SOATypelist {
     // check basic properties to validate implementation
     static_assert(typelist<>::empty(), "implementation error");
     static_assert(typelist<>::size() == 0, "implementation error");
+    static_assert(typelist<>::find<float>() == std::size_t(-1),
+	    "implementation error");
     static_assert(!typelist<int>::empty(), "implementation error");
     static_assert(typelist<int>::size() == 1, "implementation error");
     static_assert(std::is_same<typelist<int>::at<0>::type, int>::value,
             "implementation error");
+    static_assert(typelist<int>::find<int>() == 0, "implementation error");
+    static_assert(typelist<int>::find<float>() == std::size_t(-1),
+	    "implementation error");
     static_assert(!typelist<int, bool>::empty(), "implementation error");
     static_assert(typelist<int, bool>::size() == 2, "implementation error");
     static_assert(std::is_same<typelist<int, bool>::at<0>::type, int>::value,
             "implementation error");
     static_assert(std::is_same<typelist<int, bool>::at<1>::type, bool>::value,
             "implementation error");
+    static_assert(typelist<int, bool>::find<int>() == 0, "implementation error");
+    static_assert(typelist<int, bool>::find<bool>() == 1, "implementation error");
 
-    /// return type at index idx in typelist TL
     template <typename TL, std::size_t idx>
     struct at { typedef typename TL::template at<idx>::type type; };
 }
