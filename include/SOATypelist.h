@@ -31,10 +31,10 @@ namespace SOATypelist {
         constexpr static std::size_t size() noexcept { return 0; }
         /// no types at any indices!
         template <std::size_t IDX> struct at {};
-	/// find a type, return its index, or -1 if not found
-	template <typename T, std::size_t = 0>
-	constexpr static std::size_t find() noexcept
-	{ return -1; }
+        /// find a type, return its index, or -1 if not found
+        template <typename T, std::size_t = 0>
+        constexpr static std::size_t find() noexcept
+        { return -1; }
     };
 
     /// little switch for typelist
@@ -72,16 +72,16 @@ namespace SOATypelist {
         /// specialisation: specialisation for reading types at valid indices
         template <int DUMMY> struct at<0, false, DUMMY>
         { typedef head_type type; };
-	/// find a type, return its index, or -1 if not found
-	template <typename T, std::size_t OFS = 0>
-	constexpr static std::size_t find() noexcept
-	{
-	    return std::is_same<T, head_type>::value ? OFS :
-		tail_types::template find<T, OFS + 1>();
-	}
-	/// little helper to map over the types in the typelist
-	template <template <typename ARG> class OP>
-	using map_t = typelist<OP<HEAD>, OP<ARGS>...>;
+        /// find a type, return its index, or -1 if not found
+        template <typename T, std::size_t OFS = 0>
+        constexpr static std::size_t find() noexcept
+        {
+            return std::is_same<T, head_type>::value ? OFS :
+                tail_types::template find<T, OFS + 1>();
+        }
+        /// little helper to map over the types in the typelist
+        template <template <typename ARG> class OP>
+        using map_t = typelist<OP<HEAD>, OP<ARGS>...>;
         // make sure we construct only valid typelists
         static_assert(!empty() || (empty() && 0 == size()),
                 "typelist: head empty_typelist with non-empty tail not allowed!");
@@ -90,35 +90,35 @@ namespace SOATypelist {
 
     /// check basic properties to validate implementation
     namespace __impl_compile_time_tests {
-	template <typename T> using add_const_t = const T;
-	static_assert(typelist<>::empty(), "implementation error");
-	static_assert(typelist<>::size() == 0, "implementation error");
-	static_assert(typelist<>::find<float>() == std::size_t(-1),
-		"implementation error");
-	static_assert(!typelist<int>::empty(), "implementation error");
-	static_assert(typelist<int>::size() == 1, "implementation error");
-	static_assert(std::is_same<typelist<int>::at<0>::type, int>::value,
-		"implementation error");
-	static_assert(std::is_same<typelist<const int>,
-		typelist<int>::map_t<add_const_t> >::value,
-		"implementation error");
-	static_assert(typelist<int>::find<int>() == 0, "implementation error");
-	static_assert(typelist<int>::find<float>() == std::size_t(-1),
-		"implementation error");
-	static_assert(!typelist<int, bool>::empty(), "implementation error");
-	static_assert(typelist<int, bool>::size() == 2, "implementation error");
-	static_assert(std::is_same<typelist<int, bool>::at<0>::type, int>::value,
-		"implementation error");
-	static_assert(std::is_same<typelist<int, bool>::at<1>::type, bool>::value,
-		"implementation error");
-	static_assert(typelist<int, bool>::find<int>() == 0, "implementation error");
-	static_assert(typelist<int, bool>::find<bool>() == 1, "implementation error");
-	static_assert(std::is_same<typelist<const int, const bool>,
-		typelist<int, bool>::map_t<add_const_t> >::value, 
-		"implementation error");
+        template <typename T> using add_const_t = const T;
+        static_assert(typelist<>::empty(), "implementation error");
+        static_assert(typelist<>::size() == 0, "implementation error");
+        static_assert(typelist<>::find<float>() == std::size_t(-1),
+                "implementation error");
+        static_assert(!typelist<int>::empty(), "implementation error");
+        static_assert(typelist<int>::size() == 1, "implementation error");
+        static_assert(std::is_same<typelist<int>::at<0>::type, int>::value,
+                "implementation error");
+        static_assert(std::is_same<typelist<const int>,
+                typelist<int>::map_t<add_const_t> >::value,
+                "implementation error");
+        static_assert(typelist<int>::find<int>() == 0, "implementation error");
+        static_assert(typelist<int>::find<float>() == std::size_t(-1),
+                "implementation error");
+        static_assert(!typelist<int, bool>::empty(), "implementation error");
+        static_assert(typelist<int, bool>::size() == 2, "implementation error");
+        static_assert(std::is_same<typelist<int, bool>::at<0>::type, int>::value,
+                "implementation error");
+        static_assert(std::is_same<typelist<int, bool>::at<1>::type, bool>::value,
+                "implementation error");
+        static_assert(typelist<int, bool>::find<int>() == 0, "implementation error");
+        static_assert(typelist<int, bool>::find<bool>() == 1, "implementation error");
+        static_assert(std::is_same<typelist<const int, const bool>,
+                typelist<int, bool>::map_t<add_const_t> >::value,
+                "implementation error");
     }
 }
 
 #endif // SOATYPELIST_H
 
-// vim: sw=4:tw=78:ft=cpp
+// vim: sw=4:tw=78:ft=cpp:et

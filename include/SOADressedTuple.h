@@ -13,7 +13,7 @@
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
  * @date 2015-05-09
- * 
+ *
  * @tparam TUPLE        an instantiation of std::tuple
  * @tparam CONTAINER    underlying SOAContainer
  */
@@ -27,7 +27,7 @@ class DressedTuple : public TUPLE
         /// forward constructor calls to TUPLE's constructor(s)
         template <typename... ARGS>
         DressedTuple(ARGS&&... args) : TUPLE(std::forward<ARGS>(args)...) { }
-        
+
         /// forward (copy) assignment to the TUPLE implementation
         template <typename ARG>
         self_type& operator=(const ARG& other) noexcept(noexcept(
@@ -69,4 +69,4 @@ class DressedTuple : public TUPLE
 
 #endif // SOADRESSEDTUPLE_H
 
-// vim: sw=4:tw=78:ft=cpp
+// vim: sw=4:tw=78:ft=cpp:et

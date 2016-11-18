@@ -17,43 +17,43 @@ namespace SOAUtils {
     template <std::size_t N>
     struct recursive_apply_tuple
     {
-	/// used to pass current index to functor
-	struct IndexWrapper { enum { value = N - 1 }; };
-	/// version for functors that return something
+        /// used to pass current index to functor
+        struct IndexWrapper { enum { value = N - 1 }; };
+        /// version for functors that return something
         template <typename OBJ, typename F, typename C, typename I>
         auto operator()(OBJ& obj, const F& functor,
-		const C& combiner, I initial) const -> decltype(
-		    combiner(
-			recursive_apply_tuple<N - 1>()(obj, functor,
-			    combiner, initial),
-			functor(std::get<N - 1>(obj), IndexWrapper())))
+                const C& combiner, I initial) const -> decltype(
+                    combiner(
+                        recursive_apply_tuple<N - 1>()(obj, functor,
+                            combiner, initial),
+                        functor(std::get<N - 1>(obj), IndexWrapper())))
         {
-	    return combiner(
-    		recursive_apply_tuple<N - 1>()(obj, functor,
-		    combiner, initial),
-    		functor(std::get<N - 1>(obj), IndexWrapper()));
+            return combiner(
+                recursive_apply_tuple<N - 1>()(obj, functor,
+                    combiner, initial),
+                functor(std::get<N - 1>(obj), IndexWrapper()));
         }
-	/// version for functors that return nothing
+        /// version for functors that return nothing
         template <typename OBJ, typename F>
-	void operator()(OBJ& obj, const F& functor) const
+        void operator()(OBJ& obj, const F& functor) const
         {
-	    recursive_apply_tuple<N - 1>()(obj, functor);
-	    functor(std::get<N - 1>(obj), IndexWrapper());
+            recursive_apply_tuple<N - 1>()(obj, functor);
+            functor(std::get<N - 1>(obj), IndexWrapper());
         }
     };
-    
+
     /// specialisation for termination of recursion
     template <>
     struct recursive_apply_tuple<0>
     {
-	/// version for functors that return something
+        /// version for functors that return something
         template <typename OBJ, typename F, typename C, typename I>
         I operator()(OBJ&, const F&, const C&, I initial) const
         { return initial; }
-	/// version for functors that return nothing
+        /// version for functors that return nothing
         template <typename OBJ, typename F>
         void operator()(OBJ&, const F&) const
-	{ }
+        { }
     };
 
     /// little tool to call a callable using the arguments given in a tuple
@@ -119,4 +119,4 @@ namespace SOAUtils {
 
 #endif // SOAUTILS_H
 
-// vim: sw=4:tw=78:ft=cpp
+// vim: sw=4:tw=78:ft=cpp:et

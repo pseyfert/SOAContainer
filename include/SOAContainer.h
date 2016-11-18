@@ -79,7 +79,7 @@ class NullSkin : public NAKEDPROXY
  * storage array, effectively creating a structure-of-arrays (SOA) layout which
  * is advantageous for vectorisation of algorithms. To illustrate the SOA
  * layout, first consider the normal array-of-structures (AOS) layout:
- * 
+ *
  * @code
  * class Point {
  *     private:
@@ -95,11 +95,11 @@ class NullSkin : public NAKEDPROXY
  *         float r2() const noexcept
  *         { return m_x * m_x + m_y * m_y; }
  * };
- * 
+ *
  * typedef std::vector<Point> AOSPoints;
  * typedef Point& AOSPoint;
  * @endcode
- * 
+ *
  * The memory layout in the example above will be x of element 0, y of element
  * 0, x of element 1, y of element 1, x of element 2, and so on.
  *
@@ -107,7 +107,7 @@ class NullSkin : public NAKEDPROXY
  *
  * @code
  * #include "SOAContainer.h"
- * 
+ *
  * // first declare member "tags" which describe the members of the notional
  * // struct (which will never exist in memory - SOA layout!)
  *  namespace PointFields {
@@ -118,7 +118,7 @@ class NullSkin : public NAKEDPROXY
  *     typedef struct : public wrap_type<float> { } x;
  *     typedef struct : public wrap_type<float> { } y;
  * };
- * 
+ *
  * // define the "skin", i.e. the outer guise that the naked members "wear"
  * // to make interaction with the class nice
  * template <typename NAKEDPROXY>
@@ -138,7 +138,7 @@ class NullSkin : public NAKEDPROXY
  *         template <typename ARG>
  *         SOAPoint<NAKEDPROXY>& operator=(ARG&& arg)
  *         { NAKEDPROXY::operator=(std::move(arg)); return *this; }
- * 
+ *
  *         float x() const noexcept
  *         { return this-> template get<PointFields::x>(); }
  *         float y() const noexcept
@@ -147,11 +147,11 @@ class NullSkin : public NAKEDPROXY
  *         { this-> template get<PointFields::x>() = x; }
  *         void setY(float y) noexcept
  *         { this-> template get<PointFields::y>() = y; }
- * 
+ *
  *         // again, something beyond plain setters/getters
  *         float r2() const noexcept { return x() * x() + y() * y(); }
  * };
- * 
+ *
  * // define the SOA container type
  * typedef SOAContainer<
  *         std::vector, // underlying type for each field
@@ -161,7 +161,7 @@ class NullSkin : public NAKEDPROXY
  * // define the SOAPoint itself
  * typedef typename SOAPoints::proxy SOAPoint;
  * @endcode
- * 
+ *
  * The code is very similar to the AOS layout example above, but the memory
  * layout is very different. Internally, the container has two std::vectors,
  * one which holds all the x "members" of the point structure, and one which
@@ -280,10 +280,10 @@ class SOAContainer {
         /// typedef holding a typelist with the given fields
         typedef SOATypelist::typelist<FIELDS...> fields_typelist;
 
-	/// convenience function to return member number given member tag type
-	template <typename MEMBER>
-	static constexpr size_type memberno() noexcept
-	{ return fields_typelist::template find<MEMBER>(); }
+        /// convenience function to return member number given member tag type
+        template <typename MEMBER>
+        static constexpr size_type memberno() noexcept
+        { return fields_typelist::template find<MEMBER>(); }
 
     private:
         /// type of the storage backend
@@ -305,14 +305,14 @@ class SOAContainer {
 
     public:
         /// (notion of) type of the contained objects
-	typedef SKIN<DressedTuple<naked_value_tuple_type, self_type> >
-	    value_type;
-	/// (notion of) reference to value_type (outside container)
-	typedef SKIN<DressedTuple<naked_reference_tuple_type, self_type> >
-	    value_reference;
-	/// (notion of) const reference to value_type (outside container)
-	typedef SKIN<DressedTuple<naked_const_reference_tuple_type,
-		self_type> > value_const_reference;
+        typedef SKIN<DressedTuple<naked_value_tuple_type, self_type> >
+            value_type;
+        /// (notion of) reference to value_type (outside container)
+        typedef SKIN<DressedTuple<naked_reference_tuple_type, self_type> >
+            value_reference;
+        /// (notion of) const reference to value_type (outside container)
+        typedef SKIN<DressedTuple<naked_const_reference_tuple_type,
+                self_type> > value_const_reference;
 
     public:
         /// naked proxy type (to be given a "skin" later)
@@ -764,8 +764,8 @@ class SOAContainer {
         /// get begin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto begin() noexcept -> decltype(
-		std::get<memberno<MEMBER>()>(m_storage).begin())
-	{ return std::get<memberno<MEMBER>()>(m_storage).begin(); }
+                std::get<memberno<MEMBER>()>(m_storage).begin())
+        { return std::get<memberno<MEMBER>()>(m_storage).begin(); }
 
         /// get begin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -776,8 +776,8 @@ class SOAContainer {
         /// get begin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto begin() const noexcept -> decltype(
-		std::get<memberno<MEMBER>()>(m_storage).begin())
-	{ return std::get<memberno<MEMBER>()>(m_storage).begin(); }
+                std::get<memberno<MEMBER>()>(m_storage).begin())
+        { return std::get<memberno<MEMBER>()>(m_storage).begin(); }
 
         /// get begin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -800,8 +800,8 @@ class SOAContainer {
         /// get end iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto end() noexcept -> decltype(
-		std::get<memberno<MEMBER>()>(m_storage).end())
-	{ return std::get<memberno<MEMBER>()>(m_storage).end(); }
+                std::get<memberno<MEMBER>()>(m_storage).end())
+        { return std::get<memberno<MEMBER>()>(m_storage).end(); }
 
         /// get end iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -812,8 +812,8 @@ class SOAContainer {
         /// get end iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto end() const noexcept -> decltype(
-		std::get<memberno<MEMBER>()>(m_storage).end())
-	{ return std::get<memberno<MEMBER>()>(m_storage).end(); }
+                std::get<memberno<MEMBER>()>(m_storage).end())
+        { return std::get<memberno<MEMBER>()>(m_storage).end(); }
 
         /// get cend iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -824,8 +824,8 @@ class SOAContainer {
         /// get cend iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto cend() const noexcept -> decltype(
-		std::get<memberno<MEMBER>()>(m_storage).cend())
-	{ return std::get<memberno<MEMBER>()>(m_storage).cend(); }
+                std::get<memberno<MEMBER>()>(m_storage).cend())
+        { return std::get<memberno<MEMBER>()>(m_storage).cend(); }
 
         /// iterator pointing to first element in reverse order
         reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
@@ -852,8 +852,8 @@ class SOAContainer {
         /// get rbegin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto rbegin() noexcept -> decltype(
-		std::get<memberno<MEMBER>()>(m_storage).rbegin())
-	{ return std::get<memberno<MEMBER>()>(m_storage).rbegin(); }
+                std::get<memberno<MEMBER>()>(m_storage).rbegin())
+        { return std::get<memberno<MEMBER>()>(m_storage).rbegin(); }
 
         /// get rbegin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -864,8 +864,8 @@ class SOAContainer {
         /// get rbegin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto rbegin() const noexcept -> decltype(
-		std::get<memberno<MEMBER>()>(m_storage).rbegin())
-	{ return std::get<memberno<MEMBER>()>(m_storage).rbegin(); }
+                std::get<memberno<MEMBER>()>(m_storage).rbegin())
+        { return std::get<memberno<MEMBER>()>(m_storage).rbegin(); }
 
         /// get rbegin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -876,8 +876,8 @@ class SOAContainer {
         /// get rbegin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto crbegin() const noexcept -> decltype(
-		std::get<memberno<MEMBER>()>(m_storage).crbegin())
-	{ return std::get<memberno<MEMBER>()>(m_storage).crbegin(); }
+                std::get<memberno<MEMBER>()>(m_storage).crbegin())
+        { return std::get<memberno<MEMBER>()>(m_storage).crbegin(); }
 
         /// get rend iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -888,8 +888,8 @@ class SOAContainer {
         /// get rend iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto rend() noexcept -> decltype(
-		std::get<memberno<MEMBER>()>(m_storage).rend())
-	{ return std::get<memberno<MEMBER>()>(m_storage).rend(); }
+                std::get<memberno<MEMBER>()>(m_storage).rend())
+        { return std::get<memberno<MEMBER>()>(m_storage).rend(); }
 
         /// get rend iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -900,8 +900,8 @@ class SOAContainer {
         /// get rend iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto rend() const noexcept -> decltype(
-		std::get<memberno<MEMBER>()>(m_storage).rend())
-	{ return std::get<memberno<MEMBER>()>(m_storage).rend(); }
+                std::get<memberno<MEMBER>()>(m_storage).rend())
+        { return std::get<memberno<MEMBER>()>(m_storage).rend(); }
 
         /// get crend iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
@@ -912,8 +912,8 @@ class SOAContainer {
         /// get crend iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto crend() const noexcept -> decltype(
-		std::get<memberno<MEMBER>()>(m_storage).crend())
-	{ return std::get<memberno<MEMBER>()>(m_storage).crend(); }
+                std::get<memberno<MEMBER>()>(m_storage).crend())
+        { return std::get<memberno<MEMBER>()>(m_storage).crend(); }
 
         /// resize container (use default-constructed values if container grows)
         void resize(size_type sz) noexcept(noexcept(
@@ -1287,4 +1287,4 @@ bool operator>=(const SOAContainer<CONTAINER, SKIN, FIELDS...>& a,
 
 #endif // SOACONTAINER_H
 
-// vim: sw=4:tw=78:ft=cpp
+// vim: sw=4:tw=78:ft=cpp:et

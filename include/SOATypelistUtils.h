@@ -116,4 +116,4 @@ namespace SOATypelist {
 
 #endif // SOATYPELISTUTILS_H
 
-// vim: sw=4:tw=78:ft=cpp
+// vim: sw=4:tw=78:ft=cpp:et
