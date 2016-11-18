@@ -250,7 +250,7 @@ class SOAContainer {
                 /// true if HEAD and TAIL verify okay
                 enum {
                     value = (std::is_pod<HEAD>::value ||
-                        SOATypelist::typelist_helpers::is_wrapped<
+                        SOATypelist::is_wrapped<
                         HEAD>::value) && verify_fields<TAIL...>::value
                 };
             };
@@ -261,7 +261,7 @@ class SOAContainer {
                 /// true if HEAD verifies okay
                 enum {
                     value = std::is_pod<HEAD>::value ||
-                        SOATypelist::typelist_helpers::is_wrapped<HEAD>::value
+                        SOATypelist::is_wrapped<HEAD>::value
                 };
             };
             // make sure fields are either POD or wrapped types
@@ -283,7 +283,7 @@ class SOAContainer {
 	/// convenience function to return member number given member tag type
 	template <typename MEMBER>
 	static constexpr size_type memberno() noexcept
-	{ return SOATypelist::find<fields_typelist, MEMBER>::index; }
+	{ return fields_typelist::template find<MEMBER>(); }
 
     private:
         /// type of the storage backend
@@ -295,14 +295,14 @@ class SOAContainer {
         SOAStorage m_storage;
 
         /// (naked) tuple type used as values
-        typedef typename SOATypelist::typelist_to_tuple<
-            fields_typelist>::type naked_value_tuple_type;
+        typedef typename SOATypelist::to_tuple<
+            fields_typelist>::value_tuple naked_value_tuple_type;
         /// (naked) tuple type used as reference
-        typedef typename SOATypelist::typelist_to_reftuple<
-            fields_typelist>::type naked_reference_tuple_type;
+        typedef typename SOATypelist::to_tuple<
+            fields_typelist>::reference_tuple naked_reference_tuple_type;
         /// (naked) tuple type used as const reference
-        typedef typename SOATypelist::typelist_to_creftuple<
-            fields_typelist>::type naked_const_reference_tuple_type;
+        typedef typename SOATypelist::to_tuple<
+            fields_typelist>::const_reference_tuple naked_const_reference_tuple_type;
 
     public:
         /// (notion of) type of the contained objects

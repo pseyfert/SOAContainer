@@ -11,40 +11,26 @@
 #include <vector>
 
 #include "SOATypelist.h"
+#include "c++14_compat.h"
 
 namespace SOATypelist {
-    /// find index of type NEEDLE in typelist TL (returns -1 if not found)
-    template <typename TL, typename NEEDLE>
-    struct find { enum { index = TL::template find<NEEDLE>() }; };
-
-    // compile-time test find
-    static_assert(std::size_t(-1) == find<typelist<>, int>::index,
-	    "find on empty typelist broken");
-    static_assert(0 == find<typelist<int>, int>::index,
-	    "find on one element typelist broken");
-    static_assert(0 == find<typelist<int, int>, int>::index,
-	    "find on two element typelist broken");
-    static_assert(0 == find<typelist<int, float>, int>::index,
-	    "find on two element typelist broken");
-    static_assert(1 == find<typelist<float, int>, int>::index,
-	    "find on two element typelist broken");
-    static_assert(1 == find<typelist<bool, int, float>, int>::index,
-	    "find on three element typelist broken");
-    static_assert(2 == find<typelist<double, bool, int, float>, int>::index,
-	    "find on four element typelist broken");
-    static_assert(3 == find<typelist<double, float, bool, int>, int>::index,
-	    "find on four element typelist broken");
-    static_assert(std::size_t(-1) == find<typelist<double, float, bool, int>, char>::index,
-	    "find on four element typelist broken");
+    /// is a type a wrapped type or not (see below)?
+    template <typename T, typename = void>
+    struct is_wrapped : std::false_type {};
+    /// is a type a wrapped type or not (see below)?
+    template <typename T>
+    struct is_wrapped<T, std::void_t<typename T::wrap_tag> > : std::true_type {};
 
     /// type to "wrap" other types (to  "distinguish" instances of same type)
-    template<typename T> struct wrap_type;
+    template<typename T, bool DUMMY = is_wrapped<T>::value> struct wrap_type;
     /// specialisation: wrapping a wrap_type results in the type itself
-    template<typename T> struct wrap_type<wrap_type<T> >
-    { typedef struct {} wrap_tag; typedef T type; };
+    template<typename T> struct wrap_type<T, true>
+    { typedef struct {} wrap_tag; typedef typename T::type type; };
     /// specialisation: wrap a type
-    template<typename T> struct wrap_type
+    template<typename T> struct wrap_type<T, false>
     { typedef struct {} wrap_tag; typedef T type; };
+    /// little helper to "unwrap" wrapped types (wrap_type, see above)
+    template <typename T> using unwrap_t = typename wrap_type<T>::type;
 
     // test wrap_type
     static_assert(std::is_same<int, typename wrap_type<int>::type>::value,
@@ -62,39 +48,26 @@ namespace SOATypelist {
 	typedef struct : public wrap_type<double> {} dzdy;
 
 	typedef typelist<xAtYEq0, zAtYEq0, y, dxdy, dzdy> hitfields;
-	static_assert(0 == find<hitfields, xAtYEq0>::index,
+	static_assert(0 == hitfields::find<xAtYEq0>(),
 		"lookup with typedefs won't work");
-	static_assert(1 == find<hitfields, zAtYEq0>::index,
+	static_assert(1 == hitfields::find<zAtYEq0>(),
 		"lookup with typedefs won't work");
-	static_assert(2 == find<hitfields, y>::index,
+	static_assert(2 == hitfields::find<y>(),
 		"lookup with typedefs won't work");
-	static_assert(3 == find<hitfields, dxdy>::index,
+	static_assert(3 == hitfields::find<dxdy>(),
 		"lookup with typedefs won't work");
-	static_assert(4 == find<hitfields, dzdy>::index,
+	static_assert(4 == hitfields::find<dzdy>(),
 		"lookup with typedefs won't work");
-	static_assert(std::is_same<double, at<hitfields, 2>::type::type>::value,
+	static_assert(std::is_same<double, hitfields::at<2>::type::type>::value,
 		"unpacking tagged type doesn't work");
+	static_assert(std::is_same<typelist<double, double, double, double, double>,
+		hitfields::map_t<unwrap_t> >::value,
+		"unpacking tagged type doesn't work");
+
     }
 
     /// base class to convert typelist to tuple (helper templates)
     struct typelist_helpers {
-	/// little helper needed to unwrap wrapped types (recognises wrapped types)
-	template <typename T>
-	struct is_wrapped {
-	    template <typename U> static int* test(typename U::wrap_tag*);
-	    template <typename U> static int test(...);
-	    enum { value = std::is_pointer<decltype(test<T>(nullptr))>::value };
-	};
-
-	/// little helper to "unwrap" wrapped types (wrap_type, see above)
-	template <typename T, bool ISWRAPPED = is_wrapped<T>::value>
-	struct unwrap;
-	/// specialisation: unwrap a wrapped type
-	template <typename T>
-	struct unwrap<T, true> { typedef typename T::type type; };
-	/// specialisation: unwrap an un-wrapped type (just returns T)
-	template <typename T>
-	struct unwrap<T, false> { typedef T type; };
 
 	/// little helper to perform the typelist to tuple conversion
 	template <typename H, typename... T>
@@ -106,92 +79,40 @@ namespace SOATypelist {
 	};
     };
 
-    /// tuple type holding the types contained in the typelist
     template <typename TL>
-    struct typelist_to_tuple : public typelist_helpers {
-	/// finished tuple type
-	typedef typename tuple_push<typename unwrap<typename TL::head_type>::type,
-		typename typelist_to_tuple<
-		    typename TL::tail_types>::type>::type type;
-    };
+    class to_tuple {
+	private:
+	    template <typename T> using decay_t = typename std::decay<T>::type;
+	    template <typename... ARGS>
+	    static std::tuple<ARGS...> to_tuple_fn(typelist<ARGS...>) noexcept;
+	    template <typename... ARGS>
+	    static std::tuple<ARGS&...> to_ref_tuple_fn(typelist<ARGS...>) noexcept;
+	    template <typename... ARGS>
+	    static std::tuple<const ARGS&...> to_cref_tuple_fn(typelist<ARGS...>) noexcept;
+	    template <typename... ARGS>
+	    static std::tuple<ARGS&&...> to_rval_tuple_fn(typelist<ARGS...>) noexcept;
+	public:
+	    using value_tuple = decltype(to_tuple_fn(typename TL::template map_t<unwrap_t>::template map_t<decay_t>()));
+	    using rvalue_tuple = decltype(to_rval_tuple_fn(typename TL::template map_t<unwrap_t>::template map_t<decay_t>()));
+	    using reference_tuple = decltype(to_ref_tuple_fn(typename TL::template map_t<unwrap_t>::template map_t<decay_t>()));
+	    using const_reference_tuple = decltype(to_cref_tuple_fn(typename TL::template map_t<unwrap_t>::template map_t<decay_t>()));
 
-    /// finished tuple type for one-element typelists
-    template <typename H>
-    struct typelist_to_tuple<typelist<H> > : public typelist_helpers {
-	typedef std::tuple<typename unwrap<H>::type> type;
     };
-
-    // compile-time test typelist_to_tuple
+    /// test implementation of to_tuple
     namespace __impl_compile_time_tests {
-	// test typelist_to_tuple on typelists with unwrapped types
-	static_assert(std::is_same<std::tuple<int, int, float>,
-		typename typelist_to_tuple<
-		typelist<int, int, float> >::type>::value,
-		"typelist_to_tuple broken for simple typelists");
-	// test typelist_to_tuple on typelists with wrapped types
 	static_assert(std::is_same<
-		std::tuple<double, double, double, double, double>,
-		typename typelist_to_tuple<hitfields>::type>::value,
-		"typelist_to_tuple broken for wrapped typelists");
-    }
-
-    /// tuple type holding references to the types contained in the typelist
-    template <typename TL>
-    struct typelist_to_reftuple : public typelist_helpers {
-	/// finished tuple type
-	typedef typename tuple_push<typename unwrap<typename TL::head_type>::type&,
-		typename typelist_to_reftuple<
-		    typename TL::tail_types>::type>::type type;
-    };
-
-    /// finished tuple type for one-element typelists
-    template <typename H>
-    struct typelist_to_reftuple<typelist<H> > : public typelist_helpers {
-	typedef std::tuple<typename unwrap<H>::type&> type;
-    };
-
-    // compile-time test typelist_to_reftuple
-    namespace __impl_compile_time_tests {
-	// test typelist_to_tuple on typelists with unwrapped types
-	static_assert(std::is_same<std::tuple<int&, int&, float&>,
-		typename typelist_to_reftuple<
-		typelist<int, int, float> >::type>::value,
-		"typelist_to_reftuple broken for simple typelists");
-	// test typelist_to_tuple on typelists with wrapped types
+		typename to_tuple<typelist<int, float> >::value_tuple,
+		std::tuple<int, float> >::value, "implementation error");
 	static_assert(std::is_same<
-		std::tuple<double&, double&, double&, double&, double&>,
-		typename typelist_to_reftuple<hitfields>::type>::value,
-		"typelist_to_reftuple broken for wrapped typelists");
-    }
-
-    /// tuple type holding references to the types contained in the typelist
-    template <typename TL>
-    struct typelist_to_creftuple : public typelist_helpers {
-	/// finished tuple type
-	typedef typename tuple_push<const typename unwrap<typename TL::head_type>::type&,
-		typename typelist_to_creftuple<
-		    typename TL::tail_types>::type>::type type;
-    };
-
-    /// finished tuple type for one-element typelists
-    template <typename H>
-    struct typelist_to_creftuple<typelist<H> > : public typelist_helpers {
-	typedef std::tuple<const typename unwrap<H>::type&> type;
-    };
-
-    // compile-time test typelist_to_creftuple
-    namespace __impl_compile_time_tests {
-	// test typelist_to_tuple on typelists with unwrapped types
-	static_assert(std::is_same<std::tuple<
-		const int&, const int&, const float&>,
-		typename typelist_to_creftuple<
-		typelist<int, int, float> >::type>::value,
-		"typelist_to_creftuple broken for simple typelists");
-	// test typelist_to_tuple on typelists with wrapped types
-	static_assert(std::is_same<std::tuple<const double&, const double&,
-		const double&, const double&, const double&>,
-		typename typelist_to_creftuple<hitfields>::type>::value,
-		"typelist_to_creftuple broken for wrapped typelists");
+		typename to_tuple<typelist<int, float> >::reference_tuple,
+		std::tuple<int&, float&> >::value, "implementation error");
+	static_assert(std::is_same<
+		typename to_tuple<typelist<int, float> >::const_reference_tuple,
+		std::tuple<const int&, const float&> >::value,
+		"implementation error");
+	static_assert(std::is_same<
+		typename to_tuple<typelist<int, float> >::rvalue_tuple,
+		std::tuple<int&&, float&&> >::value, "implementation error");
     }
 
     /// helper to turn a type T into CONTAINER<T>
@@ -208,7 +129,7 @@ namespace SOATypelist {
     struct typelist_to_tuple_of_containers : public typelist_helpers {
 	/// finished tuple type
 	typedef typename tuple_push<typename CONTAINERIFIER::template of_type<
-	    typename unwrap<typename TL::head_type>::type>::type,
+	    unwrap_t<typename TL::head_type> >::type,
 		     typename typelist_to_tuple_of_containers<
 			 typename TL::tail_types>::type>::type type;
     };
@@ -219,7 +140,7 @@ namespace SOATypelist {
         public typelist_helpers
     {
 	typedef std::tuple<typename CONTAINERIFIER::template of_type<
-	    typename unwrap<H>::type>::type> type;
+	    unwrap_t<H> >::type> type;
     };
 
     // compile-time test typelist_to_tuple_of_containers

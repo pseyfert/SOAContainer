@@ -41,7 +41,7 @@ namespace std {
 #error "Your C++ compiler must support at least C++11."
 #endif // __cplusplus
 
-// FIXME: what is the defined value of compliant C++17 compilters?
+// FIXME: what is the defined value of compliant C++17 compilers?
 #if __cplusplus >= 201700L
 #include <type_traits>
 #else
