@@ -287,9 +287,8 @@ class SOAContainer {
 
     private:
         /// type of the storage backend
-        typedef typename SOATypelist::typelist_to_tuple_of_containers<
-            fields_typelist,
-            SOATypelist::containerify<CONTAINER> >::type SOAStorage;
+        typedef typename SOATypelist::to_tuple<
+            fields_typelist>::template container_tuple<CONTAINER> SOAStorage;
 
         /// storage backend
         SOAStorage m_storage;
