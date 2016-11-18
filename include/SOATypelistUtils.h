@@ -75,6 +75,7 @@ namespace SOATypelist {
             struct container_of {
                 template <typename T> using _t = CONTAINER<T>;
             };
+        public:
             template <typename... ARGS>
             static std::tuple<ARGS...> to_tuple_fn(typelist<ARGS...>) noexcept;
             template <typename... ARGS>
@@ -83,7 +84,6 @@ namespace SOATypelist {
             static std::tuple<const ARGS&...> to_cref_tuple_fn(typelist<ARGS...>) noexcept;
             template <typename... ARGS>
             static std::tuple<ARGS&&...> to_rval_tuple_fn(typelist<ARGS...>) noexcept;
-        public:
             using value_tuple = decltype(to_tuple_fn(typename TL::template map_t<unwrap_t>::template map_t<decay_t>()));
             using rvalue_tuple = decltype(to_rval_tuple_fn(typename TL::template map_t<unwrap_t>::template map_t<decay_t>()));
             using reference_tuple = decltype(to_ref_tuple_fn(typename TL::template map_t<unwrap_t>::template map_t<decay_t>()));
