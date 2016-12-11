@@ -42,6 +42,18 @@ namespace SOAUtils {
         noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...))) ->
         decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...))
     { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...); }
+    /// apply functor fn to each element of tuple, and return tuple with results
+    template <typename OBJ, typename FUNCTOR, typename ARG2, std::size_t... IDX>
+    auto apply_tuple2(OBJ& obj, FUNCTOR fn, ARG2& arg2, std::index_sequence<IDX...>) noexcept(
+        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...))) ->
+        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...))
+    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...); }
+    /// apply functor fn to each element of tuple, and return tuple with results
+    template <typename OBJ, typename FUNCTOR, typename ARG2, typename ARG3, std::size_t... IDX>
+    auto apply_tuple3(OBJ& obj, FUNCTOR fn, const ARG2& arg2, ARG3 arg3, std::index_sequence<IDX...>) noexcept(
+        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2), arg3)...))) ->
+        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2), arg3)...))
+    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2), arg3)...); }
 
     /// apply some functor to each element of a tuple, and gather return value
     template <std::size_t N>

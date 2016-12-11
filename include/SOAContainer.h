@@ -480,24 +480,10 @@ class SOAContainer {
                 void operator()(T& obj, V&& val) const noexcept(
                         noexcept(obj.insert(obj.begin() + m_idx, std::move(val))))
                 { obj.insert(obj.begin() + m_idx, std::move(val)); }
-            };
-
-            /// little helper for insert(it, count, val)
-            struct insertHelper_count {
-                const value_type& m_val;
-                size_type m_idx;
-                size_type m_cnt;
-                insertHelper_count( const value_type& val, size_type idx,
-                    size_type cnt) noexcept :
-                m_val(val), m_idx(idx), m_cnt(cnt) { }
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(noexcept(
-                        obj.insert(obj.begin() + m_idx, m_cnt,
-                            std::get<IDX::value>(m_val))))
-                {
-                obj.insert(obj.begin() + m_idx, m_cnt,
-                        std::get<IDX::value>(m_val));
-                }
+                template <typename T, typename V>
+                void operator()(T& obj, const V& val, size_type count) const noexcept(
+                        noexcept(obj.insert(obj.begin() + m_idx, val, count)))
+                { obj.insert(obj.begin() + m_idx, count, val); }
             };
 
             /// little helper for erase(it)
@@ -965,17 +951,17 @@ class SOAContainer {
         }
 
         /// insert count copies of value at the given position
-        iterator insert(const_iterator pos, size_type count, const
-                value_type& val) noexcept(noexcept(
-                        SOAUtils::recursive_apply_tuple<
-                        sizeof...(FIELDS)>()(m_storage,
-                            typename impl_detail::insertHelper_count(
-                                val, pos.m_proxy.m_index, count))))
+        iterator insert(const_iterator pos, size_type count, const value_type& val) noexcept(
+                noexcept(SOAUtils::apply_tuple3(m_storage,
+                    typename impl_detail::insertHelper(pos.m_proxy.m_index),
+                    val, count,
+                    std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*pos).m_storage == &m_storage);
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::insertHelper_count(
-                        val, pos.m_proxy.m_index, count));
+            SOAUtils::apply_tuple3(m_storage,
+                    typename impl_detail::insertHelper(pos.m_proxy.m_index),
+                    val, count,
+                    std::make_index_sequence<sizeof...(FIELDS)>());
             return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
         }
 
