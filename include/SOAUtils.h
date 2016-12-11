@@ -13,6 +13,36 @@
 
 /// various other utilities used by SOAContainer
 namespace SOAUtils {
+    /// invoke fun on given arguments, return a dummy int if fun returns void
+    template <typename FUN, typename... ARG>
+    auto invoke_void2int(FUN fun, ARG&&... arg) noexcept(
+        noexcept(fun(std::forward<ARG>(arg)...))) ->
+        typename std::enable_if<
+            !std::is_same<void, typename std::result_of<FUN(ARG...)>::type>::value,
+            typename std::result_of<FUN(ARG...)>::type>::type
+    { return fun(std::forward<ARG>(arg)...); }
+    /// invoke fun on given arguments, return a dummy int if fun returns void
+    template <typename FUN, typename... ARG>
+    auto invoke_void2int(FUN fun, ARG&&... arg) noexcept(
+        noexcept(fun(std::forward<ARG>(arg)...))) ->
+        typename std::enable_if<
+            std::is_same<void, typename std::result_of<FUN(ARG...)>::type>::value,
+            int>::type
+    { return fun(std::forward<ARG>(arg)...), 0; }
+
+    /// apply functor fn to each element of tuple, and return tuple with results
+    template <typename OBJ, typename FUNCTOR, std::size_t... IDX>
+    auto apply_tuple(OBJ& obj, FUNCTOR fn, std::index_sequence<IDX...>) noexcept(
+        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj))...))) ->
+        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj))...))
+    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj))...); }
+    /// apply functor fn to each element of tuple, and return tuple with results
+    template <typename OBJ, typename FUNCTOR, typename ARG2, std::size_t... IDX>
+    auto apply_tuple2(OBJ& obj, FUNCTOR fn, const ARG2& arg2, std::index_sequence<IDX...>) noexcept(
+        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...))) ->
+        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...))
+    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...); }
+
     /// apply some functor to each element of a tuple, and gather return value
     template <std::size_t N>
     struct recursive_apply_tuple

@@ -393,25 +393,24 @@ class SOAContainer {
         struct impl_detail {
             /// little helper for indexing to implement clear()
             struct clearHelper {
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(
-                        noexcept(obj.clear()))
+                template <typename T>
+                void operator()(T& obj) const noexcept(noexcept(obj.clear()))
                 { obj.clear(); }
             };
 
             /// little helper for indexing to implement pop_back()
             struct pop_backHelper {
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(
-                    noexcept(obj.pop_back()))
+                template <typename T>
+                void operator()(T& obj) const noexcept(
+                        noexcept(obj.pop_back()))
                 { obj.pop_back(); }
             };
 
             /// little helper for indexing to implement shrink_to_fit()
             struct shrink_to_fitHelper {
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(
-                    noexcept(obj.shrink_to_fit()))
+                template <typename T>
+                void operator()(T& obj) const noexcept(
+                        noexcept(obj.shrink_to_fit()))
                 { obj.shrink_to_fit(); }
             };
 
@@ -419,8 +418,8 @@ class SOAContainer {
             struct reserveHelper {
                 size_type m_sz;
                 reserveHelper(size_type sz) noexcept : m_sz(sz) { }
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(
+                template <typename T>
+                void operator()(T& obj) const noexcept(
                     noexcept(obj.reserve(m_sz)))
                 { obj.reserve(m_sz); }
             };
@@ -441,75 +440,46 @@ class SOAContainer {
                 { return obj.max_size(); }
             };
 
-            /// little helper for resize(sz)
+            /// little helper for resize(sz) and resize(sz, val)
             struct resizeHelper {
                 size_type m_sz;
                 resizeHelper(size_type sz) noexcept : m_sz(sz) { }
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(
-                    noexcept(obj.resize(m_sz)))
+                template <typename T>
+                void operator()(T& obj) const noexcept(
+                        noexcept(obj.resize(m_sz)))
                 { obj.resize(m_sz); }
-            };
 
-            /// little helper for resize(sz, val)
-            struct resizeHelper_val {
-                size_type m_sz;
-                const value_type& m_val;
-                resizeHelper_val(size_type sz,
-                        const value_type& val) noexcept : m_sz(sz), m_val(val)
-                { }
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(noexcept(
-                        obj.resize(m_sz, std::get<IDX::value>(m_val))))
-                { obj.resize(m_sz, std::get<IDX::value>(m_val)); }
+                template <typename T, typename V>
+                void operator()(T& obj, const V& val) const noexcept(
+                        noexcept(obj.resize(m_sz, val)))
+                { obj.resize(m_sz, val); }
             };
 
             /// little helper for push_back
             struct push_backHelper {
-                const value_type& m_val;
-                push_backHelper(const value_type& val) noexcept :
-                    m_val(val) { }
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(noexcept(
-                        obj.push_back(std::get<IDX::value>(m_val))))
-                { obj.push_back(std::get<IDX::value>(m_val)); }
-            };
-
-            /// little helper for push_back (move variant)
-            struct push_backHelper_move {
-                value_type&& m_val;
-                push_backHelper_move(value_type&& val) noexcept :
-                m_val(std::move(val)) { }
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(noexcept(
-                        obj.push_back(std::move(std::get<IDX::value>(m_val)))))
-                { obj.push_back(std::move(std::get<IDX::value>(m_val))); }
+                template <typename T, typename V>
+                void operator()(T& obj, const V& val) const noexcept(noexcept(
+                            obj.push_back(val)))
+                { obj.push_back(val); }
+                template <typename T, typename V>
+                void operator()(T& obj, V&& val) const noexcept(noexcept(
+                        obj.push_back(std::move(val))))
+                { obj.push_back(std::move(val)); }
             };
 
             /// little helper for insert(it, val)
             struct insertHelper {
-                const value_type& m_val;
                 size_type m_idx;
-                insertHelper(const value_type& val, size_type idx) noexcept :
-                m_val(val), m_idx(idx) { }
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(noexcept(obj.insert(
-                            obj.begin() + m_idx, std::get<IDX::value>(m_val))))
-                {obj.insert(obj.begin() + m_idx, std::get<IDX::value>(m_val));}
-            };
-
-            /// little helper for insert(it, val) - move variant
-            struct insertHelper_move {
-                value_type&& m_val;
-                size_type m_idx;
-                insertHelper_move(value_type&& val, size_type idx) noexcept :
-                m_val(std::move(val)), m_idx(idx) { }
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(noexcept(
-                        obj.insert(obj.begin() + m_idx,
-                            std::move(std::get<IDX::value>(m_val)))))
-                { obj.insert(obj.begin() + m_idx,
-                    std::move(std::get<IDX::value>(m_val))); }
+                insertHelper(size_type idx) noexcept :
+                    m_idx(idx) { }
+                template <typename T, typename V>
+                void operator()(T& obj, const V& val) const noexcept(
+                        noexcept(obj.insert(obj.begin() + m_idx, val)))
+                { obj.insert(obj.begin() + m_idx, val); }
+                template <typename T, typename V>
+                void operator()(T& obj, V&& val) const noexcept(
+                        noexcept(obj.insert(obj.begin() + m_idx, std::move(val))))
+                { obj.insert(obj.begin() + m_idx, std::move(val)); }
             };
 
             /// little helper for insert(it, count, val)
@@ -655,38 +625,44 @@ class SOAContainer {
     public:
         /// clear the container
         void clear() noexcept(noexcept(
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::clearHelper())))
+            SOAUtils::apply_tuple(m_storage, typename impl_detail::clearHelper(),
+                std::make_index_sequence<sizeof...(FIELDS)>())))
         {
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::clearHelper());
+            SOAUtils::apply_tuple(m_storage, typename impl_detail::clearHelper(),
+                    std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
         /// pop the last element off the container
         void pop_back() noexcept(noexcept(
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::pop_backHelper())))
+            SOAUtils::apply_tuple(m_storage,
+                    typename impl_detail::pop_backHelper(),
+                    std::make_index_sequence<sizeof...(FIELDS)>())))
         {
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::pop_backHelper());
+            SOAUtils::apply_tuple(m_storage,
+                    typename impl_detail::pop_backHelper(),
+                    std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
         /// shrink the underlying storage of the container to fit its size
         void shrink_to_fit() noexcept(noexcept(
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::shrink_to_fitHelper())))
+            SOAUtils::apply_tuple(m_storage,
+                    typename impl_detail::shrink_to_fitHelper(),
+                    std::make_index_sequence<sizeof...(FIELDS)>())))
         {
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::shrink_to_fitHelper());
+            SOAUtils::apply_tuple(m_storage,
+                    typename impl_detail::shrink_to_fitHelper(),
+                    std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
         /// reserve space for at least sz elements
         void reserve(size_type sz) noexcept(noexcept(
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::reserveHelper(sz))))
+            SOAUtils::apply_tuple(m_storage,
+                    typename impl_detail::reserveHelper(sz),
+                    std::make_index_sequence<sizeof...(FIELDS)>())))
         {
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::reserveHelper(sz));
+            SOAUtils::apply_tuple(m_storage,
+                    typename impl_detail::reserveHelper(sz),
+                    std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
         /// return capacity of container
@@ -917,68 +893,74 @@ class SOAContainer {
 
         /// resize container (use default-constructed values if container grows)
         void resize(size_type sz) noexcept(noexcept(
-                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-                        m_storage, typename impl_detail::resizeHelper(sz))))
+                    SOAUtils::apply_tuple(
+                        m_storage, typename impl_detail::resizeHelper(sz),
+                        std::make_index_sequence<sizeof...(FIELDS)>())))
         {
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::resizeHelper(sz));
+            SOAUtils::apply_tuple(m_storage,
+                    typename impl_detail::resizeHelper(sz),
+                    std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
         /// resize the container (append val if the container grows)
         void resize(size_type sz, const value_type& val) noexcept(noexcept(
-                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-                        m_storage,
-                        typename impl_detail::resizeHelper_val(sz, val))))
+                    SOAUtils::apply_tuple2(m_storage,
+                        typename impl_detail::resizeHelper(sz), val,
+                        std::make_index_sequence<sizeof...(FIELDS)>())))
         {
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::resizeHelper_val(sz, val));
+            SOAUtils::apply_tuple2(m_storage,
+                    typename impl_detail::resizeHelper(sz), val,
+                    std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
         /// push an element at the back of the array
         void push_back(const value_type& val) noexcept(noexcept(
-                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-                        m_storage,
-                        typename impl_detail::push_backHelper(val))))
+                    SOAUtils::apply_tuple2(m_storage,
+                        typename impl_detail::push_backHelper(), val,
+                        std::make_index_sequence<sizeof...(FIELDS)>())))
         {
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::push_backHelper(val));
+            SOAUtils::apply_tuple2(m_storage,
+                    typename impl_detail::push_backHelper(), val,
+                    std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
         /// push an element at the back of the array (move variant)
         void push_back(value_type&& val) noexcept(noexcept(
-                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-                        m_storage, typename impl_detail::push_backHelper_move(
-                            std::move(val)))))
+                    SOAUtils::apply_tuple2(m_storage,
+                        typename impl_detail::push_backHelper(),
+                        std::move(val),
+                        std::make_index_sequence<sizeof...(FIELDS)>())))
         {
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::push_backHelper_move(std::move(val)));
+            SOAUtils::apply_tuple2(m_storage,
+                    typename impl_detail::push_backHelper(), std::move(val),
+                    std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
         /// insert a value at the given position
         iterator insert(const_iterator pos, const value_type& val) noexcept(
-                noexcept(SOAUtils::recursive_apply_tuple<
-                    sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::insertHelper(
-                        val, pos.m_proxy.m_index))))
+                noexcept(SOAUtils::apply_tuple2(m_storage,
+                    typename impl_detail::insertHelper(pos.m_proxy.m_index),
+                    val, std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*pos).m_storage == &m_storage);
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::insertHelper(
-                        val, pos.m_proxy.m_index));
+            SOAUtils::apply_tuple2(m_storage,
+                    typename impl_detail::insertHelper(pos.m_proxy.m_index),
+                    val, std::make_index_sequence<sizeof...(FIELDS)>());
             return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
         }
 
         /// insert a value at the given position (move variant)
         iterator insert(const_iterator pos, value_type&& val) noexcept(
-                noexcept(SOAUtils::recursive_apply_tuple<
-                    sizeof...(FIELDS)>()(m_storage,
-                        typename impl_detail::insertHelper_move(
-                            std::move(val), pos.m_proxy.m_index))))
+                noexcept(SOAUtils::apply_tuple2(m_storage,
+                    typename impl_detail::insertHelper(pos.m_proxy.m_index),
+                    std::move(val),
+                    std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*pos).m_storage == &m_storage);
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::insertHelper_move(
-                        std::move(val), pos.m_proxy.m_index));
+            SOAUtils::apply_tuple2(m_storage,
+                    typename impl_detail::insertHelper(pos.m_proxy.m_index),
+                    std::move(val),
+                    std::make_index_sequence<sizeof...(FIELDS)>());
             return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
         }
 
