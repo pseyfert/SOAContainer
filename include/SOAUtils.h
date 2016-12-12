@@ -12,6 +12,8 @@
 #include <cstdint>
 #include <type_traits>
 
+#include "c++14_compat.h"
+
 /// various other utilities used by SOAContainer
 namespace SOAUtils {
     /// invoke fun on given arguments, return a dummy int if fun returns void
@@ -32,11 +34,27 @@ namespace SOAUtils {
     { fun(std::forward<ARG>(arg)...); return 0; }
 
     /// apply functor fn to each element of tuple, and return tuple with results
-    template <typename OBJ, typename FUNCTOR, std::size_t... IDX>
-    auto apply_tuple(OBJ&& obj, FUNCTOR fn, std::index_sequence<IDX...>) noexcept(
+    template <typename FUNCTOR, typename OBJ, std::size_t... IDX>
+    auto map(FUNCTOR fn, OBJ&& obj, std::index_sequence<IDX...>) noexcept(
         noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)))...))) ->
         decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)))...))
     { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)))...); }
+
+    /// apply functor fn to each element of tuple, and return tuple with results
+    template <typename FUNCTOR, typename OBJ>
+    auto map(FUNCTOR fn, OBJ&& obj) noexcept(
+        noexcept(map(fn, std::forward<OBJ>(obj),
+                std::make_index_sequence<
+                std::tuple_size<typename std::decay<OBJ>::type>::value>()))) ->
+        decltype(map(fn, std::forward<OBJ>(obj),
+                std::make_index_sequence<
+                std::tuple_size<typename std::decay<OBJ>::type>::value>()))
+    {
+        return map(fn, std::forward<OBJ>(obj),
+            std::make_index_sequence<
+            std::tuple_size<typename std::decay<OBJ>::type>::value>());
+    }
+
     /// apply functor fn to each element of tuple, and return tuple with results
     template <typename OBJ, typename FUNCTOR, typename ARG2, std::size_t... IDX>
     auto apply_tuple2(OBJ&& obj, FUNCTOR fn, ARG2&& arg2, std::index_sequence<IDX...>) noexcept(

@@ -418,7 +418,6 @@ class SOAContainer {
             /// little helper for indexing to implement reserve()
             struct reserveHelper {
                 size_type m_sz;
-                reserveHelper(size_type sz) noexcept : m_sz(sz) { }
                 template <typename T>
                 void operator()(T& obj) const noexcept(
                     noexcept(obj.reserve(m_sz)))
@@ -444,7 +443,6 @@ class SOAContainer {
             /// little helper for resize(sz) and resize(sz, val)
             struct resizeHelper {
                 size_type m_sz;
-                resizeHelper(size_type sz) noexcept : m_sz(sz) { }
                 template <typename T>
                 void operator()(T& obj) const noexcept(
                         noexcept(obj.resize(m_sz)))
@@ -605,44 +603,36 @@ class SOAContainer {
     public:
         /// clear the container
         void clear() noexcept(noexcept(
-            SOAUtils::apply_tuple(m_storage, typename impl_detail::clearHelper(),
-                std::make_index_sequence<sizeof...(FIELDS)>())))
+            SOAUtils::map(typename impl_detail::clearHelper(), m_storage)))
         {
-            SOAUtils::apply_tuple(m_storage, typename impl_detail::clearHelper(),
-                    std::make_index_sequence<sizeof...(FIELDS)>());
+            SOAUtils::map(typename impl_detail::clearHelper(), m_storage);
         }
 
         /// pop the last element off the container
         void pop_back() noexcept(noexcept(
-            SOAUtils::apply_tuple(m_storage,
-                    typename impl_detail::pop_backHelper(),
-                    std::make_index_sequence<sizeof...(FIELDS)>())))
+            SOAUtils::map(
+                    typename impl_detail::pop_backHelper(), m_storage)))
         {
-            SOAUtils::apply_tuple(m_storage,
-                    typename impl_detail::pop_backHelper(),
-                    std::make_index_sequence<sizeof...(FIELDS)>());
+            SOAUtils::map(
+                    typename impl_detail::pop_backHelper(), m_storage);
         }
 
         /// shrink the underlying storage of the container to fit its size
         void shrink_to_fit() noexcept(noexcept(
-            SOAUtils::apply_tuple(m_storage,
-                    typename impl_detail::shrink_to_fitHelper(),
-                    std::make_index_sequence<sizeof...(FIELDS)>())))
+            SOAUtils::map(
+                    typename impl_detail::shrink_to_fitHelper(), m_storage)))
         {
-            SOAUtils::apply_tuple(m_storage,
-                    typename impl_detail::shrink_to_fitHelper(),
-                    std::make_index_sequence<sizeof...(FIELDS)>());
+            SOAUtils::map(
+                    typename impl_detail::shrink_to_fitHelper(), m_storage);
         }
 
         /// reserve space for at least sz elements
         void reserve(size_type sz) noexcept(noexcept(
-            SOAUtils::apply_tuple(m_storage,
-                    typename impl_detail::reserveHelper(sz),
-                    std::make_index_sequence<sizeof...(FIELDS)>())))
+            SOAUtils::map(
+                    typename impl_detail::reserveHelper{sz}, m_storage)))
         {
-            SOAUtils::apply_tuple(m_storage,
-                    typename impl_detail::reserveHelper(sz),
-                    std::make_index_sequence<sizeof...(FIELDS)>());
+            SOAUtils::map(
+                    typename impl_detail::reserveHelper{sz}, m_storage);
         }
 
         /// return capacity of container
@@ -651,9 +641,8 @@ class SOAContainer {
             return SOAUtils::foldl<size_type>(
                     [] (size_type a, size_type b) noexcept
                     { return std::min(a, b); },
-                    SOAUtils::apply_tuple(m_storage,
-                        typename impl_detail::capacityHelper(),
-                        std::make_index_sequence<sizeof...(FIELDS)>()),
+                    SOAUtils::map(
+                        typename impl_detail::capacityHelper(), m_storage),
                     std::numeric_limits<size_type>::max());
         }
 
@@ -663,9 +652,8 @@ class SOAContainer {
             return SOAUtils::foldl<size_type>(
                     [] (size_type a, size_type b) noexcept
                     { return std::min(a, b); },
-                    SOAUtils::apply_tuple(m_storage,
-                        typename impl_detail::max_sizeHelper(),
-                        std::make_index_sequence<sizeof...(FIELDS)>()),
+                    SOAUtils::map(
+                        typename impl_detail::max_sizeHelper(), m_storage),
                     std::numeric_limits<size_type>::max());
         }
 
@@ -879,23 +867,21 @@ class SOAContainer {
 
         /// resize container (use default-constructed values if container grows)
         void resize(size_type sz) noexcept(noexcept(
-                    SOAUtils::apply_tuple(
-                        m_storage, typename impl_detail::resizeHelper(sz),
-                        std::make_index_sequence<sizeof...(FIELDS)>())))
+                    SOAUtils::map(
+                        typename impl_detail::resizeHelper{sz}, m_storage)))
         {
-            SOAUtils::apply_tuple(m_storage,
-                    typename impl_detail::resizeHelper(sz),
-                    std::make_index_sequence<sizeof...(FIELDS)>());
+            SOAUtils::map(
+                    typename impl_detail::resizeHelper{sz}, m_storage);
         }
 
         /// resize the container (append val if the container grows)
         void resize(size_type sz, const value_type& val) noexcept(noexcept(
                     SOAUtils::apply_tuple2(m_storage,
-                        typename impl_detail::resizeHelper(sz), val,
+                        typename impl_detail::resizeHelper{sz}, val,
                         std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             SOAUtils::apply_tuple2(m_storage,
-                    typename impl_detail::resizeHelper(sz), val,
+                    typename impl_detail::resizeHelper{sz}, val,
                     std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
@@ -982,32 +968,32 @@ class SOAContainer {
 
         /// erase an element at the given position
         iterator erase(const_iterator pos) noexcept(noexcept(
-                    SOAUtils::apply_tuple(m_storage,
+                    SOAUtils::map(
                         typename impl_detail::eraseHelper{pos.m_proxy.m_index},
-                        std::make_index_sequence<sizeof...(FIELDS)>())))
+                        m_storage)))
         {
             assert((*pos).m_storage == &m_storage);
-            SOAUtils::apply_tuple(m_storage,
+            SOAUtils::map(
                     typename impl_detail::eraseHelper{pos.m_proxy.m_index},
-                    std::make_index_sequence<sizeof...(FIELDS)>());
+                    m_storage);
             return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
         }
 
         /// erase elements from first to last
         iterator erase(const_iterator first, const_iterator last) noexcept(
                 noexcept(
-                    SOAUtils::apply_tuple(m_storage,
+                    SOAUtils::map(
                         typename impl_detail::eraseHelper_N{
                             first.m_proxy.m_index,
                             last.m_proxy.m_index - first.m_proxy.m_index},
-                        std::make_index_sequence<sizeof...(FIELDS)>())))
+                            m_storage)))
         {
             assert((*first).m_storage == &m_storage);
             assert((*last).m_storage == &m_storage);
-            SOAUtils::apply_tuple(m_storage,
+            SOAUtils::map(
                     typename impl_detail::eraseHelper_N{first.m_proxy.m_index,
                         last.m_proxy.m_index - first.m_proxy.m_index},
-                    std::make_index_sequence<sizeof...(FIELDS)>());
+                        m_storage);
             return { first.m_proxy.m_storage, first.m_proxy.m_index };
         }
 
