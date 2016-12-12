@@ -7,6 +7,7 @@
 #ifndef SOACONTAINER_H
 #define SOACONTAINER_H
 
+#include <limits>
 #include <cassert>
 #include <stdexcept>
 #include <algorithm>
@@ -426,16 +427,16 @@ class SOAContainer {
 
             /// little helper for indexing to implement capacity()
             struct capacityHelper {
-                template <typename T, typename IDX>
-                size_type operator()(T& obj, IDX) const noexcept(
+                template <typename T>
+                size_type operator()(const T& obj) const noexcept(
                     noexcept(obj.capacity()))
                 { return obj.capacity(); }
             };
 
             /// little helper for indexing to implement max_size()
             struct max_sizeHelper {
-                template <typename T, typename IDX>
-                size_type operator()(T& obj, IDX) const noexcept(
+                template <typename T>
+                size_type operator()(const T& obj) const noexcept(
                     noexcept(obj.max_size()))
                 { return obj.max_size(); }
             };
@@ -489,9 +490,8 @@ class SOAContainer {
             /// little helper for erase(it)
             struct eraseHelper {
                 size_type m_idx;
-                eraseHelper(size_type idx) noexcept : m_idx(idx) { }
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(noexcept(
+                template <typename T>
+                void operator()(T& obj) const noexcept(noexcept(
                         obj.erase(obj.begin() + m_idx)))
                 { obj.erase(obj.begin() + m_idx); }
             };
@@ -499,27 +499,21 @@ class SOAContainer {
             /// little helper for erase(first, last)
             struct eraseHelper_N {
                 size_type m_idx;
-                size_type m_sz;
-                eraseHelper_N(size_type idx, size_type sz) noexcept :
-                m_idx(idx), m_sz(sz) { }
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(noexcept(
+                size_type m_len;
+                template <typename T>
+                void operator()(T& obj) const noexcept(noexcept(
                         obj.erase(obj.begin() + m_idx,
-                            obj.begin() + m_idx + m_sz)))
-                { obj.erase(obj.begin() + m_idx, obj.begin() + m_idx + m_sz); }
+                            obj.begin() + m_idx + m_len)))
+                { obj.erase(obj.begin() + m_idx, obj.begin() + m_idx + m_len); }
             };
 
             /// little helper for assign(count, val)
             struct assignHelper {
-                const value_type& m_val;
                 size_type m_cnt;
-                assignHelper(
-                    const value_type& val, size_type cnt) noexcept :
-                m_val(val), m_cnt(cnt) { }
-                template <typename T, typename IDX>
-                void operator()(T& obj, IDX) const noexcept(noexcept(
-                        obj.assign(m_cnt, std::get<IDX::value>(m_val))))
-                { obj.assign(m_cnt, std::get<IDX::value>(m_val)); }
+                template <typename T, typename V>
+                void operator()(T& obj, const V& val) const noexcept(noexcept(
+                        obj.assign(m_cnt, val)))
+                { obj.assign(m_cnt, val); }
             };
 
             /// helper for emplace_back
@@ -654,19 +648,25 @@ class SOAContainer {
         /// return capacity of container
         size_type capacity() const
         {
-            return SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-                    m_storage, typename impl_detail::capacityHelper(),
-                    [] (size_type s1, size_type s2) {
-                    return std::min(s1, s2); }, size_type(-1));
+            return SOAUtils::foldl<size_type>(
+                    [] (size_type a, size_type b) noexcept
+                    { return std::min(a, b); },
+                    SOAUtils::apply_tuple(m_storage,
+                        typename impl_detail::capacityHelper(),
+                        std::make_index_sequence<sizeof...(FIELDS)>()),
+                    std::numeric_limits<size_type>::max());
         }
 
         /// return maximal size of container
         size_type max_size() const
         {
-            return SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-                    m_storage, typename impl_detail::max_sizeHelper(),
-                    [] (size_type s1, size_type s2) {
-                    return std::min(s1, s2); }, size_type(-1));
+            return SOAUtils::foldl<size_type>(
+                    [] (size_type a, size_type b) noexcept
+                    { return std::min(a, b); },
+                    SOAUtils::apply_tuple(m_storage,
+                        typename impl_detail::max_sizeHelper(),
+                        std::make_index_sequence<sizeof...(FIELDS)>()),
+                    std::numeric_limits<size_type>::max());
         }
 
         /// access specified element
@@ -982,40 +982,44 @@ class SOAContainer {
 
         /// erase an element at the given position
         iterator erase(const_iterator pos) noexcept(noexcept(
-                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-                        m_storage, typename impl_detail::eraseHelper(
-                            pos.m_proxy.m_index))))
+                    SOAUtils::apply_tuple(m_storage,
+                        typename impl_detail::eraseHelper{pos.m_proxy.m_index},
+                        std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*pos).m_storage == &m_storage);
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::eraseHelper(pos.m_proxy.m_index));
+            SOAUtils::apply_tuple(m_storage,
+                    typename impl_detail::eraseHelper{pos.m_proxy.m_index},
+                    std::make_index_sequence<sizeof...(FIELDS)>());
             return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
         }
 
         /// erase elements from first to last
         iterator erase(const_iterator first, const_iterator last) noexcept(
                 noexcept(
-                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-                        m_storage, typename impl_detail::eraseHelper_N(
+                    SOAUtils::apply_tuple(m_storage,
+                        typename impl_detail::eraseHelper_N{
                             first.m_proxy.m_index,
-                            last.m_proxy.m_index - first.m_proxy.m_index))))
+                            last.m_proxy.m_index - first.m_proxy.m_index},
+                        std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*first).m_storage == &m_storage);
             assert((*last).m_storage == &m_storage);
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::eraseHelper_N(first.m_proxy.m_index,
-                        last.m_proxy.m_index - first.m_proxy.m_index));
+            SOAUtils::apply_tuple(m_storage,
+                    typename impl_detail::eraseHelper_N{first.m_proxy.m_index,
+                        last.m_proxy.m_index - first.m_proxy.m_index},
+                    std::make_index_sequence<sizeof...(FIELDS)>());
             return { first.m_proxy.m_storage, first.m_proxy.m_index };
         }
 
         /// assign the vector to contain count copies of val
         void assign(size_type count, const value_type& val) noexcept(noexcept(
-                    SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(
-                        m_storage,
-                        typename impl_detail::assignHelper(val, count))))
+                    SOAUtils::apply_tuple2(m_storage,
+                        typename impl_detail::assignHelper{count}, val,
+                        std::make_index_sequence<sizeof...(FIELDS)>())))
         {
-            SOAUtils::recursive_apply_tuple<sizeof...(FIELDS)>()(m_storage,
-                    typename impl_detail::assignHelper(val, count));
+            SOAUtils::apply_tuple2(m_storage,
+                    typename impl_detail::assignHelper{count}, val,
+                    std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
         /// assign the vector from a range of elements in another container

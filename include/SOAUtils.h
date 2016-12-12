@@ -7,9 +7,10 @@
 #ifndef SOAUTILS_H
 #define SOAUTILS_H
 
-#include <cstdint>
-
 #include <tuple>
+#include <utility>
+#include <cstdint>
+#include <type_traits>
 
 /// various other utilities used by SOAContainer
 namespace SOAUtils {
@@ -28,75 +29,133 @@ namespace SOAUtils {
         typename std::enable_if<
             std::is_same<void, typename std::result_of<FUN(ARG...)>::type>::value,
             int>::type
-    { return fun(std::forward<ARG>(arg)...), 0; }
+    { fun(std::forward<ARG>(arg)...); return 0; }
 
     /// apply functor fn to each element of tuple, and return tuple with results
     template <typename OBJ, typename FUNCTOR, std::size_t... IDX>
-    auto apply_tuple(OBJ& obj, FUNCTOR fn, std::index_sequence<IDX...>) noexcept(
-        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj))...))) ->
-        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj))...))
-    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj))...); }
+    auto apply_tuple(OBJ&& obj, FUNCTOR fn, std::index_sequence<IDX...>) noexcept(
+        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)))...))) ->
+        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)))...))
+    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)))...); }
     /// apply functor fn to each element of tuple, and return tuple with results
     template <typename OBJ, typename FUNCTOR, typename ARG2, std::size_t... IDX>
-    auto apply_tuple2(OBJ& obj, FUNCTOR fn, const ARG2& arg2, std::index_sequence<IDX...>) noexcept(
-        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...))) ->
-        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...))
-    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...); }
-    /// apply functor fn to each element of tuple, and return tuple with results
-    template <typename OBJ, typename FUNCTOR, typename ARG2, std::size_t... IDX>
-    auto apply_tuple2(OBJ& obj, FUNCTOR fn, ARG2& arg2, std::index_sequence<IDX...>) noexcept(
-        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...))) ->
-        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...))
-    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2))...); }
+    auto apply_tuple2(OBJ&& obj, FUNCTOR fn, ARG2&& arg2, std::index_sequence<IDX...>) noexcept(
+        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)))...))) ->
+        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)))...))
+    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)))...); }
     /// apply functor fn to each element of tuple, and return tuple with results
     template <typename OBJ, typename FUNCTOR, typename ARG2, typename ARG3, std::size_t... IDX>
-    auto apply_tuple3(OBJ& obj, FUNCTOR fn, const ARG2& arg2, ARG3 arg3, std::index_sequence<IDX...>) noexcept(
-        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2), arg3)...))) ->
-        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2), arg3)...))
-    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(obj), std::get<IDX>(arg2), arg3)...); }
+    auto apply_tuple3(OBJ&& obj, FUNCTOR fn, ARG2&& arg2, ARG3&& arg3, std::index_sequence<IDX...>) noexcept(
+        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)), std::forward<ARG3>(arg3))...))) ->
+        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)), std::forward<ARG3>(arg3))...))
+    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)), std::forward<ARG3>(arg3))...); }
 
-    /// apply some functor to each element of a tuple, and gather return value
-    template <std::size_t N>
-    struct recursive_apply_tuple
+    /// implementation details of foldl
+    namespace foldl_impl {
+        /// implementation of foldl
+        template <typename FUN, typename TUP, std::size_t LEN>
+        struct foldl_impl {
+            FUN fun;
+            const TUP& tup;
+            /// fold over tuple with more than 2 elements
+            template <typename INI, std::size_t IDX, std::size_t... IDXS>
+            typename std::enable_if<(LEN > 1),
+                typename std::result_of<
+                    foldl_impl<FUN, TUP, LEN - 1>(
+                        typename std::result_of<FUN(INI,
+                            typename std::tuple_element<IDX, TUP>::type)
+                        >::type, std::index_sequence<IDXS...>)
+                    >::type
+                >::type
+            operator()(INI ini,
+                    std::index_sequence<IDX, IDXS...>) const noexcept(
+                    noexcept(foldl_impl<FUN, TUP, LEN - 1>{fun, tup}(
+                            fun(ini, std::get<IDX>(tup)),
+                            std::index_sequence<IDXS...>())))
+            {
+                return foldl_impl<FUN, TUP, LEN - 1>{fun, tup}(
+                        fun(ini, std::get<IDX>(tup)),
+                        std::index_sequence<IDXS...>());
+            }
+            /// foldl over tuple with exactly one element
+            template <typename INI, std::size_t IDX>
+            typename std::enable_if<1 == LEN,
+                typename std::result_of<
+                    FUN(INI,
+                            typename std::tuple_element<IDX, TUP>::type)>::type
+                >::type
+            operator()(INI ini, std::index_sequence<IDX>) const noexcept(
+                    noexcept(fun(ini, std::get<IDX>(tup))))
+            { return fun(ini, std::get<IDX>(tup)); }
+            /// foldl over tuple with no elements
+            template <typename INI>
+            INI operator()(INI ini, std::index_sequence<>) const noexcept(
+                    noexcept(INI(ini)))
+            { return ini; }
+        };
+    }
+    
+    /** @brief foldl (left fold) on tuples
+     *
+     * Given an index sequence i1, ..., iN, a tuple with elements (e_1, ...,
+     * e_N-1, e_N), a fold function fun, and an initial value ini, "fold" the
+     * tuple elements given in the index sequence using the functor fun
+     * starting from the left, i.e. return fun(fun(fun(...fun(ini, e_i1),
+     * ...), e_iN-1), e_iN), or return ini for the empty tuple.
+     *
+     * @tparam INI  type of initial value
+     * @tparam FUN  type of functor used in the fold
+     * @tparam TUP  type of the tuple to be folded
+     *
+     * @param fun   functor used to "fold" tuple
+     * @param tup   tuple to fold
+     * @param ini   initial value
+     *
+     * @returns     value of the left fold
+     *
+     * @author Manuel Schiller <Manuel.Schiller@glasgow.ac.uk>
+     * @date 2016-12-12
+     */
+    template <typename INI, typename FUN, typename TUP, std::size_t... IDXS>
+    typename std::result_of<foldl_impl::foldl_impl<FUN, TUP, sizeof...(IDXS)>(INI, std::index_sequence<IDXS...>)>::type
+    foldl(FUN fun, const TUP& tup, INI ini, std::index_sequence<IDXS...>) noexcept(
+            noexcept(foldl_impl::foldl_impl<FUN, TUP, sizeof...(IDXS)>{fun, tup}(
+                    ini, std::index_sequence<IDXS...>())))
     {
-        /// used to pass current index to functor
-        struct IndexWrapper { enum { value = N - 1 }; };
-        /// version for functors that return something
-        template <typename OBJ, typename F, typename C, typename I>
-        auto operator()(OBJ& obj, const F& functor,
-                const C& combiner, I initial) const -> decltype(
-                    combiner(
-                        recursive_apply_tuple<N - 1>()(obj, functor,
-                            combiner, initial),
-                        functor(std::get<N - 1>(obj), IndexWrapper())))
-        {
-            return combiner(
-                recursive_apply_tuple<N - 1>()(obj, functor,
-                    combiner, initial),
-                functor(std::get<N - 1>(obj), IndexWrapper()));
-        }
-        /// version for functors that return nothing
-        template <typename OBJ, typename F>
-        void operator()(OBJ& obj, const F& functor) const
-        {
-            recursive_apply_tuple<N - 1>()(obj, functor);
-            functor(std::get<N - 1>(obj), IndexWrapper());
-        }
-    };
-
-    /// specialisation for termination of recursion
-    template <>
-    struct recursive_apply_tuple<0>
+        return foldl_impl::foldl_impl<FUN, TUP, sizeof...(IDXS)>{fun, tup}(
+                ini, std::index_sequence<IDXS...>());
+    }
+    
+    /** @brief foldl (left fold) on tuples
+     *
+     * Given a tuple with elements (e_1, ..., e_N-1, e_N), a fold function
+     * fun, and an initial value ini, "fold" the tuple using the functor fun
+     * starting from the left, i.e. return fun(fun(fun(...fun(ini, e_1), ...),
+     * e_N-1), e_N), or return ini for the empty tuple.
+     *
+     * @tparam INI  type of initial value
+     * @tparam FUN  type of functor used in the fold
+     * @tparam TUP  type of the tuple to be folded
+     *
+     * @param fun   functor used to "fold" tuple
+     * @param tup   tuple to fold
+     * @param ini   initial value
+     *
+     * @returns     value of the left fold
+     *
+     * @author Manuel Schiller <Manuel.Schiller@glasgow.ac.uk>
+     * @date 2016-12-12
+     */
+    template <typename INI, typename FUN, typename TUP>
+    auto foldl(FUN fun, const TUP& tup, INI ini = INI()) noexcept(
+            noexcept(foldl(fun, tup, ini,
+                    std::make_index_sequence<std::tuple_size<TUP>::value>()))) ->
+        decltype(foldl(fun, tup, ini,
+                    std::make_index_sequence<std::tuple_size<TUP>::value>()))
     {
-        /// version for functors that return something
-        template <typename OBJ, typename F, typename C, typename I>
-        I operator()(OBJ&, const F&, const C&, I initial) const
-        { return initial; }
-        /// version for functors that return nothing
-        template <typename OBJ, typename F>
-        void operator()(OBJ&, const F&) const
-        { }
-    };
+        return foldl(fun, tup, ini,
+                std::make_index_sequence<std::tuple_size<TUP>::value>());
+    }
 
     /// little tool to call a callable using the arguments given in a tuple
     template <typename F, typename T, size_t sz = std::tuple_size<T>::value>
