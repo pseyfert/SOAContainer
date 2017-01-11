@@ -42,7 +42,7 @@ namespace std {
 #endif // __cplusplus
 
 // FIXME: what is the defined value of compliant C++17 compilers?
-#if __cplusplus >= 201700L
+#if __cplusplus > 201402L
 #include <type_traits>
 #else
 namespace std {
