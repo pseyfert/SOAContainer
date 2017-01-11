@@ -24,20 +24,68 @@ class DressedTuple : public TUPLE
         /// convenience typedef
         typedef DressedTuple<TUPLE, CONTAINER> self_type;
 
-        /// forward constructor calls to TUPLE's constructor(s)
+    private:
+        /// helper for construction from related tuples
+        template <size_t... IDXS, typename... ARGS>
+        constexpr DressedTuple(std::index_sequence<IDXS...>,
+                const std::tuple<ARGS...>& args) : TUPLE(
+                    std::get<IDXS>(args)...)
+        { }
+        /// helper for construction from related tuples
+        template <size_t... IDXS, typename... ARGS>
+        constexpr DressedTuple(std::index_sequence<IDXS...>,
+                const std::tuple<const ARGS&...>& args) : TUPLE(
+                    std::get<IDXS>(args)...)
+        { }
+        /// helper for construction from related tuples
+        template <size_t... IDXS, typename... ARGS>
+        constexpr DressedTuple(std::index_sequence<IDXS...>,
+                std::tuple<ARGS...>&& args) : TUPLE(
+                    std::get<IDXS>(args)...)
+        { }
+
+    public:
+        /// construct from naked tuple
         template <typename... ARGS>
-        DressedTuple(ARGS&&... args) : TUPLE(std::forward<ARGS>(args)...) { }
+        constexpr DressedTuple(const std::tuple<ARGS...>& args) :
+            DressedTuple(std::make_index_sequence<sizeof...(ARGS)>(),
+                    args)
+        { }
+        /// construct from naked tuple of const references
+        template <typename... ARGS>
+        constexpr DressedTuple(const std::tuple<const ARGS&...>& args) :
+            DressedTuple(std::make_index_sequence<sizeof...(ARGS)>(),
+                    args)
+        { }
+        /// move-construct from naked tuple
+        template <typename... ARGS>
+        constexpr DressedTuple(std::tuple<ARGS...>&& args) :
+            DressedTuple(std::make_index_sequence<sizeof...(ARGS)>(),
+                    std::move(args))
+        { }
+
+        /// forward constructor calls to TUPLE's constructor(s)
+        template <typename... ARGS,
+                 typename std::enable_if<
+                     std::is_constructible<TUPLE, ARGS...>::value,
+                    int>::type = 0>
+        constexpr DressedTuple(ARGS&&... args) :
+            TUPLE(std::forward<ARGS>(args)...) { }
 
         /// forward (copy) assignment to the TUPLE implementation
-        template <typename ARG>
+        template <typename ARG, typename std::enable_if<
+            std::is_assignable<TUPLE, const ARG&>::value
+            >::type = 0>
         self_type& operator=(const ARG& other) noexcept(noexcept(
-                    static_cast<TUPLE*>(nullptr)->operator=(other)))
+                    std::declval<TUPLE>().operator=(other)))
         { TUPLE::operator=(other); return *this; }
 
         /// forward (move) assignment to the TUPLE implementation
-        template <typename ARG>
+        template <typename ARG, typename std::enable_if<
+            std::is_assignable<TUPLE, ARG&&>::value
+            >::type = 0>
         self_type& operator=(ARG&& other) noexcept(noexcept(
-                    static_cast<TUPLE*>(nullptr)->operator=(std::move(other))))
+                    std::declval<TUPLE>().operator=(std::move(other))))
         { TUPLE::operator=(std::move(other)); return *this; }
 
         /// provide the member function template get interface of proxies

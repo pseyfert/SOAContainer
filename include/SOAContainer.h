@@ -49,13 +49,13 @@ class NullSkin : public NAKEDPROXY
         /// assignment operator - forward to underlying proxy
         template <typename ARG>
         NullSkin<NAKEDPROXY>& operator=(const ARG& arg) noexcept(noexcept(
-                    static_cast<NAKEDPROXY*>(nullptr)->operator=(arg)))
+                    std::declval<NAKEDPROXY>().operator=(arg)))
         { NAKEDPROXY::operator=(arg); return *this; }
 
         /// move assignment operator - forward to underlying proxy
         template <typename ARG>
         NullSkin<NAKEDPROXY>& operator=(ARG&& arg) noexcept(noexcept(
-                    static_cast<NAKEDPROXY*>(nullptr)->operator=(
+                    std::declval<NAKEDPROXY>().operator=(
                         std::move(arg))))
         { NAKEDPROXY::operator=(std::move(arg)); return *this; }
 };
@@ -686,11 +686,11 @@ class SOAContainer {
         const_reference front() const noexcept { return operator[](0); }
         /// access last element (non-empty container)
         reference back() noexcept(noexcept(
-                    static_cast<self_type*>(nullptr)->size()))
+                    std::declval<self_type>().size()))
         { return operator[](size() - 1); }
         /// access last element (non-empty container, read-only)
         const_reference back() const noexcept(noexcept(
-                    static_cast<self_type*>(nullptr)->size()))
+                    std::declval<self_type>().size()))
         { return operator[](size() - 1); }
 
         /// iterator pointing to first element

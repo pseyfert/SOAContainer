@@ -12,6 +12,7 @@ else()
 endif()
 # be moderately paranoid with flags
 add_compile_options(-pedantic -Wall -Wextra)
+#add_compile_options(-stdlib=libc++)
 
 # CMAKE 2
 include_directories(include)

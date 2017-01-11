@@ -50,7 +50,7 @@ class PrintableNullSkin : public T
     public:
         /// constructor - forward to underlying proxy
         template <typename... ARGS>
-        PrintableNullSkin(ARGS&&... args)
+        constexpr PrintableNullSkin(ARGS&&... args)
             // ordinarily, we would like to have the following noexcept
             // specification here:
             //
@@ -66,13 +66,13 @@ class PrintableNullSkin : public T
         /// assignment operator - forward to underlying proxy
         template <typename ARG>
         PrintableNullSkin<T>& operator=(const ARG& arg) noexcept(noexcept(
-                    static_cast<T*>(nullptr)->operator=(arg)))
+                    std::declval<T>().operator=(arg)))
         { T::operator=(arg); return *this; }
 
         /// move assignment operator - forward to underlying proxy
         template <typename ARG>
         PrintableNullSkin<T>& operator=(ARG&& arg) noexcept(noexcept(
-                    static_cast<T*>(nullptr)->operator=(std::move(arg))))
+                    std::declval<T>().operator=(std::move(arg))))
         { T::operator=(std::move(arg)); return *this; }
 
         /// conversion to string
