@@ -56,12 +56,6 @@ namespace SOAUtils {
     }
 
     /// apply functor fn to each element of tuple, and return tuple with results
-    template <typename OBJ, typename FUNCTOR, typename ARG2, std::size_t... IDX>
-    auto apply_tuple2(OBJ&& obj, FUNCTOR fn, ARG2&& arg2, std::index_sequence<IDX...>) noexcept(
-        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)))...))) ->
-        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)))...))
-    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)))...); }
-    /// apply functor fn to each element of tuple, and return tuple with results
     template <typename OBJ, typename FUNCTOR, typename ARG2, typename ARG3, std::size_t... IDX>
     auto apply_tuple3(OBJ&& obj, FUNCTOR fn, ARG2&& arg2, ARG3&& arg3, std::index_sequence<IDX...>) noexcept(
         noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)), std::forward<ARG3>(arg3))...))) ->
@@ -173,6 +167,68 @@ namespace SOAUtils {
     {
         return foldl(fun, tup, ini,
                 std::make_index_sequence<std::tuple_size<TUP>::value>());
+    }
+    
+    /// implementation details for zip
+    namespace zip_impl {
+        /// little helper for zip
+        template <std::size_t IDXINNER, std::size_t... IDXOUTER, typename... OBJS>
+        auto zip(std::index_sequence<IDXOUTER...>, OBJS&&... objs) noexcept(noexcept(
+                    std::forward_as_tuple(std::get<IDXINNER>(std::get<IDXOUTER>(
+                                std::forward_as_tuple(std::forward<OBJS>(objs)...)))...))) -> decltype(
+                std::forward_as_tuple(std::get<IDXINNER>(std::get<IDXOUTER>(
+                            std::forward_as_tuple(std::forward<OBJS>(objs)...)))...))
+        {
+            return std::forward_as_tuple(std::get<IDXINNER>(std::get<IDXOUTER>(
+                            std::forward_as_tuple(std::forward<OBJS>(objs)...)))...);
+        }
+
+        /// little helper for zip
+        template <typename... OBJS, std::size_t... IDXOUTER, std::size_t... IDXINNER>
+        auto zip(std::index_sequence<IDXOUTER...> outer,
+                std::index_sequence<IDXINNER...>, OBJS&&... objs) noexcept(noexcept(
+                        std::make_tuple(zip<IDXINNER>(
+                                outer, std::forward<OBJS>(objs)...)...))) -> decltype(
+                    std::make_tuple(zip<IDXINNER>(
+                            outer, std::forward<OBJS>(objs)...)...))
+        {
+            return std::make_tuple(zip<IDXINNER>(
+                        outer, std::forward<OBJS>(objs)...)...);
+        }
+    }
+
+    /** @brief zip together tuples
+     *
+     * @template OBJS... parameter pack of types of tuples to zip
+     *
+     * @param objs...    tuples to zip
+     * @returns          a tuple of zipped tuples
+     *
+     * Given N tuples with elements (a0, a1, ..., a_M), (b0, b1, ... b_M), ...,
+     * returns a tuple ((a0, b0, ...), (a1, b1, ...), ...), i.e. zip "zips" up
+     * the contents of the tuples passed as arguments.
+     *
+     * @author Manuel Schiller <Manuel.Schiller@glasgow.ac.uk>
+     * @date 2017-01-11
+     */
+    template <typename... OBJS>
+    auto zip(OBJS&&... objs) noexcept(noexcept(
+                zip_impl::zip(std::make_index_sequence<sizeof...(OBJS)>(),
+                    std::make_index_sequence<std::tuple_size<
+                    typename std::tuple_element<0, std::tuple<
+                    typename std::decay<OBJS>::type...> >::type>::value>(),
+                    std::forward<OBJS>(objs)...))) -> decltype(
+            zip_impl::zip(std::make_index_sequence<sizeof...(OBJS)>(),
+                std::make_index_sequence<std::tuple_size<
+                typename std::tuple_element<0, std::tuple<
+                typename std::decay<OBJS>::type...> >::type>::value>(),
+                std::forward<OBJS>(objs)...))
+    {
+        return zip_impl::zip(std::make_index_sequence<sizeof...(OBJS)>(),
+                std::make_index_sequence<std::tuple_size<
+                typename std::tuple_element<0, std::tuple<
+                typename std::decay<OBJS>::type...> >::type>::value>(),
+                std::forward<OBJS>(objs)...);
     }
 
     /// little tool to call a callable using the arguments given in a tuple

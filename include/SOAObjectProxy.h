@@ -116,9 +116,9 @@ class SOAObjectProxy {
             size_type m_idx1;
             size_type m_idx2;
             template <typename T>
-            void operator()(T& obj, T& obj2) const noexcept(noexcept(
-                        std::swap(obj[m_idx1], obj2[m_idx2])))
-            { std::swap(obj[m_idx1], obj2[m_idx2]); }
+            void operator()(std::tuple<T&, T&> obj) const noexcept(noexcept(
+                        std::swap(std::get<0>(obj)[m_idx1], std::get<1>(obj)[m_idx2])))
+            { std::swap(std::get<0>(obj)[m_idx1], std::get<1>(obj)[m_idx2]); }
         };
 
     public:
@@ -245,14 +245,12 @@ class SOAObjectProxy {
 
         /// swap the contents of two SOAObjectProxy instances
         void swap(self_type& other) noexcept(noexcept(
-                    SOAUtils::apply_tuple2(*m_storage,
-                    swapHelper{ m_index, other.m_index },
-                    *other.m_storage,
+                    SOAUtils::map(swapHelper{ m_index, other.m_index },
+                    SOAUtils::zip(*m_storage, *other.m_storage),
                     std::make_index_sequence<fields_typelist::size()>())))
         {
-            SOAUtils::apply_tuple2(*m_storage,
-                    swapHelper{ m_index, other.m_index },
-                    *other.m_storage,
+            SOAUtils::map(swapHelper{ m_index, other.m_index },
+                    SOAUtils::zip(*m_storage, *other.m_storage),
                     std::make_index_sequence<fields_typelist::size()>());
         }
 
