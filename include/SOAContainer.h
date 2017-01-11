@@ -469,8 +469,6 @@ class SOAContainer {
             /// little helper for insert(it, val)
             struct insertHelper {
                 size_type m_idx;
-                insertHelper(size_type idx) noexcept :
-                    m_idx(idx) { }
                 template <typename T, typename V>
                 void operator()(std::tuple<T&, const V&> t) const noexcept(
                         noexcept(std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, std::get<1>(t))))
@@ -479,10 +477,16 @@ class SOAContainer {
                 void operator()(std::tuple<T&, V&&> t) const noexcept(
                         noexcept(std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, std::move(std::get<1>(t)))))
                 { std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, std::move(std::get<1>(t))); }
+            };
+
+            /// little helper for insert(it, count, val)
+            struct insertHelper2 {
+                size_type m_idx;
+                size_type m_count;
                 template <typename T, typename V>
-                void operator()(T& obj, const V& val, size_type count) const noexcept(
-                        noexcept(obj.insert(obj.begin() + m_idx, val, count)))
-                { obj.insert(obj.begin() + m_idx, count, val); }
+                void operator()(std::tuple<T&, const V&> t) const noexcept(
+                        noexcept(std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, m_count, std::get<1>(t))))
+                { std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, m_count, std::get<1>(t)); }
             };
 
             /// little helper for erase(it)
@@ -910,13 +914,13 @@ class SOAContainer {
         /// insert a value at the given position
         iterator insert(const_iterator pos, const value_type& val) noexcept(
                 noexcept(SOAUtils::map(
-                    typename impl_detail::insertHelper(pos.m_proxy.m_index),
+                    typename impl_detail::insertHelper{pos.m_proxy.m_index},
                         SOAUtils::zip(m_storage, val),
                         std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*pos).m_storage == &m_storage);
             SOAUtils::map(
-                    typename impl_detail::insertHelper(pos.m_proxy.m_index),
+                    typename impl_detail::insertHelper{pos.m_proxy.m_index},
                     SOAUtils::zip(m_storage, val),
                     std::make_index_sequence<sizeof...(FIELDS)>());
             return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
@@ -925,13 +929,13 @@ class SOAContainer {
         /// insert a value at the given position (move variant)
         iterator insert(const_iterator pos, value_type&& val) noexcept(
                 noexcept(SOAUtils::map(
-                    typename impl_detail::insertHelper(pos.m_proxy.m_index),
+                    typename impl_detail::insertHelper{pos.m_proxy.m_index},
                         SOAUtils::zip(m_storage, std::move(val)),
                         std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*pos).m_storage == &m_storage);
             SOAUtils::map(
-                    typename impl_detail::insertHelper(pos.m_proxy.m_index),
+                    typename impl_detail::insertHelper{pos.m_proxy.m_index},
                     SOAUtils::zip(m_storage, std::move(val)),
                     std::make_index_sequence<sizeof...(FIELDS)>());
             return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
@@ -939,15 +943,15 @@ class SOAContainer {
 
         /// insert count copies of value at the given position
         iterator insert(const_iterator pos, size_type count, const value_type& val) noexcept(
-                noexcept(SOAUtils::apply_tuple3(m_storage,
-                    typename impl_detail::insertHelper(pos.m_proxy.m_index),
-                    val, count,
+                noexcept(SOAUtils::map(
+                    typename impl_detail::insertHelper2{pos.m_proxy.m_index, count},
+                    SOAUtils::zip(m_storage, val),
                     std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*pos).m_storage == &m_storage);
-            SOAUtils::apply_tuple3(m_storage,
-                    typename impl_detail::insertHelper(pos.m_proxy.m_index),
-                    val, count,
+            SOAUtils::map(
+                    typename impl_detail::insertHelper2{pos.m_proxy.m_index, count},
+                    SOAUtils::zip(m_storage, val),
                     std::make_index_sequence<sizeof...(FIELDS)>());
             return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
         }

@@ -55,13 +55,6 @@ namespace SOAUtils {
             std::tuple_size<typename std::decay<OBJ>::type>::value>());
     }
 
-    /// apply functor fn to each element of tuple, and return tuple with results
-    template <typename OBJ, typename FUNCTOR, typename ARG2, typename ARG3, std::size_t... IDX>
-    auto apply_tuple3(OBJ&& obj, FUNCTOR fn, ARG2&& arg2, ARG3&& arg3, std::index_sequence<IDX...>) noexcept(
-        noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)), std::forward<ARG3>(arg3))...))) ->
-        decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)), std::forward<ARG3>(arg3))...))
-    { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)), std::get<IDX>(std::forward<ARG2>(arg2)), std::forward<ARG3>(arg3))...); }
-
     /// implementation details of foldl
     namespace foldl_impl {
         /// implementation of foldl
