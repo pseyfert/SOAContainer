@@ -212,13 +212,10 @@ TEST (BasicTest, EvenMore) {
                 decltype(c)::value_const_reference b)
             { return a.get<1>() < b.get<1>(); }));
 
-    // CONSTRUCTOR PROBLEMS - CLANG ONLY
     std::sort(c.begin(), c.end(),
             [] (decltype(c)::value_const_reference a,
                 decltype(c)::value_const_reference b)
             { return a.get<1>() > b.get<1>(); });
-    // END CONSTRUCTOR PROBLEMS
-    
     
     std::sort(temp.begin(), temp.end(),
             [] (const decltype(temp)::value_type& a,
@@ -244,33 +241,29 @@ TEST (BasicTest, EvenMore) {
 
 
     // test the begin<fieldno> and end<fieldno> calls
-    EXPECT_EQ(&(*c.begin<0>()), &(c.begin()->get<0>()));
-    EXPECT_EQ(&(*cc.begin<0>()), &(cc.begin()->get<0>()));
-    EXPECT_EQ(&(*c.cbegin<0>()), &(c.cbegin()->get<0>()));
+    EXPECT_EQ(&(*c.begin<0>()), &((*c.begin()).get<0>()));
+    EXPECT_EQ(&(*cc.begin<0>()), &((*cc.begin()).get<0>()));
+    EXPECT_EQ(&(*c.cbegin<0>()), &((*c.cbegin()).get<0>()));
     
-    EXPECT_EQ(&(*c.end<0>()), &(c.end()->get<0>()));
-    EXPECT_EQ(&(*cc.end<0>()), &(cc.end()->get<0>()));
-    EXPECT_EQ(&(*c.cend<0>()), &(c.cend()->get<0>()));
+    EXPECT_EQ(&(*c.end<0>()), &((*c.end()).get<0>()));
+    EXPECT_EQ(&(*cc.end<0>()), &((*cc.end()).get<0>()));
+    EXPECT_EQ(&(*c.cend<0>()), &((*c.cend()).get<0>()));
     
-    // ADDRESS OF COMPILER ERROR - CLANG ONLY
     // test (some of) the rbegin<fieldno> and rend<fieldno> calls
-    EXPECT_EQ(&(*c.rbegin<0>()), &(c.rbegin()->get<0>()));
-    EXPECT_EQ(&(*c.rend<0>()), &(c.rend()->get<0>()));
-    // END ADDRESS OF COMPILER ERROR
+    EXPECT_EQ(&(*c.rbegin<0>()), &((*c.rbegin()).get<0>()));
+    EXPECT_EQ(&(*c.rend<0>()), &((*c.rend()).get<0>()));
     
     // test the begin<fieldtag> and end<fieldtag> calls
-    EXPECT_EQ(&(*c.begin<double>()), &(c.begin()->get<double>()));
-    EXPECT_EQ(&(*cc.begin<double>()), &(cc.begin()->get<double>()));
-    EXPECT_EQ(&(*c.cbegin<double>()), &(c.cbegin()->get<double>()));
-    EXPECT_EQ(&(*c.end<double>()), &(c.end()->get<double>()));
-    EXPECT_EQ(&(*cc.end<double>()), &(cc.end()->get<double>()));
-    EXPECT_EQ(&(*c.cend<double>()), &(c.cend()->get<double>()));
+    EXPECT_EQ(&(*c.begin<double>()), &((*c.begin()).get<double>()));
+    EXPECT_EQ(&(*cc.begin<double>()), &((*cc.begin()).get<double>()));
+    EXPECT_EQ(&(*c.cbegin<double>()), &((*c.cbegin()).get<double>()));
+    EXPECT_EQ(&(*c.end<double>()), &((*c.end()).get<double>()));
+    EXPECT_EQ(&(*cc.end<double>()), &((*cc.end()).get<double>()));
+    EXPECT_EQ(&(*c.cend<double>()), &((*c.cend()).get<double>()));
     
-    // ADDRESS OF COMPILER ERROR - CLANG ONLY
     // test (some of) the rbegin<fieldno> and rend<fieldno> calls
-    EXPECT_EQ(&(*c.rbegin<double>()), &(c.rbegin()->get<double>()));
-    EXPECT_EQ(&(*c.rend<double>()), &(c.rend()->get<double>()));
-    // END ADDRESS OF COMPILER ERROR
+    EXPECT_EQ(&(*c.rbegin<double>()), &((*c.rbegin()).get<double>()));
+    EXPECT_EQ(&(*c.rend<double>()), &((*c.rend()).get<double>()));
     
     // rudimentary tests of comparison of containers
     decltype(c) d;
