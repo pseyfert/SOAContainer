@@ -232,41 +232,38 @@ class NullSkin : public NAKEDPROXY
  *     { return a.y() < b.y(); });
  * @endcode
  */
-template <template <typename...> class STORAGE,
+template <template <typename... RANGES> class STORAGE,
     template <typename> class SKIN, typename... FIELDS>
 class SOAView {
     private:
+        /// is any of a type-trait predicate applied to a list of ARGS true?
+        template <template <typename> class PRED, typename... ARGS>
+        struct ANY : std::false_type { };
+        template <template <typename> class PRED, typename ARG>
+        struct ANY : PRED<ARG> { };
+        template <template <typename> class PRED, typename HEAD, typename... TAIL>
+        struct ANY : typename std::conditional<bool(PRED<HEAD>::value,
+                HEAD, typename ANY<PRED, TAIL> >::type { };
+        /// are ALL of a type-trait predicate applied to a list of ARGS true?
+        template <template <typename> class PRED, typename... ARGS>
+        struct ALL : std::true_type { };
+        template <template <typename> class PRED, typename ARG>
+        struct ALL : PRED<ARG> { };
+        template <template <typename> class PRED, typename HEAD, typename... TAIL>
+        struct  ALL : typename std::conditional<bool(!PRED<HEAD>::value,
+                HEAD, typename ALL<PRED, TAIL> >::type { };
         /// hide verification of FIELDS inside struct or doxygen gets confused
         struct fields_verifier {
             // storing objects without state doesn't make sense
             static_assert(1 <= sizeof...(FIELDS),
                 "need to supply at least one field");
             /// little helper to verify the FIELDS template parameter
-            template <typename... ARGS>
-            struct verify_fields;
-            /// specialisation for more than one field
-            template <typename HEAD, typename... TAIL>
-            struct verify_fields<HEAD, TAIL...>
-            {
-                /// true if HEAD and TAIL verify okay
-                enum {
-                    value = (std::is_pod<HEAD>::value ||
-                        SOATypelist::is_wrapped<HEAD>::value) &&
-                        verify_fields<TAIL...>::value
-                };
-            };
-            /// specialisation for one field
-            template <typename HEAD>
-            struct verify_fields<HEAD>
-            {
-                /// true if HEAD verifies okay
-                enum {
-                    value = std::is_pod<HEAD>::value ||
-                        SOATypelist::is_wrapped<HEAD>::value
-                };
-            };
-            // make sure fields are either POD or wrapped types
-            static_assert(verify_fields<FIELDS...>::value,
+            template <typename T>
+            struct is_pod_or_wrapped : std::integral_constant<bool,
+                std::is_pod<T>::value ||
+                SOATypelist::is_wrapped<T>::value> {};
+            // and check that all fields are either pod or wrapped
+            static_assert(ALL<is_pod_or_wrapped, FIELDS...>::value,
                 "Fields should be either plain old data (POD) or "
                 "wrapped types.");
 
@@ -274,6 +271,11 @@ class SOAView {
             static_assert(std::tuple_size<STORAGE>::value ==
                     sizeof...(FIELDS),
                     "Number of fields does not match storage.");
+            /// little helper to find the type contained in a range
+            template <typename RANGE>
+            struct contained_type {
+                typedef decltype(*std::begin(std::declval<RANGE>())) type;
+            };
             /// little helper verifying the storage matches the fields
             template <size_t N, template <typename...> class T,
                      typename... ARGS>
@@ -283,14 +285,19 @@ class SOAView {
                      typename HEAD, typename... TAIL>
             struct verify_storage<N, T, HEAD, TAIL...> :
                 public integral_constant<bool,
-                    (std::is_same<typename std::tuple_element<N, T>::type,
-                        SOATypelist::unwrap_t<HEAD> >::value ||
-                    std::is_same<typename std::remove_cv<
+                    (std::is_same<typename contained_type<
                         typename std::tuple_element<N, T>::type>::type,
                         SOATypelist::unwrap_t<HEAD> >::value ||
                     std::is_same<typename std::remove_cv<
+                        typename contained_type<
+                                typename std::tuple_element<N, T>::type
+                            >::type>::type,
+                        SOATypelist::unwrap_t<HEAD> >::value ||
+                    std::is_same<typename std::remove_cv<
                         typename std::remove_reference<
-                        typename std::tuple_element<N, T>::type>::type>::type,
+                        typename contained_type<
+                                typename std::tuple_element<N, T>::type
+                            >::type>::type>::type,
                         SOATypelist::unwrap_t<HEAD> >::value) &&
                     verify_storage<N + 1, T, TAIL...>::value> { };
             /// specialisation for one field
@@ -298,19 +305,38 @@ class SOAView {
                      typename HEAD>
             struct verify_storage<N, T, HEAD> :
                 public integral_constant<bool,
-                    (std::is_same<typename std::tuple_element<N, T>::type,
+                    (std::is_same<typename contained_type<
+                            typename std::tuple_element<N, T>::type>::type,
                         SOATypelist::unwrap_t<HEAD> >::value ||
                     std::is_same<typename std::remove_cv<
-                        typename std::tuple_element<N, T>::type>::type,
+                        typename containe_type<
+                                typename std::tuple_element<N, T>::type
+                            >::type>::type,
                         SOATypelist::unwrap_t<HEAD> >::value ||
                     std::is_same<typename std::remove_cv<
                         typename std::remove_reference<
-                        typename std::tuple_element<N, T>::type>::type>::type,
+                        typename constained_type<
+                                typename std::tuple_element<N, T>::type
+                            >::type>::type>::type,
                         SOATypelist::unwrap_t<HEAD> >::value)> { };
             // make sure the storage matches the fields provided
             static_assert(verify_storage<0, STORAGE, FIELDS...>::value,
                     "Type of provided storage must match fields.");
         };
+
+
+        /// work out if what is contained in a range is constant
+        template <typename RANGE>
+        struct is_contained_constant : std::integral_constant<bool,
+            std::is_constant<RANGE>::value || std::is_constant<
+                typename contained_type<RANGE>::type>::value> { };
+
+        /// is any field a constant range?
+        template <template <typename... ARGS> class STOR>
+        struct is_any_field_const : ANY<is_contained_constant, ARGS...> { };
+
+        /// record if the SOAView should be a const one
+        enum { is_constant = is_any_field_constant<STORAGE>::value };
 
     public:
         /// type to represent sizes and indices
@@ -382,45 +408,21 @@ class SOAView {
         /// const reverse iterator type
         typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-        /// default constructor
-        SOAView() { }
-        /// fill container with count copies of val
-        SOAView(size_type count, const value_type& val)
-        {
-            reserve(count);
-            assign(count, val);
-        }
-        /// fill container with count (default constructed) elements
-        SOAView(size_type count) : SOAView(count, value_type()) { }
-        /// fill container with elements from other container
-        template <typename IT>
-        SOAView(IT first, IT last)
-        { assign(first, last); }
+        /// constructor from the underlying storage
+        SOAView(STORAGE<RANGES...>&& other) :
+            m_storage(std::forward(other)) { }
+        /// constructor from a list of ranges
+        SOAView(RANGES&&... ranges) :
+            m_storage(std::forward<RANGES>(ranges)...) { }
         /// copy constructor
-        SOAView(const self_type& other) : m_storage(other.m_storage) { }
+        SOAView(const self_type& other) = default;
         /// move constructor
-        SOAView(self_type&& other) :
-            m_storage(std::move(other.m_storage)) { }
-
-        /// std::initializer_list constructor
-        SOAView(std::initializer_list<naked_value_tuple_type> listing) {
-            reserve(listing.size());
-            for(const auto &items : listing)
-                push_back(items);
-        }
+        SOAView(self_type&& other) = default;
 
         /// assignment from other SOAView
-        self_type& operator=(const self_type& other)
-        {
-            if (&other != this) m_storage = other.m_storage;
-            return *this;
-        }
+        self_type& operator=(const self_type& other) = default;
         /// move-assignment from other SOAView
-        self_type& operator=(self_type&& other)
-        {
-            if (&other != this) m_storage = std::move(other.m_storage);
-            return *this;
-        }
+        self_type& operator=(self_type&& other) = default;
 
         /// return if the container is empty
         bool empty() const noexcept(noexcept(std::get<0>(m_storage).empty()))
@@ -430,286 +432,16 @@ class SOAView {
                     std::get<0>(m_storage).size()))
         { return std::get<0>(m_storage).size(); }
 
-    private:
-        /// hide implementation details in struct to make doxygen tidier
-        struct impl_detail {
-            /// little helper for indexing to implement clear()
-            struct clearHelper {
-                template <typename T>
-                void operator()(T& obj) const noexcept(noexcept(obj.clear()))
-                { obj.clear(); }
-            };
-
-            /// little helper for indexing to implement pop_back()
-            struct pop_backHelper {
-                template <typename T>
-                void operator()(T& obj) const noexcept(
-                        noexcept(obj.pop_back()))
-                { obj.pop_back(); }
-            };
-
-            /// little helper for indexing to implement shrink_to_fit()
-            struct shrink_to_fitHelper {
-                template <typename T>
-                void operator()(T& obj) const noexcept(
-                        noexcept(obj.shrink_to_fit()))
-                { obj.shrink_to_fit(); }
-            };
-
-            /// little helper for indexing to implement reserve()
-            struct reserveHelper {
-                size_type m_sz;
-                template <typename T>
-                void operator()(T& obj) const noexcept(
-                    noexcept(obj.reserve(m_sz)))
-                { obj.reserve(m_sz); }
-            };
-
-            /// little helper for indexing to implement capacity()
-            struct capacityHelper {
-                template <typename T>
-                size_type operator()(const T& obj) const noexcept(
-                    noexcept(obj.capacity()))
-                { return obj.capacity(); }
-            };
-
-            /// little helper for indexing to implement max_size()
-            struct max_sizeHelper {
-                template <typename T>
-                size_type operator()(const T& obj) const noexcept(
-                    noexcept(obj.max_size()))
-                { return obj.max_size(); }
-            };
-
-            /// little helper for resize(sz) and resize(sz, val)
-            struct resizeHelper {
-                size_type m_sz;
-                template <typename T>
-                void operator()(T& obj) const noexcept(
-                        noexcept(obj.resize(m_sz)))
-                { obj.resize(m_sz); }
-
-                template <typename T, typename V>
-                void operator()(std::tuple<T&, const V&> t) const noexcept(
-                        noexcept(std::get<0>(t).resize(m_sz, std::get<1>(t))))
-                { std::get<0>(t).resize(m_sz, std::get<1>(t)); }
-            };
-
-            /// little helper for push_back
-            struct push_backHelper {
-                template <typename T, typename V>
-                void operator()(std::tuple<T&, const V&> t) const noexcept(noexcept(
-                            std::get<0>(t).push_back(std::get<1>(t))))
-                { std::get<0>(t).push_back(std::get<1>(t)); }
-                template <typename T, typename V>
-                void operator()(std::tuple<T&, V&&> t) const noexcept(noexcept(
-                        std::get<0>(t).push_back(std::move(std::get<1>(t)))))
-                { std::get<0>(t).push_back(std::move(std::get<1>(t))); }
-            };
-
-            /// little helper for insert(it, val)
-            struct insertHelper {
-                size_type m_idx;
-                template <typename T, typename V>
-                void operator()(std::tuple<T&, const V&> t) const noexcept(
-                        noexcept(std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, std::get<1>(t))))
-                { std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, std::get<1>(t)); }
-                template <typename T, typename V>
-                void operator()(std::tuple<T&, V&&> t) const noexcept(
-                        noexcept(std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, std::move(std::get<1>(t)))))
-                { std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, std::move(std::get<1>(t))); }
-            };
-
-            /// little helper for insert(it, count, val)
-            struct insertHelper2 {
-                size_type m_idx;
-                size_type m_count;
-                template <typename T, typename V>
-                void operator()(std::tuple<T&, const V&> t) const noexcept(
-                        noexcept(std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, m_count, std::get<1>(t))))
-                { std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, m_count, std::get<1>(t)); }
-            };
-
-            /// little helper for erase(it)
-            struct eraseHelper {
-                size_type m_idx;
-                template <typename T>
-                void operator()(T& obj) const noexcept(noexcept(
-                        obj.erase(obj.begin() + m_idx)))
-                { obj.erase(obj.begin() + m_idx); }
-            };
-
-            /// little helper for erase(first, last)
-            struct eraseHelper_N {
-                size_type m_idx;
-                size_type m_len;
-                template <typename T>
-                void operator()(T& obj) const noexcept(noexcept(
-                        obj.erase(obj.begin() + m_idx,
-                            obj.begin() + m_idx + m_len)))
-                { obj.erase(obj.begin() + m_idx, obj.begin() + m_idx + m_len); }
-            };
-
-            /// little helper for assign(count, val)
-            struct assignHelper {
-                size_type m_cnt;
-                template <typename T, typename V>
-                void operator()(std::tuple<T&, const V&> t) const noexcept(noexcept(
-                        std::get<0>(t).assign(m_cnt, std::get<1>(t))))
-                { std::get<0>(t).assign(m_cnt, std::get<1>(t)); }
-            };
-
-            /// helper for emplace_back
-            template <size_type IDX>
-            struct emplace_backHelper {
-                SOAStorage& m_storage;
-                emplace_backHelper(SOAStorage& storage) noexcept :
-                m_storage(storage) { }
-                template <typename HEAD, typename... TAIL>
-                void doIt(HEAD&& head, TAIL&&... tail) const noexcept(noexcept(
-                        std::get<IDX>(m_storage).emplace_back(
-                            std::forward<HEAD>(head))) && noexcept(
-                        emplace_backHelper<IDX + 1>(m_storage).doIt(
-                            std::forward<TAIL>(tail)...)))
-                {
-                    std::get<IDX>(m_storage).emplace_back(
-                            std::forward<HEAD>(head));
-                    emplace_backHelper<IDX + 1>(m_storage).doIt(
-                            std::forward<TAIL>(tail)...);
-                }
-                template <typename HEAD>
-                void doIt(HEAD&& head) const noexcept(noexcept(
-                        std::get<IDX>(m_storage).emplace_back(
-                            std::forward<HEAD>(head))))
-                {
-                    std::get<IDX>(m_storage).emplace_back(
-                            std::forward<HEAD>(head));
-                }
-            };
-
-            /// helper for emplace
-            template <size_type IDX>
-            struct emplaceHelper {
-                SOAStorage& m_storage;
-                size_type m_idx;
-                emplaceHelper(SOAStorage& storage, size_type idx) noexcept :
-                m_storage(storage), m_idx(idx) { }
-                template <typename HEAD, typename... TAIL>
-                void doIt(HEAD&& head, TAIL&&... tail) const noexcept(noexcept(
-                        std::get<IDX>(m_storage).emplace(
-                            std::get<IDX>(m_storage).begin() + m_idx,
-                            std::forward<HEAD>(head))) && noexcept(
-                        emplaceHelper<IDX + 1>(m_storage, m_idx).doIt(
-                            std::forward<TAIL>(tail)...)))
-                {
-                    std::get<IDX>(m_storage).emplace(
-                            std::get<IDX>(m_storage).begin() + m_idx,
-                            std::forward<HEAD>(head));
-                    emplaceHelper<IDX + 1>(m_storage, m_idx).doIt(
-                            std::forward<TAIL>(tail)...);
-                }
-                template <typename HEAD>
-                void doIt(HEAD&& head) const noexcept(noexcept(
-                        std::get<IDX>(m_storage).emplace(
-                            std::get<IDX>(m_storage).begin() + m_idx,
-                            std::forward<HEAD>(head))))
-                {
-                    std::get<IDX>(m_storage).emplace(
-                            std::get<IDX>(m_storage).begin() + m_idx,
-                            std::forward<HEAD>(head));
-                }
-            };
-
-            /// helper for emplace_back
-            struct emplaceBackHelper2 {
-                self_type* m_obj;
-                emplaceBackHelper2(self_type* obj) : m_obj(obj) {}
-
-                template <typename... ARGS>
-                void operator()(ARGS&&... args) const noexcept(noexcept(
-                    m_obj->emplace_back(std::forward<ARGS>(args)...)))
-                { m_obj->emplace_back(std::forward<ARGS>(args)...); }
-            };
-
-            // helper for emplace
-            struct emplaceHelper2 {
-                self_type* m_obj;
-                const_iterator m_it;
-                emplaceHelper2(self_type* obj, const_iterator it) :
-                    m_obj(obj), m_it(it) {}
-
-                template <typename... ARGS>
-                iterator operator()(ARGS&&... args) const noexcept(noexcept(
-                    m_obj->emplace(m_it, std::forward<ARGS>(args)...)))
-                { return m_obj->emplace(m_it, std::forward<ARGS>(args)...); }
-            };
-        }; // end of struct impl_detail
-
-    public:
-        /// clear the container
-        void clear() noexcept(noexcept(
-            SOAUtils::map(typename impl_detail::clearHelper(), m_storage)))
-        {
-            SOAUtils::map(typename impl_detail::clearHelper(), m_storage);
-        }
-
-        /// pop the last element off the container
-        void pop_back() noexcept(noexcept(
-            SOAUtils::map(
-                    typename impl_detail::pop_backHelper(), m_storage)))
-        {
-            SOAUtils::map(
-                    typename impl_detail::pop_backHelper(), m_storage);
-        }
-
-        /// shrink the underlying storage of the container to fit its size
-        void shrink_to_fit() noexcept(noexcept(
-            SOAUtils::map(
-                    typename impl_detail::shrink_to_fitHelper(), m_storage)))
-        {
-            SOAUtils::map(
-                    typename impl_detail::shrink_to_fitHelper(), m_storage);
-        }
-
-        /// reserve space for at least sz elements
-        void reserve(size_type sz) noexcept(noexcept(
-            SOAUtils::map(
-                    typename impl_detail::reserveHelper{sz}, m_storage)))
-        {
-            SOAUtils::map(
-                    typename impl_detail::reserveHelper{sz}, m_storage);
-        }
-
-        /// return capacity of container
-        size_type capacity() const
-        {
-            return SOAUtils::foldl<size_type>(
-                    [] (size_type a, size_type b) noexcept
-                    { return std::min(a, b); },
-                    SOAUtils::map(
-                        typename impl_detail::capacityHelper(), m_storage),
-                    std::numeric_limits<size_type>::max());
-        }
-
-        /// return maximal size of container
-        size_type max_size() const
-        {
-            return SOAUtils::foldl<size_type>(
-                    [] (size_type a, size_type b) noexcept
-                    { return std::min(a, b); },
-                    SOAUtils::map(
-                        typename impl_detail::max_sizeHelper(), m_storage),
-                    std::numeric_limits<size_type>::max());
-        }
-
         /// access specified element
-        reference operator[](size_type idx) noexcept
+        typename std::enable_if<!is_constant, reference>::type
+        operator[](size_type idx) noexcept
         { return { &m_storage, idx }; }
         /// access specified element (read access only)
         const_reference operator[](size_type idx) const noexcept
         { return { &const_cast<SOAStorage&>(m_storage), idx }; }
         /// access specified element with out of bounds checking
-        reference at(size_type idx)
+        typename std::enable_if<!is_constant, reference>::type
+        at (size_type idx)
         {
             if (idx < size()) return operator[](idx);
             else throw std::out_of_range("out of bounds");
@@ -722,11 +454,13 @@ class SOAView {
         }
 
         /// access first element (non-empty container)
-        reference front() noexcept { return operator[](0); }
+        typename std::enable_if<!is_constant, reference>::type
+        front() noexcept { return operator[](0); }
         /// access first element (non-empty container, read-only)
         const_reference front() const noexcept { return operator[](0); }
         /// access last element (non-empty container)
-        reference back() noexcept(noexcept(
+        typename std::enable_if<!is_constant, reference>::type
+        back() noexcept(noexcept(
                     std::declval<self_type>().size()))
         { return operator[](size() - 1); }
         /// access last element (non-empty container, read-only)
@@ -735,7 +469,8 @@ class SOAView {
         { return operator[](size() - 1); }
 
         /// iterator pointing to first element
-        iterator begin() noexcept { return { &m_storage, 0 }; }
+        typename std::enable_if<!is_constant, iterator>::type
+        begin() noexcept { return { &m_storage, 0 }; }
         /// const iterator pointing to first element
         const_iterator begin() const noexcept
         { return { const_cast<SOAStorage*>(&m_storage), 0 }; }
@@ -743,7 +478,8 @@ class SOAView {
         const_iterator cbegin() const noexcept { return begin(); }
 
         /// iterator pointing one element behind the last element
-        iterator end() noexcept { return { &m_storage, size() }; }
+        typename std::enable_if<!is_constant, iterator>::type
+        end() noexcept { return { &m_storage, size() }; }
         /// const iterator pointing one element behind the last element
         const_iterator end() const noexcept
         { return { const_cast<SOAStorage*>(&m_storage), size() }; }
@@ -823,7 +559,8 @@ class SOAView {
         { return std::get<memberno<MEMBER>()>(m_storage).cend(); }
 
         /// iterator pointing to first element in reverse order
-        reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+        typename std::enable_if<!is_constant, reverse_iterator>::type
+        rbegin() noexcept { return reverse_iterator(end()); }
         /// const iterator pointing to first element in reverse order
         const_reverse_iterator rbegin() const noexcept
         { return const_reverse_iterator(end()); }
@@ -831,7 +568,8 @@ class SOAView {
         const_reverse_iterator crbegin() const noexcept { return rbegin(); }
 
         /// iterator pointing one element behind the last element in reverse order
-        reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+        typename std::enable_if<!is_constant, reverse_iterator>::type
+        rend() noexcept { return reverse_iterator(begin()); }
         /// const iterator pointing one element behind the last element in reverse order
         const_reverse_iterator rend() const noexcept
         { return const_reverse_iterator(begin()); }
@@ -840,14 +578,16 @@ class SOAView {
 
         /// get rbegin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
-        auto rbegin() noexcept -> decltype(
-                std::get<MEMBERNO>(m_storage).rbegin())
+        typename std::enable_if<!is_constant, decltype(std::get<MEMBERNO>(
+            std::declval<STORAGE<RANGES...> >()).rbegin())>::type
+        rbegin() noexcept
         { return std::get<MEMBERNO>(m_storage).rbegin(); }
 
         /// get rbegin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
-        auto rbegin() noexcept -> decltype(
-                std::get<memberno<MEMBER>()>(m_storage).rbegin())
+        typename std::enable_if<!is_constant, decltype(std::get<memberno(MEMBER)>(
+            std::declval<STORAGE<RANGES...> >()).rbegin())>::type
+        auto rbegin() noexcept
         { return std::get<memberno<MEMBER>()>(m_storage).rbegin(); }
 
         /// get rbegin iterator of storage vector for member MEMBERNO
@@ -876,14 +616,16 @@ class SOAView {
 
         /// get rend iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
-        auto rend() noexcept -> decltype(
-                std::get<MEMBERNO>(m_storage).rend())
+        typename std::enable_if<!is_constant, decltype(std::get<MEMBERNO>(
+            std::declval<STORAGE<RANGES...> >()).rend())>::type
+        rend() noexcept
         { return std::get<MEMBERNO>(m_storage).rend(); }
 
         /// get rend iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
-        auto rend() noexcept -> decltype(
-                std::get<memberno<MEMBER>()>(m_storage).rend())
+        typename std::enable_if<!is_constant, decltype(std::get<memberno(MEMBER)>(
+            std::declval<STORAGE<RANGES...> >()).rend())>::type
+        auto rend() noexcept
         { return std::get<memberno<MEMBER>()>(m_storage).rend(); }
 
         /// get rend iterator of storage vector for member MEMBERNO
@@ -910,139 +652,6 @@ class SOAView {
                 std::get<memberno<MEMBER>()>(m_storage).crend())
         { return std::get<memberno<MEMBER>()>(m_storage).crend(); }
 
-        /// resize container (use default-constructed values if container grows)
-        void resize(size_type sz) noexcept(noexcept(
-                    SOAUtils::map(
-                        typename impl_detail::resizeHelper{sz}, m_storage)))
-        {
-            SOAUtils::map(
-                    typename impl_detail::resizeHelper{sz}, m_storage);
-        }
-
-        /// resize the container (append val if the container grows)
-        void resize(size_type sz, const value_type& val) noexcept(noexcept(
-            SOAUtils::map(typename impl_detail::resizeHelper{sz},
-                    SOAUtils::zip(m_storage, val),
-                    std::make_index_sequence<sizeof...(FIELDS)>())))
-        {
-            SOAUtils::map(typename impl_detail::resizeHelper{sz},
-                    SOAUtils::zip(m_storage, val),
-                    std::make_index_sequence<sizeof...(FIELDS)>());
-        }
-
-        /// push an element at the back of the array
-        void push_back(const value_type& val) noexcept(noexcept(
-            SOAUtils::map(typename impl_detail::push_backHelper(),
-                    SOAUtils::zip(m_storage, val),
-                    std::make_index_sequence<sizeof...(FIELDS)>())))
-        {
-            SOAUtils::map(typename impl_detail::push_backHelper(),
-                    SOAUtils::zip(m_storage, val),
-                    std::make_index_sequence<sizeof...(FIELDS)>());
-        }
-
-        /// push an element at the back of the array (move variant)
-        void push_back(value_type&& val) noexcept(noexcept(
-            SOAUtils::map(typename impl_detail::push_backHelper(),
-                    SOAUtils::zip(m_storage, std::move(val)),
-                    std::make_index_sequence<sizeof...(FIELDS)>())))
-        {
-            SOAUtils::map(typename impl_detail::push_backHelper(),
-                    SOAUtils::zip(m_storage, std::move(val)),
-                    std::make_index_sequence<sizeof...(FIELDS)>());
-        }
-
-        /// insert a value at the given position
-        iterator insert(const_iterator pos, const value_type& val) noexcept(
-                noexcept(SOAUtils::map(
-                    typename impl_detail::insertHelper{pos.m_proxy.m_index},
-                        SOAUtils::zip(m_storage, val),
-                        std::make_index_sequence<sizeof...(FIELDS)>())))
-        {
-            assert((*pos).m_storage == &m_storage);
-            SOAUtils::map(
-                    typename impl_detail::insertHelper{pos.m_proxy.m_index},
-                    SOAUtils::zip(m_storage, val),
-                    std::make_index_sequence<sizeof...(FIELDS)>());
-            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
-        }
-
-        /// insert a value at the given position (move variant)
-        iterator insert(const_iterator pos, value_type&& val) noexcept(
-                noexcept(SOAUtils::map(
-                    typename impl_detail::insertHelper{pos.m_proxy.m_index},
-                        SOAUtils::zip(m_storage, std::move(val)),
-                        std::make_index_sequence<sizeof...(FIELDS)>())))
-        {
-            assert((*pos).m_storage == &m_storage);
-            SOAUtils::map(
-                    typename impl_detail::insertHelper{pos.m_proxy.m_index},
-                    SOAUtils::zip(m_storage, std::move(val)),
-                    std::make_index_sequence<sizeof...(FIELDS)>());
-            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
-        }
-
-        /// insert count copies of value at the given position
-        iterator insert(const_iterator pos, size_type count, const value_type& val) noexcept(
-                noexcept(SOAUtils::map(
-                    typename impl_detail::insertHelper2{pos.m_proxy.m_index, count},
-                    SOAUtils::zip(m_storage, val),
-                    std::make_index_sequence<sizeof...(FIELDS)>())))
-        {
-            assert((*pos).m_storage == &m_storage);
-            SOAUtils::map(
-                    typename impl_detail::insertHelper2{pos.m_proxy.m_index, count},
-                    SOAUtils::zip(m_storage, val),
-                    std::make_index_sequence<sizeof...(FIELDS)>());
-            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
-        }
-
-        /// insert elements between first and last at position pos
-        template <typename IT>
-        iterator insert(const_iterator pos, IT first, IT last)
-        {
-            // FIXME: terrible implementation!!!
-            // for iterators which support multiple passes over the data, this
-            // should fill field by field
-            // moreover, if we can determine the distance between first and
-            // last, we should make a hole of the right size to avoid moving
-            // data more than once
-            iterator retVal(pos.m_proxy.m_storage, pos.m_proxy.m_index);
-            while (first != last) { insert(pos, *first); ++first; ++pos; }
-            return retVal;
-        }
-
-        /// erase an element at the given position
-        iterator erase(const_iterator pos) noexcept(noexcept(
-                    SOAUtils::map(
-                        typename impl_detail::eraseHelper{pos.m_proxy.m_index},
-                        m_storage)))
-        {
-            assert((*pos).m_storage == &m_storage);
-            SOAUtils::map(
-                    typename impl_detail::eraseHelper{pos.m_proxy.m_index},
-                    m_storage);
-            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
-        }
-
-        /// erase elements from first to last
-        iterator erase(const_iterator first, const_iterator last) noexcept(
-                noexcept(
-                    SOAUtils::map(
-                        typename impl_detail::eraseHelper_N{
-                            first.m_proxy.m_index,
-                            last.m_proxy.m_index - first.m_proxy.m_index},
-                            m_storage)))
-        {
-            assert((*first).m_storage == &m_storage);
-            assert((*last).m_storage == &m_storage);
-            SOAUtils::map(
-                    typename impl_detail::eraseHelper_N{first.m_proxy.m_index,
-                        last.m_proxy.m_index - first.m_proxy.m_index},
-                        m_storage);
-            return { first.m_proxy.m_storage, first.m_proxy.m_index };
-        }
-
         /// assign the vector to contain count copies of val
         void assign(size_type count, const value_type& val) noexcept(noexcept(
                     SOAUtils::map(typename impl_detail::assignHelper{count},
@@ -1068,82 +677,6 @@ class SOAView {
             insert(begin(), first, last);
         }
 
-        /// construct new element at end of container (in-place) from args
-        template <typename... ARGS>
-        void emplace_back(ARGS&&... args) noexcept(noexcept(
-                    typename impl_detail::template emplace_backHelper<0>(
-                        m_storage).doIt(std::forward<ARGS>(args)...)))
-        {
-            static_assert(std::is_constructible<value_type, ARGS...>::value,
-                    "Wrong arguments to emplace_back.");
-            typename impl_detail::template emplace_backHelper<0>(
-                    m_storage).doIt(std::forward<ARGS>(args)...);
-        }
-
-        /// construct a new element at the end of container from naked_value_tuple_type
-        void emplace_back(naked_value_tuple_type&& val) noexcept(noexcept(
-            SOAUtils::call(typename impl_detail::emplaceBackHelper2(nullptr),
-                std::forward<naked_value_tuple_type>(val))))
-        {
-            return SOAUtils::call(
-                typename impl_detail::emplaceBackHelper2(this),
-                std::forward<naked_value_tuple_type>(val));
-        }
-
-        /// construct a new element at the end of container from value_type
-        void emplace_back(value_type&& val) noexcept(noexcept(
-            SOAUtils::call(typename impl_detail::emplaceBackHelper2(nullptr),
-                std::forward<naked_value_tuple_type>(
-                    static_cast<naked_value_tuple_type>(val)))))
-        {
-            return SOAUtils::call(
-                typename impl_detail::emplaceBackHelper2(this),
-                std::forward<naked_value_tuple_type>(
-                    static_cast<naked_value_tuple_type>(val)));
-        }
-
-        /// construct new element at position pos (in-place) from args
-        template <typename... ARGS>
-        iterator emplace(const_iterator pos, ARGS&&... args) noexcept(
-                noexcept(typename impl_detail::template emplaceHelper<0>(
-                        m_storage, pos.m_proxy.m_index).doIt(
-                            std::forward<ARGS>(args)...)))
-        {
-            static_assert(std::is_constructible<value_type, ARGS...>::value,
-                    "Wrong arguments to emplace.");
-            assert(&m_storage == (*pos).m_storage);
-            typename impl_detail::template emplaceHelper<0>(
-                    m_storage, pos.m_proxy.m_index).doIt(
-                        std::forward<ARGS>(args)...);
-            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
-        }
-
-        /// construct a new element at position pos from naked_value_tuple_type
-        iterator emplace(const_iterator pos,
-            naked_value_tuple_type&& val) noexcept(noexcept(
-                SOAUtils::call(typename impl_detail::emplaceHelper2(
-                nullptr, pos), std::forward<naked_value_tuple_type>(val))))
-        {
-            return SOAUtils::call(
-                typename impl_detail::emplaceHelper2(this, pos),
-                std::forward<naked_value_tuple_type>(val));
-        }
-
-        /// construct a new element at position pos from value_type
-        iterator emplace(const_iterator pos,
-            value_type&& val) noexcept(noexcept(
-                SOAUtils::call(typename impl_detail::emplaceHelper2(
-                nullptr, pos), std::forward<naked_value_tuple_type>(
-                    static_cast<naked_value_tuple_type>(val)))))
-        {
-            return SOAUtils::call(
-                typename impl_detail::emplaceHelper2(this, pos),
-                std::forward<naked_value_tuple_type>(
-                    static_cast<naked_value_tuple_type>(val)));
-        }
-
-        /// construct new element at position pos (in-place) from args
-        template <typename... ARGS>
         /// swap contents of two containers
         void swap(self_type& other) noexcept(
                 noexcept(std::swap(m_storage, other.m_storage)))
