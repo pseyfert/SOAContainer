@@ -311,11 +311,14 @@ class SOAView {
 
         /// helper for _is_any_field_constant: extract parameter pack
         template <template <typename...> class T, typename... ARGS>
-        constexpr static bool is_any_field_constant(T<ARGS...>) noexcept
+        constexpr static bool is_any_field_constant(const T<ARGS...>*) noexcept
         { return _is_any_field_constant<ARGS...>::value; }
 
         /// record if the SOAView should be a const one
-        enum { is_constant = SOAView<STORAGE, SKIN, FIELDS...>::is_any_field_constant(std::declval<STORAGE>()) };
+        enum {
+            is_constant = SOAView<STORAGE, SKIN, FIELDS...
+                >::is_any_field_constant(static_cast<const STORAGE*>(nullptr))
+        };
 
     public:
         /// type to represent sizes and indices
