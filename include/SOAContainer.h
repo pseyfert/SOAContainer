@@ -277,10 +277,6 @@ class SOAContainer : public SOAView<
         };
 
     public:
-        /// type to represent sizes and indices
-        typedef std::size_t size_type;
-        /// type to represent differences of indices
-        typedef std::ptrdiff_t difference_type;
         /// type to represent container itself
         typedef SOAContainer<CONTAINER, SKIN, FIELDS...> self_type;
         /// typedef holding a typelist with the given fields
@@ -304,42 +300,6 @@ class SOAContainer : public SOAView<
             fields_typelist>::const_reference_tuple naked_const_reference_tuple_type;
 
     public:
-        /// (notion of) type of the contained objects
-        typedef SKIN<DressedTuple<naked_value_tuple_type, self_type> >
-            value_type;
-        /// (notion of) reference to value_type (outside container)
-        typedef SKIN<DressedTuple<naked_reference_tuple_type, self_type> >
-            value_reference;
-        /// (notion of) const reference to value_type (outside container)
-        typedef SKIN<DressedTuple<naked_const_reference_tuple_type,
-                self_type> > value_const_reference;
-
-    public:
-        /// naked proxy type (to be given a "skin" later)
-        typedef SOAObjectProxy<self_type> naked_proxy;
-        friend naked_proxy;
-        /// type of proxy
-        typedef SKIN<naked_proxy> proxy;
-        friend proxy;
-        /// pointer to contained objects
-        typedef SOAIterator<proxy> pointer;
-        friend pointer;
-        /// iterator type
-        typedef pointer iterator;
-        /// reference to contained objects
-        typedef proxy reference;
-        /// reference to contained objects
-        typedef const reference const_reference;
-        /// const pointer to contained objects
-        typedef SOAConstIterator<proxy> const_pointer;
-        friend const_pointer;
-        /// const iterator type
-        typedef const_pointer const_iterator;
-        /// reverse iterator type
-        typedef std::reverse_iterator<iterator> reverse_iterator;
-        /// const reverse iterator type
-        typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
-
         /// default constructor
         SOAContainer() { }
         /// fill container with count copies of val

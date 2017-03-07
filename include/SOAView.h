@@ -299,17 +299,22 @@ class SOAView {
 
 
         /// work out if what is contained in a range is constant
-        template <typename RANGE> // FIXME: WTF?
+        template <typename RANGE>
         struct is_contained_constant : std::integral_constant<bool,
             std::is_const<RANGE>::value || std::is_const<
                 typename contained_type<RANGE>::type>::value> { };
 
         /// is any field a constant range?
-        template <template <typename... ARGS> class STOR>
-        struct is_any_field_constant : ANY<is_contained_constant, ARGS...> { };
+        template <typename... ARGS> /// FIXME: WTF?!?
+        struct _is_any_field_constant : ANY<is_contained_constant, ARGS...> { };
+
+        template <template <typename...> class T, typename... ARGS>
+        constexpr static bool is_any_field_constant(T<ARGS...>&) noexcept
+        { return _is_any_field_constant<ARGS...>::value; }
+
 
         /// record if the SOAView should be a const one
-        enum { is_constant = is_any_field_constant<STORAGE>::value };
+        enum { is_constant = is_any_field_constant(std::declval<STORAGE>()) };
 
     public:
         /// type to represent sizes and indices
@@ -317,7 +322,7 @@ class SOAView {
         /// type to represent differences of indices
         typedef std::ptrdiff_t difference_type;
         /// type to represent container itself
-        typedef SOAView<CONTAINER, SKIN, FIELDS...> self_type;
+        typedef SOAView<STORAGE, SKIN, FIELDS...> self_type;
         /// typedef holding a typelist with the given fields
         typedef SOATypelist::typelist<FIELDS...> fields_typelist;
 
@@ -386,8 +391,8 @@ class SOAView {
         /// constructor from a list of ranges
         template <typename... RANGES>
         SOAView(RANGES&&... ranges, typename std::enable_if<
-                std::is_same<verify_storage<0, std::tuple<RANGES...>,
-                    FIELDS...>::value, int, void>::value>::type = 0) :
+                fields_verifier::template verify_storage<0, std::tuple<RANGES...>,
+                    FIELDS...>::value, int>::type = 0) :
             m_storage(std::forward<RANGES>(ranges)...) { }
         /// copy constructor
         SOAView(const self_type& other) = default;
@@ -478,13 +483,13 @@ class SOAView {
         /// get begin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         typename std::enable_if<!is_constant, decltype(
-                std::get<memberno(MEMBER)>(std::declval<SOAStorage>()).begin())>::type
+                std::get<memberno<MEMBER>()>(std::declval<SOAStorage>()).begin())>::type
         begin() noexcept
         { return std::get<memberno<MEMBER>()>(m_storage).begin(); }
         /// get end iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         typename std::enable_if<!is_constant, decltype(
-                std::get<memberno(MEMBER)>(std::declval<SOAStorage>()).end())>::type
+                std::get<memberno<MEMBER>()>(std::declval<SOAStorage>()).end())>::type
         end() noexcept
         { return std::get<memberno<MEMBER>()>(m_storage).end(); }
 
@@ -568,13 +573,13 @@ class SOAView {
         /// get begin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         typename std::enable_if<!is_constant, decltype(
-                std::get<memberno(MEMBER)>(std::declval<SOAStorage>()).rbegin())>::type
+                std::get<memberno<MEMBER>()>(std::declval<SOAStorage>()).rbegin())>::type
         rbegin() noexcept
         { return std::get<memberno<MEMBER>()>(m_storage).rbegin(); }
         /// get end iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         typename std::enable_if<!is_constant, decltype(
-                std::get<memberno(MEMBER)>(std::declval<SOAStorage>()).rend())>::type
+                std::get<memberno<MEMBER>()>(std::declval<SOAStorage>()).rend())>::type
         rend() noexcept
         { return std::get<memberno<MEMBER>()>(m_storage).rend(); }
 
