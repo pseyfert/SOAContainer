@@ -283,6 +283,29 @@ namespace SOAUtils {
     auto call(const F& f, const T& t) -> decltype(
         caller<F, typename std::decay<T>::type>(f)(t))
     { return caller<F, typename std::decay<T>::type>(f)(t); }
+    /// little helper to implment ANY
+    template <template <typename> class PRED, typename HEAD, typename... TAIL>
+    struct _ANY : public std::conditional<bool(PRED<HEAD>::value),
+            std::true_type, _ANY<PRED, TAIL...> >::type { };
+    template <template <typename> class PRED, typename ARG>
+    struct _ANY<PRED, ARG> : public PRED<ARG> { };
+    /// is any of a type-trait predicate applied to a list of ARGS true?
+    template <template <typename> class PRED, typename... ARGS>
+    struct ANY : public _ANY<PRED, ARGS...> { };
+    template <template <typename> class PRED>
+    struct ANY<PRED> : public std::false_type { };
+    /// little helper to implement ALL
+    template <template <typename> class PRED, typename HEAD, typename... TAIL>
+    struct  _ALL : public std::conditional<bool(!PRED<HEAD>::value),
+        HEAD, _ALL<PRED, TAIL...> >::type { };
+    /// is any of a type-trait predicate applied to a list of ARGS true?
+    template <template <typename> class PRED, typename ARG>
+    struct _ALL<PRED, ARG> : public PRED<ARG> { };
+    /// are ALL of a type-trait predicate applied to a list of ARGS true?
+    template <template <typename> class PRED, typename... ARGS>
+    struct ALL : public _ALL<PRED, ARGS...> { };
+    template <template <typename> class PRED>
+    struct ALL<PRED> : public std::true_type { };
 }
 
 #endif // SOAUTILS_H

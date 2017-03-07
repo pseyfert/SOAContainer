@@ -232,26 +232,19 @@ class NullSkin : public NAKEDPROXY
  *     { return a.y() < b.y(); });
  * @endcode
  */
-template <template <typename... RANGES> class STORAGE,
+template <class STORAGE,
     template <typename> class SKIN, typename... FIELDS>
 class SOAView {
     private:
-        /// is any of a type-trait predicate applied to a list of ARGS true?
         template <template <typename> class PRED, typename... ARGS>
-        struct ANY : std::false_type { };
-        template <template <typename> class PRED, typename ARG>
-        struct ANY : PRED<ARG> { };
-        template <template <typename> class PRED, typename HEAD, typename... TAIL>
-        struct ANY : typename std::conditional<bool(PRED<HEAD>::value,
-                HEAD, typename ANY<PRED, TAIL> >::type { };
-        /// are ALL of a type-trait predicate applied to a list of ARGS true?
+        using ANY = SOAUtils::ANY<PRED, ARGS...>;
         template <template <typename> class PRED, typename... ARGS>
-        struct ALL : std::true_type { };
-        template <template <typename> class PRED, typename ARG>
-        struct ALL : PRED<ARG> { };
-        template <template <typename> class PRED, typename HEAD, typename... TAIL>
-        struct  ALL : typename std::conditional<bool(!PRED<HEAD>::value,
-                HEAD, typename ALL<PRED, TAIL> >::type { };
+        using ALL = SOAUtils::ALL<PRED, ARGS...>;
+        /// little helper to find the type contained in a range
+        template <typename RANGE>
+        struct contained_type {
+            typedef decltype(*std::begin(std::declval<RANGE>())) type;
+        };
         /// hide verification of FIELDS inside struct or doxygen gets confused
         struct fields_verifier {
             // storing objects without state doesn't make sense
@@ -271,54 +264,34 @@ class SOAView {
             static_assert(std::tuple_size<STORAGE>::value ==
                     sizeof...(FIELDS),
                     "Number of fields does not match storage.");
-            /// little helper to find the type contained in a range
-            template <typename RANGE>
-            struct contained_type {
-                typedef decltype(*std::begin(std::declval<RANGE>())) type;
-            };
+            /// little helper: check if element in a tuple F matches field
+            template <size_t N, class T, typename FIELD>
+            struct verify_storage_element : public std::integral_constant<bool,
+                std::is_same<typename contained_type<
+                    typename std::tuple_element<N, T>::type>::type,
+                    SOATypelist::unwrap_t<FIELD> >::value ||
+                std::is_same<typename std::remove_cv<typename contained_type<
+                    typename std::tuple_element<N, T>::type>::type>::type,
+                    SOATypelist::unwrap_t<FIELD> >::value ||
+                std::is_same<typename std::remove_cv<
+                    typename std::remove_reference<typename contained_type<
+                    typename std::tuple_element<N, T>::type>::type>::type>::type,
+                    SOATypelist::unwrap_t<FIELD> >::value> {};
+
             /// little helper verifying the storage matches the fields
-            template <size_t N, template <typename...> class T,
-                     typename... ARGS>
+            template <size_t N, class T, typename... ARGS>
             struct verify_storage;
             /// specialisation for > 1 field
-            template <size_t N, template <typename...> class T,
-                     typename HEAD, typename... TAIL>
-            struct verify_storage<N, T, HEAD, TAIL...> :
-                public integral_constant<bool,
-                    (std::is_same<typename contained_type<
-                        typename std::tuple_element<N, T>::type>::type,
-                        SOATypelist::unwrap_t<HEAD> >::value ||
-                    std::is_same<typename std::remove_cv<
-                        typename contained_type<
-                                typename std::tuple_element<N, T>::type
-                            >::type>::type,
-                        SOATypelist::unwrap_t<HEAD> >::value ||
-                    std::is_same<typename std::remove_cv<
-                        typename std::remove_reference<
-                        typename contained_type<
-                                typename std::tuple_element<N, T>::type
-                            >::type>::type>::type,
-                        SOATypelist::unwrap_t<HEAD> >::value) &&
+            template <size_t N, class T, typename HEAD, typename... TAIL>
+            struct verify_storage<N, T, HEAD, TAIL...> : public
+                std::integral_constant<bool,
+                    verify_storage_element<N, T, HEAD>::value &&
                     verify_storage<N + 1, T, TAIL...>::value> { };
             /// specialisation for one field
-            template <size_t N, template <typename...> class T,
-                     typename HEAD>
-            struct verify_storage<N, T, HEAD> :
-                public integral_constant<bool,
-                    (std::is_same<typename contained_type<
-                            typename std::tuple_element<N, T>::type>::type,
-                        SOATypelist::unwrap_t<HEAD> >::value ||
-                    std::is_same<typename std::remove_cv<
-                        typename containe_type<
-                                typename std::tuple_element<N, T>::type
-                            >::type>::type,
-                        SOATypelist::unwrap_t<HEAD> >::value ||
-                    std::is_same<typename std::remove_cv<
-                        typename std::remove_reference<
-                        typename constained_type<
-                                typename std::tuple_element<N, T>::type
-                            >::type>::type>::type,
-                        SOATypelist::unwrap_t<HEAD> >::value)> { };
+            template <size_t N, class T, typename HEAD>
+            struct verify_storage<N, T, HEAD> : public
+                std::integral_constant<bool,
+                    verify_storage_element<N, T, HEAD>::value> { };
             // make sure the storage matches the fields provided
             static_assert(verify_storage<0, STORAGE, FIELDS...>::value,
                     "Type of provided storage must match fields.");
@@ -326,14 +299,14 @@ class SOAView {
 
 
         /// work out if what is contained in a range is constant
-        template <typename RANGE>
+        template <typename RANGE> // FIXME: WTF?
         struct is_contained_constant : std::integral_constant<bool,
-            std::is_constant<RANGE>::value || std::is_constant<
+            std::is_const<RANGE>::value || std::is_const<
                 typename contained_type<RANGE>::type>::value> { };
 
         /// is any field a constant range?
         template <template <typename... ARGS> class STOR>
-        struct is_any_field_const : ANY<is_contained_constant, ARGS...> { };
+        struct is_any_field_constant : ANY<is_contained_constant, ARGS...> { };
 
         /// record if the SOAView should be a const one
         enum { is_constant = is_any_field_constant<STORAGE>::value };
@@ -355,8 +328,7 @@ class SOAView {
 
     private:
         /// type of the storage backend
-        typedef typename SOATypelist::to_tuple<
-            fields_typelist>::template container_tuple<CONTAINER> SOAStorage;
+        typedef STORAGE SOAStorage;
 
         /// storage backend
         SOAStorage m_storage;
@@ -409,10 +381,13 @@ class SOAView {
         typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
         /// constructor from the underlying storage
-        SOAView(STORAGE<RANGES...>&& other) :
+        SOAView(SOAStorage&& other) :
             m_storage(std::forward(other)) { }
         /// constructor from a list of ranges
-        SOAView(RANGES&&... ranges) :
+        template <typename... RANGES>
+        SOAView(RANGES&&... ranges, typename std::enable_if<
+                std::is_same<verify_storage<0, std::tuple<RANGES...>,
+                    FIELDS...>::value, int, void>::value>::type = 0) :
             m_storage(std::forward<RANGES>(ranges)...) { }
         /// copy constructor
         SOAView(const self_type& other) = default;
@@ -471,186 +446,191 @@ class SOAView {
         /// iterator pointing to first element
         typename std::enable_if<!is_constant, iterator>::type
         begin() noexcept { return { &m_storage, 0 }; }
-        /// const iterator pointing to first element
-        const_iterator begin() const noexcept
-        { return { const_cast<SOAStorage*>(&m_storage), 0 }; }
-        /// const iterator pointing to first element
-        const_iterator cbegin() const noexcept { return begin(); }
-
         /// iterator pointing one element behind the last element
         typename std::enable_if<!is_constant, iterator>::type
         end() noexcept { return { &m_storage, size() }; }
+
+        /// const iterator pointing to first element
+        const_iterator begin() const noexcept
+        { return { const_cast<SOAStorage*>(&m_storage), 0 }; }
         /// const iterator pointing one element behind the last element
         const_iterator end() const noexcept
         { return { const_cast<SOAStorage*>(&m_storage), size() }; }
+
+        /// const iterator pointing to first element
+        const_iterator cbegin() const noexcept { return begin(); }
         /// const iterator pointing one element behind the last element
         const_iterator cend() const noexcept { return end(); }
 
         /// get begin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
-        auto begin() noexcept -> decltype(
-                std::get<MEMBERNO>(m_storage).begin())
+        typename std::enable_if<!is_constant, decltype(
+                std::get<MEMBERNO>(std::declval<SOAStorage>()).begin())>::type
+        begin() noexcept
         { return std::get<MEMBERNO>(m_storage).begin(); }
+        /// get end iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        typename std::enable_if<!is_constant, decltype(
+                std::get<MEMBERNO>(std::declval<SOAStorage>()).end())>::type
+        end() noexcept
+        { return std::get<MEMBERNO>(m_storage).end(); }
 
         /// get begin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
-        auto begin() noexcept -> decltype(
-                std::get<memberno<MEMBER>()>(m_storage).begin())
+        typename std::enable_if<!is_constant, decltype(
+                std::get<memberno(MEMBER)>(std::declval<SOAStorage>()).begin())>::type
+        begin() noexcept
         { return std::get<memberno<MEMBER>()>(m_storage).begin(); }
+        /// get end iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        typename std::enable_if<!is_constant, decltype(
+                std::get<memberno(MEMBER)>(std::declval<SOAStorage>()).end())>::type
+        end() noexcept
+        { return std::get<memberno<MEMBER>()>(m_storage).end(); }
 
         /// get begin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
         auto begin() const noexcept -> decltype(
                 std::get<MEMBERNO>(m_storage).begin())
         { return std::get<MEMBERNO>(m_storage).begin(); }
+        /// get end iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto end() const noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).end())
+        { return std::get<MEMBERNO>(m_storage).end(); }
 
         /// get begin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto begin() const noexcept -> decltype(
                 std::get<memberno<MEMBER>()>(m_storage).begin())
         { return std::get<memberno<MEMBER>()>(m_storage).begin(); }
+        /// get end iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto end() const noexcept -> decltype(
+                std::get<memberno<MEMBER>()>(m_storage).end())
+        { return std::get<memberno<MEMBER>()>(m_storage).end(); }
 
         /// get begin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
         auto cbegin() const noexcept -> decltype(
                 std::get<MEMBERNO>(m_storage).cbegin())
         { return std::get<MEMBERNO>(m_storage).cbegin(); }
+        /// get end iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto cend() const noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).cend())
+        { return std::get<MEMBERNO>(m_storage).cend(); }
 
         /// get begin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto cbegin() const noexcept -> decltype(
                 std::get<memberno<MEMBER>()>(m_storage).cbegin())
         { return std::get<memberno<MEMBER>()>(m_storage).cbegin(); }
-
-        /// get end iterator of storage vector for member MEMBERNO
-        template <size_type MEMBERNO>
-        auto end() noexcept -> decltype(
-                std::get<MEMBERNO>(m_storage).end())
-        { return std::get<MEMBERNO>(m_storage).end(); }
-
         /// get end iterator of storage vector for member with tag MEMBER
-        template <typename MEMBER>
-        auto end() noexcept -> decltype(
-                std::get<memberno<MEMBER>()>(m_storage).end())
-        { return std::get<memberno<MEMBER>()>(m_storage).end(); }
-
-        /// get end iterator of storage vector for member MEMBERNO
-        template <size_type MEMBERNO>
-        auto end() const noexcept -> decltype(
-                std::get<MEMBERNO>(m_storage).end())
-        { return std::get<MEMBERNO>(m_storage).end(); }
-
-        /// get end iterator of storage vector for member with tag MEMBER
-        template <typename MEMBER>
-        auto end() const noexcept -> decltype(
-                std::get<memberno<MEMBER>()>(m_storage).end())
-        { return std::get<memberno<MEMBER>()>(m_storage).end(); }
-
-        /// get cend iterator of storage vector for member MEMBERNO
-        template <size_type MEMBERNO>
-        auto cend() const noexcept -> decltype(
-                std::get<MEMBERNO>(m_storage).cend())
-        { return std::get<MEMBERNO>(m_storage).cend(); }
-
-        /// get cend iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto cend() const noexcept -> decltype(
                 std::get<memberno<MEMBER>()>(m_storage).cend())
         { return std::get<memberno<MEMBER>()>(m_storage).cend(); }
 
-        /// iterator pointing to first element in reverse order
-        typename std::enable_if<!is_constant, reverse_iterator>::type
-        rbegin() noexcept { return reverse_iterator(end()); }
-        /// const iterator pointing to first element in reverse order
-        const_reverse_iterator rbegin() const noexcept
-        { return const_reverse_iterator(end()); }
-        /// const iterator pointing to first element in reverse order
-        const_reverse_iterator crbegin() const noexcept { return rbegin(); }
 
-        /// iterator pointing one element behind the last element in reverse order
+        /// iterator pointing to first element
         typename std::enable_if<!is_constant, reverse_iterator>::type
-        rend() noexcept { return reverse_iterator(begin()); }
-        /// const iterator pointing one element behind the last element in reverse order
+        rbegin() noexcept { return end(); }
+        /// iterator pointing one element behind the last element
+        typename std::enable_if<!is_constant, reverse_iterator>::type
+        rend() noexcept { return begin(); }
+
+        /// const iterator pointing to first element
+        const_reverse_iterator rbegin() const noexcept
+        { return end(); }
+        /// const iterator pointing one element behind the last element
         const_reverse_iterator rend() const noexcept
-        { return const_reverse_iterator(begin()); }
-        /// const iterator pointing one element behind the last element in reverse order
+        { return begin(); }
+
+        /// const iterator pointing to first element
+        const_reverse_iterator crbegin() const noexcept { return rbegin(); }
+        /// const iterator pointing one element behind the last element
         const_reverse_iterator crend() const noexcept { return rend(); }
 
-        /// get rbegin iterator of storage vector for member MEMBERNO
+        /// get begin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
-        typename std::enable_if<!is_constant, decltype(std::get<MEMBERNO>(
-            std::declval<STORAGE<RANGES...> >()).rbegin())>::type
+        typename std::enable_if<!is_constant, decltype(
+                std::get<MEMBERNO>(std::declval<SOAStorage>()).rbegin())>::type
         rbegin() noexcept
         { return std::get<MEMBERNO>(m_storage).rbegin(); }
+        /// get end iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        typename std::enable_if<!is_constant, decltype(
+                std::get<MEMBERNO>(std::declval<SOAStorage>()).rend())>::type
+        rend() noexcept
+        { return std::get<MEMBERNO>(m_storage).rend(); }
 
-        /// get rbegin iterator of storage vector for member with tag MEMBER
+        /// get begin iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
-        typename std::enable_if<!is_constant, decltype(std::get<memberno(MEMBER)>(
-            std::declval<STORAGE<RANGES...> >()).rbegin())>::type
-        auto rbegin() noexcept
+        typename std::enable_if<!is_constant, decltype(
+                std::get<memberno(MEMBER)>(std::declval<SOAStorage>()).rbegin())>::type
+        rbegin() noexcept
         { return std::get<memberno<MEMBER>()>(m_storage).rbegin(); }
+        /// get end iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        typename std::enable_if<!is_constant, decltype(
+                std::get<memberno(MEMBER)>(std::declval<SOAStorage>()).rend())>::type
+        rend() noexcept
+        { return std::get<memberno<MEMBER>()>(m_storage).rend(); }
 
-        /// get rbegin iterator of storage vector for member MEMBERNO
+        /// get begin iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
         auto rbegin() const noexcept -> decltype(
                 std::get<MEMBERNO>(m_storage).rbegin())
         { return std::get<MEMBERNO>(m_storage).rbegin(); }
-
-        /// get rbegin iterator of storage vector for member with tag MEMBER
-        template <typename MEMBER>
-        auto rbegin() const noexcept -> decltype(
-                std::get<memberno<MEMBER>()>(m_storage).rbegin())
-        { return std::get<memberno<MEMBER>()>(m_storage).rbegin(); }
-
-        /// get rbegin iterator of storage vector for member MEMBERNO
-        template <size_type MEMBERNO>
-        auto crbegin() const noexcept -> decltype(
-                std::get<MEMBERNO>(m_storage).crbegin())
-        { return std::get<MEMBERNO>(m_storage).crbegin(); }
-
-        /// get rbegin iterator of storage vector for member with tag MEMBER
-        template <typename MEMBER>
-        auto crbegin() const noexcept -> decltype(
-                std::get<memberno<MEMBER>()>(m_storage).crbegin())
-        { return std::get<memberno<MEMBER>()>(m_storage).crbegin(); }
-
-        /// get rend iterator of storage vector for member MEMBERNO
-        template <size_type MEMBERNO>
-        typename std::enable_if<!is_constant, decltype(std::get<MEMBERNO>(
-            std::declval<STORAGE<RANGES...> >()).rend())>::type
-        rend() noexcept
-        { return std::get<MEMBERNO>(m_storage).rend(); }
-
-        /// get rend iterator of storage vector for member with tag MEMBER
-        template <typename MEMBER>
-        typename std::enable_if<!is_constant, decltype(std::get<memberno(MEMBER)>(
-            std::declval<STORAGE<RANGES...> >()).rend())>::type
-        auto rend() noexcept
-        { return std::get<memberno<MEMBER>()>(m_storage).rend(); }
-
-        /// get rend iterator of storage vector for member MEMBERNO
+        /// get end iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
         auto rend() const noexcept -> decltype(
                 std::get<MEMBERNO>(m_storage).rend())
         { return std::get<MEMBERNO>(m_storage).rend(); }
 
-        /// get rend iterator of storage vector for member with tag MEMBER
+        /// get begin iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto rbegin() const noexcept -> decltype(
+                std::get<memberno<MEMBER>()>(m_storage).rbegin())
+        { return std::get<memberno<MEMBER>()>(m_storage).rbegin(); }
+        /// get end iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto rend() const noexcept -> decltype(
                 std::get<memberno<MEMBER>()>(m_storage).rend())
         { return std::get<memberno<MEMBER>()>(m_storage).rend(); }
 
-        /// get crend iterator of storage vector for member MEMBERNO
+        /// get begin iterator of storage vector for member MEMBERNO
+        template <size_type MEMBERNO>
+        auto crbegin() const noexcept -> decltype(
+                std::get<MEMBERNO>(m_storage).crbegin())
+        { return std::get<MEMBERNO>(m_storage).crbegin(); }
+        /// get end iterator of storage vector for member MEMBERNO
         template <size_type MEMBERNO>
         auto crend() const noexcept -> decltype(
                 std::get<MEMBERNO>(m_storage).crend())
         { return std::get<MEMBERNO>(m_storage).crend(); }
 
-        /// get crend iterator of storage vector for member with tag MEMBER
+        /// get begin iterator of storage vector for member with tag MEMBER
+        template <typename MEMBER>
+        auto crbegin() const noexcept -> decltype(
+                std::get<memberno<MEMBER>()>(m_storage).crbegin())
+        { return std::get<memberno<MEMBER>()>(m_storage).crbegin(); }
+        /// get end iterator of storage vector for member with tag MEMBER
         template <typename MEMBER>
         auto crend() const noexcept -> decltype(
                 std::get<memberno<MEMBER>()>(m_storage).crend())
         { return std::get<memberno<MEMBER>()>(m_storage).crend(); }
+
+
+
+
+
+
+
+
+
+
 
         /// assign the vector to contain count copies of val
         void assign(size_type count, const value_type& val) noexcept(noexcept(
