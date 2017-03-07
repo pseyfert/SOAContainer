@@ -293,6 +293,10 @@ class SOAView {
             struct verify_storage<N, T, HEAD> : public
                 std::integral_constant<bool,
                     verify_storage_element<N, T, HEAD>::value> { };
+            /// specialisation for empty tuples
+            template <size_t N, typename... ARGS>
+            struct verify_storage<N, std::tuple<>, ARGS...> :
+                public std::false_type { };
             // make sure the storage matches the fields provided
             static_assert(verify_storage<0, STORAGE, FIELDS...>::value,
                     "Type of provided storage must match fields.");
@@ -405,6 +409,8 @@ class SOAView {
         typedef typename SOATypelist::to_tuple<
             fields_typelist>::const_reference_tuple naked_const_reference_tuple_type;
 
+        SOAView() {}
+
     public:
         /// (notion of) type of the contained objects
         typedef SKIN<DressedTuple<naked_value_tuple_type, self_type> >
@@ -443,8 +449,11 @@ class SOAView {
         typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
         /// constructor from the underlying storage
+        SOAView(const SOAStorage& other) :
+            m_storage(other) { }
+        /// constructor from the underlying storage
         SOAView(SOAStorage&& other) :
-            m_storage(std::forward(other)) { }
+            m_storage(std::move(other)) { }
         /// constructor from a list of ranges
         template <typename... RANGES>
         SOAView(RANGES&&... ranges, typename std::enable_if<

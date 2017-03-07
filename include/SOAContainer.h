@@ -274,9 +274,9 @@ class SOAContainer : public SOAView<
 
     public:
         /// default constructor
-        SOAContainer() { }
+        SOAContainer() : BASE() { }
         /// fill container with count copies of val
-        SOAContainer(size_type count, const value_type& val)
+        SOAContainer(size_type count, const value_type& val) : BASE()
         {
             reserve(count);
             assign(count, val);
@@ -285,7 +285,7 @@ class SOAContainer : public SOAView<
         SOAContainer(size_type count) : SOAContainer(count, value_type()) { }
         /// fill container with elements from other container
         template <typename IT>
-        SOAContainer(IT first, IT last)
+        SOAContainer(IT first, IT last) : BASE()
         { assign(first, last); }
         /// copy constructor
         SOAContainer(const self_type& other) : BASE(other) { }
@@ -293,7 +293,9 @@ class SOAContainer : public SOAView<
         SOAContainer(self_type&& other) : BASE(std::move(other)) { }
 
         /// std::initializer_list constructor
-        SOAContainer(std::initializer_list<naked_value_tuple_type> listing) {
+        SOAContainer(std::initializer_list<naked_value_tuple_type> listing) :
+            BASE()
+        {
             reserve(listing.size());
             for(const auto &items : listing)
                 push_back(items);
