@@ -19,6 +19,9 @@ template <typename PROXY>
 class SOAConstIterator;
 template <typename PROXY>
 class SOAIterator;
+template < template <typename...> class CONTAINER,
+         template <typename> class SKIN, typename... FIELDS>
+class SOAContainer;
 
 /** @brief proxy object for the elements stored in the container.
  *
@@ -67,6 +70,10 @@ class SOAObjectProxy {
 
         // SOAContainer is allowed to invoke the private constructor
         friend parent_type;
+        /// corresponding SOAContainers are friends
+        template < template <typename...> class CONTAINER,
+                 template <typename> class SKIN, typename... FIELDS>
+        friend class SOAContainer;
         // so is the pointer/iterator type
         friend pointer;
         // and the const pointer/iterator type
