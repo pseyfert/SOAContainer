@@ -311,11 +311,11 @@ class SOAView {
 
         /// helper for _is_any_field_constant: extract parameter pack
         template <template <typename...> class T, typename... ARGS>
-        constexpr static bool is_any_field_constant(T<ARGS...>&) noexcept
+        constexpr static bool is_any_field_constant(T<ARGS...>) noexcept
         { return _is_any_field_constant<ARGS...>::value; }
 
         /// record if the SOAView should be a const one
-        enum { is_constant = is_any_field_constant(std::declval<STORAGE>()) };
+        enum { is_constant = SOAView<STORAGE, SKIN, FIELDS...>::is_any_field_constant(std::declval<STORAGE>()) };
 
     public:
         /// type to represent sizes and indices
@@ -385,7 +385,7 @@ class SOAView {
             };
         };
 
-    private:
+    protected:
         /// type of the storage backend
         typedef STORAGE SOAStorage;
 
@@ -684,11 +684,11 @@ class SOAView {
         /// assign the vector to contain count copies of val
         void assign(size_type count, const value_type& val)
         {
-            if (size() != count) {
+            if (size() >= count) {
                 std::stringstream str;
                 str << "In " << __func__ << " (" << __FILE__ << ", line " <<
-                    __LINE__ << "): count must match length of range.";
-                throw std::length_error(str.str());
+                    __LINE__ << "): count must not exceed length of range.";
+                throw std::out_of_range(str.str());
             }
             SOAUtils::map(typename impl_detail::assignHelper{count},
                     SOAUtils::zip(m_storage, val),
@@ -699,7 +699,7 @@ class SOAView {
         template <typename IT>
         void assign(IT first, IT last)
         {
-            if (std::distance(first, last) <= size()) {
+            if (size() >= std::distance(first, last)) {
                 std::stringstream str;
                 str << "In " << __func__ << " (" << __FILE__ << ", line " <<
                     __LINE__ << "): supplied range too large.";
@@ -789,44 +789,44 @@ namespace SOAViewImpl {
 }
 
 /// compare two SOAViews for equality
-template < template <typename...> class CONTAINER,
+template <typename STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-bool operator==(const SOAView<CONTAINER, SKIN, FIELDS...>& a,
-        const SOAView<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+bool operator==(const SOAView<STORAGE, SKIN, FIELDS...>& a,
+        const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
             noexcept(a.size()) && noexcept(
                 SOAViewImpl::compare<std::equal_to,
-                SOAView<CONTAINER, SKIN, FIELDS...
+                SOAView<STORAGE, SKIN, FIELDS...
                 >::fields_typelist::size()>()(a, b)))
 {
     if (a.size() != b.size()) return false;
     // compare one field at a time
     return SOAViewImpl::compare<std::equal_to,
-           SOAView<CONTAINER, SKIN, FIELDS...
+           SOAView<STORAGE, SKIN, FIELDS...
                >::fields_typelist::size()>()(a, b);
 }
 
 /// compare two SOAViews for inequality
-template < template <typename...> class CONTAINER,
+template <typename STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-bool operator!=(const SOAView<CONTAINER, SKIN, FIELDS...>& a,
-        const SOAView<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+bool operator!=(const SOAView<STORAGE, SKIN, FIELDS...>& a,
+        const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
             noexcept(a.size()) && noexcept(
                 SOAViewImpl::compare<std::not_equal_to,
-                SOAView<CONTAINER, SKIN, FIELDS...
+                SOAView<STORAGE, SKIN, FIELDS...
                 >::fields_typelist::size()>()(a, b)))
 {
     if (a.size() != b.size()) return true;
     // compare one field at a time
     return SOAViewImpl::compare<std::not_equal_to,
-           SOAView<CONTAINER, SKIN, FIELDS...
+           SOAView<STORAGE, SKIN, FIELDS...
                >::fields_typelist::size()>()(a, b);
 }
 
 /// compare two SOAViews lexicographically using <
-template < template <typename...> class CONTAINER,
+template <typename STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-bool operator<(const SOAView<CONTAINER, SKIN, FIELDS...>& a,
-        const SOAView<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+bool operator<(const SOAView<STORAGE, SKIN, FIELDS...>& a,
+        const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
             noexcept(std::lexicographical_compare(a.cbegin(), a.cend(),
                     b.cbegin(), b.cend(),
                     std::less<decltype(a.front())>())))
@@ -836,26 +836,26 @@ bool operator<(const SOAView<CONTAINER, SKIN, FIELDS...>& a,
 }
 
 /// compare two SOAViews lexicographically using >
-template < template <typename...> class CONTAINER,
+template <typename STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-bool operator>(const SOAView<CONTAINER, SKIN, FIELDS...>& a,
-        const SOAView<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+bool operator>(const SOAView<STORAGE, SKIN, FIELDS...>& a,
+        const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
             noexcept(b < a))
 { return b < a; }
 
 /// compare two SOAViews lexicographically using <=
-template < template <typename...> class CONTAINER,
+template <typename STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-bool operator<=(const SOAView<CONTAINER, SKIN, FIELDS...>& a,
-        const SOAView<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+bool operator<=(const SOAView<STORAGE, SKIN, FIELDS...>& a,
+        const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
             noexcept(!(a > b)))
 { return !(a > b); }
 
 /// compare two SOAViews lexicographically using >=
-template < template <typename...> class CONTAINER,
+template <typename STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-bool operator>=(const SOAView<CONTAINER, SKIN, FIELDS...>& a,
-        const SOAView<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+bool operator>=(const SOAView<STORAGE, SKIN, FIELDS...>& a,
+        const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
             noexcept(!(a < b)))
 { return !(a < b); }
 
