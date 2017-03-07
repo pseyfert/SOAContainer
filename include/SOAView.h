@@ -61,6 +61,11 @@ class NullSkin : public NAKEDPROXY
         { NAKEDPROXY::operator=(std::move(arg)); return *this; }
 };
 
+// forward decl.
+template < template <typename...> class CONTAINER,
+         template <typename> class SKIN, typename... FIELDS>
+class SOAContainer;
+
 /** @brief SOA view for objects with given fields (SOA storage)
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
@@ -333,6 +338,8 @@ class SOAView {
         typedef SOAView<STORAGE, SKIN, FIELDS...> self_type;
         /// typedef holding a typelist with the given fields
         typedef SOATypelist::typelist<FIELDS...> fields_typelist;
+        /// type of the storage backend
+        typedef STORAGE SOAStorage;
 
         /// convenience function to return member number given member tag type
         template <typename MEMBER>
@@ -393,9 +400,6 @@ class SOAView {
         };
 
     protected:
-        /// type of the storage backend
-        typedef STORAGE SOAStorage;
-
         /// storage backend
         SOAStorage m_storage;
 
@@ -426,6 +430,10 @@ class SOAView {
         /// naked proxy type (to be given a "skin" later)
         typedef SOAObjectProxy<self_type> naked_proxy;
         friend naked_proxy;
+        /// corresponding SOAContainers are friends
+        template < template <typename...> class CONTAINER,
+                 template <typename> class SKIN2, typename... FIELDS2>
+        friend class SOAContainer;
         /// type of proxy
         typedef SKIN<naked_proxy> proxy;
         friend proxy;
@@ -606,17 +614,17 @@ class SOAView {
 
         /// iterator pointing to first element
         typename std::enable_if<!is_constant, reverse_iterator>::type
-        rbegin() noexcept { return end(); }
+        rbegin() noexcept { return reverse_iterator(end()); }
         /// iterator pointing one element behind the last element
         typename std::enable_if<!is_constant, reverse_iterator>::type
-        rend() noexcept { return begin(); }
+        rend() noexcept { return reverse_iterator(begin()); }
 
         /// const iterator pointing to first element
         const_reverse_iterator rbegin() const noexcept
-        { return end(); }
+        { return const_reverse_iterator(end()); }
         /// const iterator pointing one element behind the last element
         const_reverse_iterator rend() const noexcept
-        { return begin(); }
+        { return const_reverse_iterator(begin()); }
 
         /// const iterator pointing to first element
         const_reverse_iterator crbegin() const noexcept { return rbegin(); }

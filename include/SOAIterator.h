@@ -265,6 +265,10 @@ class SOAIterator : public SOAConstIterator<PROXY>
         typedef PROXY proxy;
         // underlying "dressed" proxy is friend as well
         friend proxy;
+        /// corresponding SOAContainers are friends
+        template < template <typename...> class CONTAINER,
+                 template <typename> class SKIN, typename... FIELDS>
+        friend class SOAContainer;
         /// parent's naked proxy type
         typedef typename parent_type::naked_proxy naked_proxy;
         // underlying "naked" proxy is friend as well
