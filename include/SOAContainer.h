@@ -288,9 +288,9 @@ class SOAContainer : public SOAView<
         SOAContainer(IT first, IT last) : BASE()
         { assign(first, last); }
         /// copy constructor
-        SOAContainer(const self_type& other) : BASE(other) { }
+        SOAContainer(const self_type& other) = default;
         /// move constructor
-        SOAContainer(self_type&& other) : BASE(std::move(other)) { }
+        SOAContainer(self_type&& other) = default;
 
         /// std::initializer_list constructor
         SOAContainer(std::initializer_list<naked_value_tuple_type> listing) :
@@ -302,17 +302,9 @@ class SOAContainer : public SOAView<
         }
 
         /// assignment from other SOAContainer
-        self_type& operator=(const self_type& other)
-        {
-            if (&other != this) this->m_storage = other.m_storage;
-            return *this;
-        }
+        self_type& operator=(const self_type& other) = default;
         /// move-assignment from other SOAContainer
-        self_type& operator=(self_type&& other)
-        {
-            if (&other != this) this->m_storage = std::move(other.m_storage);
-            return *this;
-        }
+        self_type& operator=(self_type&& other) = default;
 
     private:
         /// hide implementation details in struct to make doxygen tidier

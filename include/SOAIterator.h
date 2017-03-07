@@ -81,11 +81,9 @@ class SOAConstIterator
         SOAConstIterator() noexcept : SOAConstIterator(nullptr, 0) { }
 
         /// copy constructor
-        SOAConstIterator(const self_type& other) noexcept :
-            m_proxy(other.m_proxy) { }
+        SOAConstIterator(const self_type& other) noexcept = default;
         /// move constructor
-        SOAConstIterator(self_type&& other) noexcept :
-            m_proxy(std::move(other.m_proxy)) { }
+        SOAConstIterator(self_type&& other) noexcept = default;
 
         /// assignment
         self_type& operator=(const self_type& other) noexcept
@@ -305,12 +303,9 @@ class SOAIterator : public SOAConstIterator<PROXY>
         SOAIterator() noexcept : SOAIterator(nullptr, 0) { }
 
         /// copy constructor
-        SOAIterator(const self_type& other) noexcept :
-            SOAConstIterator<proxy>(other) { }
-
+        SOAIterator(const self_type& other) noexcept = default;
         /// move constructor
-        SOAIterator(self_type&& other) noexcept :
-            SOAConstIterator<proxy>(std::move(other)) { }
+        SOAIterator(self_type&& other) noexcept = default;
 
         /// assignment
         self_type& operator=(const self_type& other) noexcept

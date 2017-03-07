@@ -130,12 +130,9 @@ class SOAObjectProxy {
 
     public:
         /// copy constructor
-        SOAObjectProxy(const self_type& other) noexcept :
-            m_storage(other.m_storage), m_index(other.m_index) { }
+        SOAObjectProxy(const self_type& other) noexcept = default;
         /// move constructor
-        SOAObjectProxy(self_type&& other) noexcept :
-            m_storage(std::move(other.m_storage)),
-            m_index(std::move(other.m_index)) { }
+        SOAObjectProxy(self_type&& other) noexcept = default;
 
         /// convert to tuple of member contents
         operator value_type() const noexcept(noexcept(
