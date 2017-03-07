@@ -9,6 +9,7 @@
 
 #include <limits>
 #include <cassert>
+#include <sstream>
 #include <stdexcept>
 #include <algorithm>
 #include <functional>
@@ -305,13 +306,13 @@ class SOAView {
                 typename contained_type<RANGE>::type>::value> { };
 
         /// is any field a constant range?
-        template <typename... ARGS> /// FIXME: WTF?!?
+        template <typename... ARGS>
         struct _is_any_field_constant : ANY<is_contained_constant, ARGS...> { };
 
+        /// helper for _is_any_field_constant: extract parameter pack
         template <template <typename...> class T, typename... ARGS>
         constexpr static bool is_any_field_constant(T<ARGS...>&) noexcept
         { return _is_any_field_constant<ARGS...>::value; }
-
 
         /// record if the SOAView should be a const one
         enum { is_constant = is_any_field_constant(std::declval<STORAGE>()) };
@@ -330,6 +331,32 @@ class SOAView {
         template <typename MEMBER>
         static constexpr size_type memberno() noexcept
         { return fields_typelist::template find<MEMBER>(); }
+
+    protected:
+        /// implementation details
+        struct impl_detail {
+            /// little helper for assign(count, val)
+            struct assignHelper {
+                size_type m_cnt;
+                template <typename T, typename V>
+                void operator()(std::tuple<T&, const V&> t) const noexcept(noexcept(
+                        std::get<0>(t).assign(m_cnt, std::get<1>(t))))
+                { std::get<0>(t).assign(m_cnt, std::get<1>(t)); }
+            };
+            /// little helper for assign(first, last)
+            template <typename IT, typename JT>
+            struct assignHelper2 {
+                IT first1, last1;
+                JT first2;
+                template <size_type IDX>
+                void operator()() const noexcept(noexcept(
+                            std::get<IDX>(*first1) = std::get<IDX>(*first2)))
+                {
+                    while (last1 != first1)
+                        std::get<IDX>(*first1++) = std::get<IDX>(*first2);
+                }
+            };
+        };
 
     private:
         /// type of the storage backend
@@ -638,11 +665,14 @@ class SOAView {
 
 
         /// assign the vector to contain count copies of val
-        void assign(size_type count, const value_type& val) noexcept(noexcept(
-                    SOAUtils::map(typename impl_detail::assignHelper{count},
-                        SOAUtils::zip(m_storage, val),
-                        std::make_index_sequence<sizeof...(FIELDS)>())))
+        void assign(size_type count, const value_type& val)
         {
+            if (size() != count) {
+                std::stringstream str;
+                str << "In " << __func__ << " (" << __FILE__ << ", line " <<
+                    __LINE__ << "): count must match length of range.";
+                throw std::length_error(str.str());
+            }
             SOAUtils::map(typename impl_detail::assignHelper{count},
                     SOAUtils::zip(m_storage, val),
                     std::make_index_sequence<sizeof...(FIELDS)>());
@@ -650,16 +680,19 @@ class SOAView {
 
         /// assign the vector from a range of elements in another container
         template <typename IT>
-        void assign(IT first, IT last) noexcept(
-                noexcept(empty()) && noexcept(clear()) &&
-                noexcept(insert(begin(), first, last)))
+        void assign(IT first, IT last)
         {
-            if (!empty()) clear();
-            // naively, one would use a reserve(distance(first, last)) here,
-            // but I'm not sure how this will work for various kinds of
-            // special iterators - callers are expected to reserve beforehand
-            // if the required size is known
-            insert(begin(), first, last);
+            if (std::distance(first, last) != size()) {
+                std::stringstream str;
+                str << "In " << __func__ << " (" << __FILE__ << ", line " <<
+                    __LINE__ << "): lengths of ranges must match.";
+                throw std::length_error(str.str());
+            }
+            // FIXME!!!
+            SOAUtils::map(typename impl_detail::template assignHelper2<
+                    iterator, IT>{ begin(), end(), first},
+                    std::tuple<>(),
+                    std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
         /// swap contents of two containers
@@ -670,11 +703,11 @@ class SOAView {
 
 namespace std {
     /// specialise std::swap
-    template <template <typename...> class CONTAINER,
+    template <typename STORAGE,
              template <typename> class SKIN,
              typename... FIELDS>
-    void swap(const SOAView<CONTAINER, SKIN, FIELDS...>& a,
-            const SOAView<CONTAINER, SKIN, FIELDS...>& b) noexcept(
+    void swap(const SOAView<STORAGE, SKIN, FIELDS...>& a,
+            const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
                 noexcept(a.swap(b)))
     { a.swap(b); }
 }
