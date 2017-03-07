@@ -287,23 +287,26 @@ namespace SOAUtils {
     template <template <typename> class PRED, typename HEAD, typename... TAIL>
     struct _ANY : public std::conditional<bool(PRED<HEAD>::value),
             std::true_type, _ANY<PRED, TAIL...> >::type { };
+    /// little helper to implement ANY: recursion anchor
     template <template <typename> class PRED, typename ARG>
     struct _ANY<PRED, ARG> : public PRED<ARG> { };
     /// is any of a type-trait predicate applied to a list of ARGS true?
     template <template <typename> class PRED, typename... ARGS>
     struct ANY : public _ANY<PRED, ARGS...> { };
+    /// specialisation of ANY: no arguments
     template <template <typename> class PRED>
     struct ANY<PRED> : public std::false_type { };
     /// little helper to implement ALL
     template <template <typename> class PRED, typename HEAD, typename... TAIL>
     struct  _ALL : public std::conditional<bool(!PRED<HEAD>::value),
-        HEAD, _ALL<PRED, TAIL...> >::type { };
-    /// is any of a type-trait predicate applied to a list of ARGS true?
+        std::false_type, _ALL<PRED, TAIL...> >::type { };
+    /// little helper to implement ALL: recursion anchor
     template <template <typename> class PRED, typename ARG>
     struct _ALL<PRED, ARG> : public PRED<ARG> { };
     /// are ALL of a type-trait predicate applied to a list of ARGS true?
     template <template <typename> class PRED, typename... ARGS>
     struct ALL : public _ALL<PRED, ARGS...> { };
+    /// specialisation of ALL: no arguments
     template <template <typename> class PRED>
     struct ALL<PRED> : public std::true_type { };
 }

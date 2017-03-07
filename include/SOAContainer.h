@@ -243,24 +243,38 @@ class SOAContainer : public SOAView<
                      >::template container_tuple<CONTAINER>,
             SKIN, FIELDS...> BASE;
     public:
+        /// type for sizes
         using size_type = typename BASE::size_type;
+        /// type for distances between iterators
         using difference_type = typename BASE::difference_type;
+        /// pointer type
         using pointer = typename BASE::pointer;
+        /// const pointer type
         using const_pointer = typename BASE::const_pointer;
+        /// iterator type
         using iterator = typename BASE::iterator;
+        /// const iterator type
         using const_iterator = typename BASE::const_iterator;
+        /// reference type
         using reference = typename BASE::reference;
+        /// const reference type
         using const_reference = typename BASE::const_reference;
+        /// reverse iterator type
         using reverse_iterator = typename BASE::reverse_iterator;
+        /// const reverse iterator type
         using const_reverse_iterator = typename BASE::const_reverse_iterator;
+        /// (notion of) type of the contained objects
         using value_type = typename BASE::value_type;
+        /// (notion of) reference to value_type (outside container)
         using value_reference = typename BASE::value_reference;
+        /// (notion of) const reference to value_type (outside container)
         using value_const_reference = typename BASE::value_const_reference;
+        /// type of the underlying storage
         using SOAStorage = typename BASE::SOAStorage;
         /// type to represent container itself
         typedef SOAContainer<CONTAINER, SKIN, FIELDS...> self_type;
         /// typedef holding a typelist with the given fields
-        typedef SOATypelist::typelist<FIELDS...> fields_typelist;
+        using fields_typelist = typename BASE::fields_typelist;
 
         /// convenience function to return member number given member tag type
         template <typename MEMBER>
@@ -268,13 +282,28 @@ class SOAContainer : public SOAView<
         { return fields_typelist::template find<MEMBER>(); }
 
     protected:
-        using naked_value_tuple_type = typename BASE::naked_value_tuple_type;
-        using naked_reference_tuple_type = typename BASE::naked_reference_tuple_type;
-        using naked_const_reference_tuple_type = typename BASE::naked_const_reference_tuple_type;
+        /// (naked) tuple type used as values
+        using naked_value_tuple_type =
+            typename BASE::naked_value_tuple_type;
+        /// (naked) tuple type used as reference
+        using naked_reference_tuple_type =
+            typename BASE::naked_reference_tuple_type;
+        /// (naked) tuple type used as const reference
+        using naked_const_reference_tuple_type =
+            typename BASE::naked_const_reference_tuple_type;
 
     public:
         /// default constructor
         SOAContainer() : BASE() { }
+        /// copy constructor
+        SOAContainer(const self_type& other) = default;
+        /// move constructor
+        SOAContainer(self_type&& other) = default;
+        /// assignment from other SOAContainer
+        self_type& operator=(const self_type& other) = default;
+        /// move-assignment from other SOAContainer
+        self_type& operator=(self_type&& other) = default;
+
         /// fill container with count copies of val
         SOAContainer(size_type count, const value_type& val) : BASE()
         {
@@ -286,25 +315,18 @@ class SOAContainer : public SOAView<
         /// fill container with elements from other container
         template <typename IT>
         SOAContainer(IT first, IT last) : BASE()
-        { assign(first, last); }
-        /// copy constructor
-        SOAContainer(const self_type& other) = default;
-        /// move constructor
-        SOAContainer(self_type&& other) = default;
+        {
+            reserve(std::distance(first, last));
+            assign(first, last);
+        }
 
         /// std::initializer_list constructor
         SOAContainer(std::initializer_list<naked_value_tuple_type> listing) :
             BASE()
         {
             reserve(listing.size());
-            for(const auto &items : listing)
-                push_back(items);
+            assign(listing.begin(), listing.end());
         }
-
-        /// assignment from other SOAContainer
-        self_type& operator=(const self_type& other) = default;
-        /// move-assignment from other SOAContainer
-        self_type& operator=(self_type&& other) = default;
 
     private:
         /// hide implementation details in struct to make doxygen tidier
@@ -725,10 +747,10 @@ class SOAContainer : public SOAView<
         /// assign the vector from a range of elements in another container
         template <typename IT>
         void assign(IT first, IT last) noexcept(
-                noexcept(BASE::empty()) && noexcept(BASE::clear()) &&
+                noexcept(BASE::empty()) && noexcept(clear()) &&
                 noexcept(insert(BASE::begin(), first, last)))
         {
-            if (!BASE::empty()) BASE::clear();
+            if (!BASE::empty()) clear();
             // naively, one would use a reserve(distance(first, last)) here,
             // but I'm not sure how this will work for various kinds of
             // special iterators - callers are expected to reserve beforehand

@@ -740,6 +740,66 @@ class SOAView {
         { std::swap(m_storage, other.m_storage); }
 };
 
+/** @contstruct a SOAView from a skin and a bunch of ranges
+ *
+ * @tparam SKIN         type of skin class to use
+ * @tparam FIELDS       types of fields
+ * @tparam RANGES       types of the ranges supplied
+ *
+ * @param ranges        ranges from which to construct a SOAView
+ *
+ * @returns a SOAView of the ranges given
+ *
+ * @code
+ * std::vector<float> vx, vy;
+ * // fill vx, vy somehow - same number of elements
+ * typedef struct : SOAUtils::wrap_type<float> {} field_x;
+ * typedef struct : SOAUtils::wrap_type<float> {} field_y;
+ * template <typename PROXY> struct PointSkin {
+ * template <typename NAKEDPROXY>
+ * class SOAPoint : public NAKEDPROXY {
+ *     public:
+ *         template <typename... ARGS>
+ *         SOAPoint(ARGS&&... args) :
+ *             NAKEDPROXY(std::forward<ARGS>(args)...) { }
+ *         template <typename ARG>
+ *         SOAPoint<NAKEDPROXY>& operator=(const ARG& arg)
+ *         { NAKEDPROXY::operator=(arg); return *this; }
+ *         template <typename ARG>
+ *         SOAPoint<NAKEDPROXY>& operator=(ARG&& arg)
+ *         { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+ *
+ *         float x() const noexcept
+ *         { return this-> template get<field_x>(); }
+ *         float y() const noexcept
+ *         { return this-> template get<field_y>(); }
+ *         float& x() noexcept
+ *         { return this-> template get<field_x>(); }
+ *         float& y() noexcept
+ *         { return this-> template get<field_y>(); }
+ *         float r2() const noexcept { return x() * x() + y() * y(); }
+ * };
+ * // construct a SOAView from vx, vy
+ * auto view = make_soaview<SOAPoint, field_x, field_y>(vx, vy);
+ * const float angle = 42.f / 180.f * M_PI;
+ * const auto s = std::sin(angle), c = std::cos(angle);
+ * for (auto p: view) {
+ *     if (p.r2() > 1) continue;
+ *     // rotate points within the unit circle by given angle
+ *     std::tie(p.x(), p.y()) = std::make_pair(
+ *         c * p.x() + s * p.y(), -s * p.x() + c * p.y());
+ * }
+ * @endcode
+ */
+template <template <typename> class SKIN,
+         typename... FIELDS, typename... RANGES>
+SOAView<std::tuple<RANGES...>, SKIN, FIELDS...>
+make_soaview(RANGES&&... ranges)
+{
+    return SOAView<std::tuple<RANGES...>, SKIN, FIELDS...>(
+            std::forward<RANGES>(ranges)...);
+}
+
 namespace std {
     /// specialise std::swap
     template <typename STORAGE,
