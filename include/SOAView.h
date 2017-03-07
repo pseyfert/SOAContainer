@@ -343,17 +343,44 @@ class SOAView {
                         std::get<0>(t).assign(m_cnt, std::get<1>(t))))
                 { std::get<0>(t).assign(m_cnt, std::get<1>(t)); }
             };
+            template <typename IT, size_type IDX>
+            struct tuple_element_iterator {
+                IT m_it;
+                tuple_element_iterator& operator++() noexcept(
+                        noexcept(++m_it))
+                { ++m_it; return *this; }
+                auto operator*() const noexcept(
+                        noexcept(std::get<IDX>(*m_it))) -> decltype(
+                        std::get<IDX>(*m_it))
+                { return std::get<IDX>(*m_it); }
+            };
+            template <typename IT, size_type... IDXS>
+            static std::tuple<tuple_element_iterator<IT, IDXS>...>
+            make_tuple_element_iterators(IT it, std::index_sequence<IDXS...>)
+            {
+                return std::tuple<tuple_element_iterator<IT, IDXS>...>(
+                        tuple_element_iterator<IT, IDXS...>{it});
+            }
+            template <size_type N, typename IT>
+            static auto make_tuple_element_iterators(IT it) -> decltype(
+                    make_tuple_element_iterators(it,
+                        std::make_index_sequence<N>()))
+            {
+                return make_tuple_element_iterators(it,
+                        std::make_index_sequence<N>());
+            }
             /// little helper for assign(first, last)
-            template <typename IT, typename JT>
             struct assignHelper2 {
-                IT first1, last1;
-                JT first2;
-                template <size_type IDX>
-                void operator()() const noexcept(noexcept(
-                            std::get<IDX>(*first1) = std::get<IDX>(*first2)))
+                template <typename R, typename IT>
+                void operator()(std::tuple<R&, IT>& t) const noexcept(noexcept(
+                            *std::get<0>(t).begin() = *std::get<1>(t)))
                 {
-                    while (last1 != first1)
-                        std::get<IDX>(*first1++) = std::get<IDX>(*first2);
+                    auto& it = std::get<1>(t), itend = std::get<2>(t);
+                    auto& jt = std::get<0>(t).begin();
+                    while (itend != it) {
+                        *jt = *it;
+                        ++jt, ++it;
+                    }
                 }
             };
         };
@@ -654,16 +681,6 @@ class SOAView {
                 std::get<memberno<MEMBER>()>(m_storage).crend())
         { return std::get<memberno<MEMBER>()>(m_storage).crend(); }
 
-
-
-
-
-
-
-
-
-
-
         /// assign the vector to contain count copies of val
         void assign(size_type count, const value_type& val)
         {
@@ -682,16 +699,18 @@ class SOAView {
         template <typename IT>
         void assign(IT first, IT last)
         {
-            if (std::distance(first, last) != size()) {
+            if (std::distance(first, last) <= size()) {
                 std::stringstream str;
                 str << "In " << __func__ << " (" << __FILE__ << ", line " <<
-                    __LINE__ << "): lengths of ranges must match.";
-                throw std::length_error(str.str());
+                    __LINE__ << "): supplied range too large.";
+                throw std::out_of_range(str.str());
             }
-            // FIXME!!!
-            SOAUtils::map(typename impl_detail::template assignHelper2<
-                    iterator, IT>{ begin(), end(), first},
-                    std::tuple<>(),
+            SOAUtils::map(typename impl_detail::assignHelper2(),
+                    SOAUtils::zip(m_storage,
+                        impl_detail::template make_tuple_element_iterators<
+                            sizeof...(FIELDS)>(first),
+                        impl_detail::template make_tuple_element_iterators<
+                            sizeof...(FIELDS)>(last)),
                     std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
