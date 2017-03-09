@@ -161,7 +161,8 @@ class SOAContainer;
  *
  * // define the SOA container type
  * typedef SOAView<
- *         std::vector, // underlying type for each field
+ *         // underlying type for storage
+ *         std::tuple<std::vector<float>&, std::vector<float>&>,
  *         SOAPoint,    // skin to "dress" the tuple of fields with
  *         // one or more wrapped types which each tag a member/field
  *         PointFields::x, PointFields::y> SOAPoints;
@@ -237,6 +238,11 @@ class SOAContainer;
  *         decltype(c)::value_const_reference b)
  *     { return a.y() < b.y(); });
  * @endcode
+ *
+ * Since directly constructing a SOAView is a bit stressful, there's a little
+ * helper called make_soaview which takes some of the sting out of
+ * constructing SOAViews (in much the same way that std::make_pair and
+ * std::make_tuple do).
  */
 template <class STORAGE,
     template <typename> class SKIN, typename... FIELDS>
@@ -737,7 +743,7 @@ class SOAView {
         { std::swap(m_storage, other.m_storage); }
 };
 
-/** @contstruct a SOAView from a skin and a bunch of ranges
+/** @brief construct a SOAView from a skin and a bunch of ranges
  *
  * @tparam SKIN         type of skin class to use
  * @tparam FIELDS       types of fields
