@@ -307,7 +307,6 @@ class SOAView {
                     "Type of provided storage must match fields.");
         };
 
-
         /// work out if what is contained in a range is constant
         template <typename RANGE>
         struct is_contained_constant : std::integral_constant<bool,
@@ -463,10 +462,8 @@ class SOAView {
         SOAView(SOAStorage&& other) :
             m_storage(std::move(other)) { }
         /// constructor from a list of ranges
-        template <typename... RANGES>
-        SOAView(RANGES&&... ranges, typename std::enable_if<
-                fields_verifier::template verify_storage<0, std::tuple<RANGES...>,
-                    FIELDS...>::value, int>::type = 0) :
+        template <typename... RANGES, typename std::enable_if<sizeof...(RANGES) == sizeof...(FIELDS), int>::type = 0>
+        SOAView(RANGES&&... ranges) :
             m_storage(std::forward<RANGES>(ranges)...) { }
         /// copy constructor
         SOAView(const self_type& other) = default;
@@ -753,9 +750,8 @@ class SOAView {
  * @code
  * std::vector<float> vx, vy;
  * // fill vx, vy somehow - same number of elements
- * typedef struct : SOAUtils::wrap_type<float> {} field_x;
- * typedef struct : SOAUtils::wrap_type<float> {} field_y;
- * template <typename PROXY> struct PointSkin {
+ * typedef struct : SOATypelist::wrap_type<float> {} field_x;
+ * typedef struct : SOATypelist::wrap_type<float> {} field_y;
  * template <typename NAKEDPROXY>
  * class SOAPoint : public NAKEDPROXY {
  *     public:
@@ -796,8 +792,8 @@ template <template <typename> class SKIN,
 SOAView<std::tuple<RANGES...>, SKIN, FIELDS...>
 make_soaview(RANGES&&... ranges)
 {
-    return SOAView<std::tuple<RANGES...>, SKIN, FIELDS...>(
-            std::forward<RANGES>(ranges)...);
+    return SOAView<std::tuple<RANGES...>, SKIN, FIELDS...>
+        (std::forward<RANGES>(ranges)...);
 }
 
 namespace std {

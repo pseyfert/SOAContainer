@@ -546,7 +546,8 @@ class SOAContainer : public SOAView<
     public:
         /// clear the container
         void clear() noexcept(noexcept(
-            SOAUtils::map(typename impl_detail::clearHelper(), this->m_storage)))
+            SOAUtils::map(typename impl_detail::clearHelper(),
+                std::declval<self_type*>()->m_storage)))
         {
             SOAUtils::map(typename impl_detail::clearHelper(), this->m_storage);
         }
@@ -554,7 +555,8 @@ class SOAContainer : public SOAView<
         /// pop the last element off the container
         void pop_back() noexcept(noexcept(
             SOAUtils::map(
-                    typename impl_detail::pop_backHelper(), this->m_storage)))
+                    typename impl_detail::pop_backHelper(),
+                    std::declval<self_type*>()->m_storage)))
         {
             SOAUtils::map(
                     typename impl_detail::pop_backHelper(), this->m_storage);
@@ -563,7 +565,8 @@ class SOAContainer : public SOAView<
         /// shrink the underlying storage of the container to fit its size
         void shrink_to_fit() noexcept(noexcept(
             SOAUtils::map(
-                    typename impl_detail::shrink_to_fitHelper(), this->m_storage)))
+                    typename impl_detail::shrink_to_fitHelper(),
+                    std::declval<self_type*>()->m_storage)))
         {
             SOAUtils::map(
                     typename impl_detail::shrink_to_fitHelper(), this->m_storage);
@@ -572,7 +575,8 @@ class SOAContainer : public SOAView<
         /// reserve space for at least sz elements
         void reserve(size_type sz) noexcept(noexcept(
             SOAUtils::map(
-                    typename impl_detail::reserveHelper{sz}, this->m_storage)))
+                    typename impl_detail::reserveHelper{sz},
+                    std::declval<self_type*>()->m_storage)))
         {
             SOAUtils::map(
                     typename impl_detail::reserveHelper{sz}, this->m_storage);
@@ -603,7 +607,8 @@ class SOAContainer : public SOAView<
         /// resize container (use default-constructed values if container grows)
         void resize(size_type sz) noexcept(noexcept(
                     SOAUtils::map(
-                        typename impl_detail::resizeHelper{sz}, this->m_storage)))
+                        typename impl_detail::resizeHelper{sz},
+                        std::declval<self_type*>()->m_storage)))
         {
             SOAUtils::map(
                     typename impl_detail::resizeHelper{sz}, this->m_storage);
@@ -612,7 +617,7 @@ class SOAContainer : public SOAView<
         /// resize the container (append val if the container grows)
         void resize(size_type sz, const value_type& val) noexcept(noexcept(
             SOAUtils::map(typename impl_detail::resizeHelper{sz},
-                    SOAUtils::zip(this->m_storage, val),
+                    SOAUtils::zip(std::declval<self_type*>()->m_storage, val),
                     std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             SOAUtils::map(typename impl_detail::resizeHelper{sz},
@@ -623,7 +628,7 @@ class SOAContainer : public SOAView<
         /// push an element at the back of the array
         void push_back(const value_type& val) noexcept(noexcept(
             SOAUtils::map(typename impl_detail::push_backHelper(),
-                    SOAUtils::zip(this->m_storage, val),
+                    SOAUtils::zip(std::declval<self_type*>()->m_storage, val),
                     std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             SOAUtils::map(typename impl_detail::push_backHelper(),
@@ -634,7 +639,7 @@ class SOAContainer : public SOAView<
         /// push an element at the back of the array (move variant)
         void push_back(value_type&& val) noexcept(noexcept(
             SOAUtils::map(typename impl_detail::push_backHelper(),
-                    SOAUtils::zip(this->m_storage, std::move(val)),
+                    SOAUtils::zip(std::declval<self_type*>()->m_storage, std::move(val)),
                     std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             SOAUtils::map(typename impl_detail::push_backHelper(),
@@ -646,7 +651,7 @@ class SOAContainer : public SOAView<
         iterator insert(const_iterator pos, const value_type& val) noexcept(
                 noexcept(SOAUtils::map(
                     typename impl_detail::insertHelper{pos.m_proxy.m_index},
-                        SOAUtils::zip(this->m_storage, val),
+                        SOAUtils::zip(std::declval<self_type*>()->m_storage, val),
                         std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*pos).m_storage == &this->m_storage);
@@ -661,7 +666,7 @@ class SOAContainer : public SOAView<
         iterator insert(const_iterator pos, value_type&& val) noexcept(
                 noexcept(SOAUtils::map(
                     typename impl_detail::insertHelper{pos.m_proxy.m_index},
-                        SOAUtils::zip(this->m_storage, std::move(val)),
+                        SOAUtils::zip(std::declval<self_type*>()->m_storage, std::move(val)),
                         std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*pos).m_storage == &this->m_storage);
@@ -676,7 +681,7 @@ class SOAContainer : public SOAView<
         iterator insert(const_iterator pos, size_type count, const value_type& val) noexcept(
                 noexcept(SOAUtils::map(
                     typename impl_detail::insertHelper2{pos.m_proxy.m_index, count},
-                    SOAUtils::zip(this->m_storage, val),
+                    SOAUtils::zip(std::declval<self_type*>()->m_storage, val),
                     std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*pos).m_storage == &this->m_storage);
@@ -706,7 +711,7 @@ class SOAContainer : public SOAView<
         iterator erase(const_iterator pos) noexcept(noexcept(
                     SOAUtils::map(
                         typename impl_detail::eraseHelper{pos.m_proxy.m_index},
-                        this->m_storage)))
+                        std::declval<self_type*>()->m_storage)))
         {
             assert((*pos).m_storage == &this->m_storage);
             SOAUtils::map(
@@ -722,7 +727,7 @@ class SOAContainer : public SOAView<
                         typename impl_detail::eraseHelper_N{
                             first.m_proxy.m_index,
                             last.m_proxy.m_index - first.m_proxy.m_index},
-                            this->m_storage)))
+                            std::declval<self_type*>()->m_storage)))
         {
             assert((*first).m_storage == &this->m_storage);
             assert((*last).m_storage == &this->m_storage);
@@ -736,7 +741,7 @@ class SOAContainer : public SOAView<
         /// assign the vector to contain count copies of val
         void assign(size_type count, const value_type& val) noexcept(noexcept(
                     SOAUtils::map(typename impl_detail::assignHelper{count},
-                        SOAUtils::zip(this->m_storage, val),
+                        SOAUtils::zip(std::declval<self_type*>()->m_storage, val),
                         std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             SOAUtils::map(typename impl_detail::assignHelper{count},
@@ -747,8 +752,10 @@ class SOAContainer : public SOAView<
         /// assign the vector from a range of elements in another container
         template <typename IT>
         void assign(IT first, IT last) noexcept(
-                noexcept(BASE::empty()) && noexcept(clear()) &&
-                noexcept(insert(BASE::begin(), first, last)))
+                noexcept(std::declval<self_type*>()->empty()) &&
+                noexcept(std::declval<self_type*>()->clear()) &&
+                noexcept(std::declval<self_type*>()->insert(
+                        std::declval<self_type*>()->begin(), first, last)))
         {
             if (!BASE::empty()) clear();
             // naively, one would use a reserve(distance(first, last)) here,
@@ -762,7 +769,8 @@ class SOAContainer : public SOAView<
         template <typename... ARGS>
         void emplace_back(ARGS&&... args) noexcept(noexcept(
                     typename impl_detail::template emplace_backHelper<0>(
-                        this->m_storage).doIt(std::forward<ARGS>(args)...)))
+                        std::declval<self_type*>()->m_storage).doIt(
+                        std::forward<ARGS>(args)...)))
         {
             static_assert(std::is_constructible<value_type, ARGS...>::value,
                     "Wrong arguments to emplace_back.");
@@ -796,7 +804,8 @@ class SOAContainer : public SOAView<
         template <typename... ARGS>
         iterator emplace(const_iterator pos, ARGS&&... args) noexcept(
                 noexcept(typename impl_detail::template emplaceHelper<0>(
-                        this->m_storage, pos.m_proxy.m_index).doIt(
+                        std::declval<self_type*>()->m_storage,
+                        pos.m_proxy.m_index).doIt(
                             std::forward<ARGS>(args)...)))
         {
             static_assert(std::is_constructible<value_type, ARGS...>::value,

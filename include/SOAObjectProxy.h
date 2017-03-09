@@ -223,28 +223,26 @@ class SOAObjectProxy {
         auto get() noexcept -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
         { return std::get<MEMBERNO>(*m_storage)[m_index]; }
         /// access to member by "member tag"
-        template <typename MEMBER>
-        auto get() noexcept -> decltype(std::get<
-                PARENTCONTAINER::template memberno<MEMBER>()>(
-                    *m_storage)[m_index])
+        template <typename MEMBER, size_type MEMBERNO =
+            PARENTCONTAINER::template memberno<MEMBER>()>
+        auto get() noexcept -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
         {
-            return std::get<
-                PARENTCONTAINER::template memberno<MEMBER>()>(
-                        *m_storage)[m_index];
+            static_assert(PARENTCONTAINER::template memberno<MEMBER>() ==
+                    MEMBERNO, "Called with wrong template argument(s).");
+            return std::get<MEMBERNO>(*m_storage)[m_index];
         }
         /// access to member by number (read-only)
         template <size_type MEMBERNO>
         auto get() const noexcept -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
         { return std::get<MEMBERNO>(*m_storage)[m_index]; }
         /// access to member by "member tag" (read-only)
-        template <typename MEMBER>
-        auto get() const noexcept -> decltype(std::get<
-                PARENTCONTAINER::template memberno<MEMBER>()>(
-                    *m_storage)[m_index])
+        template <typename MEMBER, size_type MEMBERNO =
+            PARENTCONTAINER::template memberno<MEMBER>()>
+        auto get() const noexcept -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
         {
-            return std::get<
-                PARENTCONTAINER::template memberno<MEMBER>()>(
-                        *m_storage)[m_index];
+            static_assert(PARENTCONTAINER::template memberno<MEMBER>() ==
+                    MEMBERNO, "Called with wrong template argument(s).");
+            return std::get<MEMBERNO>(*m_storage)[m_index];
         }
 
         /// swap the contents of two SOAObjectProxy instances

@@ -12,6 +12,9 @@ else()
 endif()
 # be moderately paranoid with flags
 add_compile_options(-pedantic -Wall -Wextra)
+# the following is needed on Linux to link to libc++ instead of libstdc++
+#add_compile_options(-stdlib=libc++)
+#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
 
 # CMAKE 2
 include_directories(include)
