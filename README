@@ -7,7 +7,8 @@ difference between a SOAContainer and an array of structure (AOS)
 std::vector<Hit> where Hit is an old-style class/structure that we all
 know. You can sort, push_back, emplace, insert, erase, reserve, size,
 index and get iterators from a SOAContainer just like you would for the
-AOS case.
+AOS case. Moreover, there's the SOAView class which does the same forward
+fixed-size ranges.
 
 To illustrate, I'll bring a very short example here (something more
 realistic is in the test code in git). Consider a minimal point with an x
@@ -149,6 +150,62 @@ could take advantage of that by not dragging around five-six pointers,
 and using one pointer, and five-six compile-time known offsets... But
 we'll have to see...
 
+SOAView:
+--------
+This is much like SOAContainer, but is constructed from a set of
+pre-existing ranges. The resulting container can be changed if the range is not
+const, but its length is fixed. Again, the fields can be pretty much anything.
+A simple example follows:
+
+#include <SOAView.h>
+typedef struct : SOATypelist::wrap_type<float> {} field_x;
+typedef struct : SOATypelist::wrap_type<float> {} field_y;
+template <typename NAKEDPROXY>
+class SOAPoint : public NAKEDPROXY {
+    public:
+        template <typename... ARGS>
+            SOAPoint(ARGS&&... args) :
+                NAKEDPROXY(std::forward<ARGS>(args)...) { }
+        template <typename ARG>
+            SOAPoint<NAKEDPROXY>& operator=(const ARG& arg)
+            { NAKEDPROXY::operator=(arg); return *this; }
+        template <typename ARG>
+            SOAPoint<NAKEDPROXY>& operator=(ARG&& arg)
+            { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+
+        float x() const noexcept
+        { return this-> template get<field_x>(); }
+        float y() const noexcept
+        { return this-> template get<field_y>(); }
+        float& x() noexcept
+        { return this-> template get<field_x>(); }
+        float& y() noexcept
+        { return this-> template get<field_y>(); }
+        float r2() const noexcept { return x() * x() + y() * y(); }
+};
+std::vector<float> vx, vy;
+// fill vx, vy somehow - same number of elements
+
+// construct a SOAView from vx, vy
+auto view = make_soaview<SOAPoint, field_x, field_y>(vx, vy);
+// rotate points inside the unit circle by a given angle
+const float angle = 42.f / 180.f * M_PI;
+const auto s = std::sin(angle), c = std::cos(angle);
+for (auto p: view) {
+    if (p.r2() > 1) continue;
+    // rotate points within the unit circle by given angle
+    std::tie(p.x(), p.y()) = std::make_pair(
+            c * p.x() + s * p.y(), -s * p.x() + c * p.y());
+}
+
+In this case, two vectors play the role of the ranges, but pretty much anything
+with a range-like interface (i.e. a begin(), and end(), a size() and an empty())
+will do. SOAViews allow the construction of objects in stages - one can start
+by filling some vectors with the basic information, create a view, calculate
+some more fields into another bunch of vectors, then create a new view that
+takes the newly calculated fields into account, and so on.
+
+
 Future plans:
 -------------
 - improve documentation (Doxygen)
@@ -156,29 +213,12 @@ Future plans:
 - investigate if supporting the std::initializer_list interface of
   std::vector makes sense (I think at one point I convinced myself that
   it does not, but I'm no longer so sure... ;)
-- (longer term) provide a SOAView which at the same time could serve as:
-  * a means to express a range of all fields in a SOAContainer, including
-    skin
-  * a means to select only some of the fields in a container, optionally
-    adding a different "skin" to make working more convenient
-  * a means of combining same-size ranges from different SOAContainers,
-    as this will allow a neat way to augment information incrementally
-    (by adding a new view) without having to drag around (and copy/fill)
-    the fields that are only needed later (think of per-algorithm flags,
-    clustering information, the projection field in PatFwdHit, and things
-    like that)
 
 Random notes on current status:
 -------------------------------
 - the typelist functions and what's built around it (especially
   recursive_apply_tuple) should be reviewed by someone who's familiar
   with functional languages and template metaprogramming
-
-- somehow, I had hoped that I would be able to scatter/gather like
-  Gerhard did with index_sequence, but I'm either not clever enough, or
-  my use case is too complicated, so I had to go back to an old-style
-  solution like recursive_apply_tuple... this is moderately ugly, so if
-  someone has some better solution, please shout!
 
 - the iterator/pointer classes come in two guises:
 

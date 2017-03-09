@@ -10,6 +10,7 @@
 #include <array>
 #include <tuple>
 #include <cmath>
+#include <cstdlib>
 
 #include "SOAContainer.h"
 #include "PrintableNullSkin.h"
@@ -302,9 +303,9 @@ TEST (BasicTest, EvenMore) {
         c.resize(64, std::make_tuple(3.14, 78, 17));
         EXPECT_EQ(64u, c.size());
         EXPECT_EQ(c.back(), std::make_tuple(3.14, 78, 17));
-	c.emplace_back(std::make_tuple(42., 42, 42));
+        c.emplace_back(std::make_tuple(42., 42, 42));
         EXPECT_EQ(c.back(), std::make_tuple(42., 42, 42));
-	c.emplace(c.begin(), std::make_tuple(17., 42, 42));
+        c.emplace(c.begin(), std::make_tuple(17., 42, 42));
         EXPECT_EQ(c.front(), std::make_tuple(17., 42, 42));
         c.resize(0);
         EXPECT_TRUE(c.empty());
@@ -315,7 +316,6 @@ TEST (BasicTest, EvenMore) {
     }
  
 }
-
 
 namespace HitNamespace {
     namespace Fields {
@@ -481,30 +481,97 @@ namespace stdarraytest_fields {
 
     template <typename NAKEDPROXY>
     class ContainerSkin : public PrintableNullSkin<NAKEDPROXY> {
-	public:
-	    typedef ContainerSkin<NAKEDPROXY> self_type;
-	    typedef stdarraytest_fields::Array Array;
+        public:
+            typedef ContainerSkin<NAKEDPROXY> self_type;
+            typedef stdarraytest_fields::Array Array;
 
-	    /// forward constructor to underlying type
-	    template <typename... ARGS>
-	    ContainerSkin(ARGS&&... args) : PrintableNullSkin<NAKEDPROXY>(
-		    std::forward<ARGS>(args)...) { }
+            /// forward constructor to underlying type
+            template <typename... ARGS>
+            ContainerSkin(ARGS&&... args) : PrintableNullSkin<NAKEDPROXY>(
+                    std::forward<ARGS>(args)...) { }
 
 
-	    /// stupid constructor from an (ignored) bool
-	    ContainerSkin(bool) : ContainerSkin(Array())
-	    { }
+            /// stupid constructor from an (ignored) bool
+            ContainerSkin(bool) : ContainerSkin(Array())
+            { }
     };
 
     typedef SOAContainer<std::vector, ContainerSkin, f_array> SOAArray;
 }
 TEST(RealisticTest, Proxy) {
     using namespace stdarraytest_fields;
-	SOAArray a;
-	a.push_back(SOAArray::value_type(true));
-	a.emplace_back(SOAArray::value_type(true));
-	// this won't work since we currently have no way to "dress" an
-	// emplace_back with a skin (may be possible in the future)
-	//a.emplace_back(true);
+        SOAArray a;
+        a.push_back(SOAArray::value_type(true));
+        a.emplace_back(SOAArray::value_type(true));
+        // this won't work since we currently have no way to "dress" an
+        // emplace_back with a skin (may be possible in the future)
+        //a.emplace_back(true);
 }
 
+typedef struct : SOATypelist::wrap_type<float> {} field_x;
+typedef struct : SOATypelist::wrap_type<float> {} field_y;
+template <typename NAKEDPROXY>
+class SOAPoint : public NAKEDPROXY {
+    public:
+        template <typename... ARGS>
+            SOAPoint(ARGS&&... args) :
+                NAKEDPROXY(std::forward<ARGS>(args)...) { }
+        template <typename ARG>
+            SOAPoint<NAKEDPROXY>& operator=(const ARG& arg)
+            { NAKEDPROXY::operator=(arg); return *this; }
+        template <typename ARG>
+            SOAPoint<NAKEDPROXY>& operator=(ARG&& arg)
+            { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+
+        float x() const noexcept
+        { return this-> template get<field_x>(); }
+        float y() const noexcept
+        { return this-> template get<field_y>(); }
+        float& x() noexcept
+        { return this-> template get<field_x>(); }
+        float& y() noexcept
+        { return this-> template get<field_y>(); }
+        float r2() const noexcept { return x() * x() + y() * y(); }
+};
+
+TEST (SOAView, SimpleTests) {
+    std::vector<float> vx, vy, vxx, vyy;
+    // fill vx, vy somehow - same number of elements
+    const auto rnd = [] () { return double(random()) / double(RAND_MAX); };
+    vx.reserve(1024), vy.reserve(1024);
+    for (unsigned i = 0; i < 1024; ++i) {
+        vx.push_back(rnd());
+        vy.push_back(rnd());
+    }
+    vxx = vx, vyy = vy;
+    // construct a SOAView from vx, vy
+    auto view = make_soaview<SOAPoint, field_x, field_y>(vx, vy);
+    const float angle = 42.f / 180.f * M_PI;
+    const auto s = std::sin(angle), c = std::cos(angle);
+    for (auto p: view) {
+        if (p.r2() > 1) continue;
+        // rotate points within the unit circle by given angle
+        std::tie(p.x(), p.y()) = std::make_pair(
+                c * p.x() + s * p.y(), -s * p.x() + c * p.y());
+    }
+    // do the same thing "by hand" on vxx, vyy
+    for (unsigned i = 0; i < 1024; ++i) {
+        if ((vxx[i] * vxx[i] + vyy[i] * vyy[i]) > 1) continue;
+        // rotate points within the unit circle by given angle
+        std::tie(vxx[i], vyy[i]) = std::make_pair(
+                c * vxx[i] + s * vyy[i], -s * vxx[i] + c * vyy[i]);
+    }
+    // check that we get the same results in both cases
+    EXPECT_EQ(view.size(), vxx.size());
+    EXPECT_EQ(view.size(), vyy.size());
+    unsigned i = 0;
+    for (auto p: view) {
+        EXPECT_LT(std::abs(p.x() - vxx[i]), 64 *
+                std::numeric_limits<float>::epsilon() *
+                std::max(std::abs(p.x()), std::abs(vxx[i])));
+        EXPECT_LT(std::abs(p.y() - vyy[i]), 64 *
+                std::numeric_limits<float>::epsilon() *
+                std::max(std::abs(p.y()), std::abs(vyy[i])));
+        ++i;
+    }
+}

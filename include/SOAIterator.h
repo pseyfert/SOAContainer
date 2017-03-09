@@ -16,6 +16,9 @@ template <typename PROXY>
 class SOAConstIterator;
 template<typename T>
 std::ostream& operator<<(std::ostream&, const SOAConstIterator<T>&);
+template < template <typename...> class CONTAINER,
+    template <typename> class SKIN, typename... FIELDS>
+class SOAContainer;
 
 /** @brief class mimicking a const pointer to pointee inidicated by PROXY
  *
@@ -32,6 +35,10 @@ class SOAConstIterator
         typedef typename PROXY::parent_type parent_type;
         // parent container is a friend
         friend parent_type;
+        /// corresponding SOAContainers are friends
+        template < template <typename...> class CONTAINER,
+                 template <typename> class SKIN, typename... FIELDS>
+        friend class SOAContainer;
         /// parent's proxy type
         typedef PROXY proxy;
         // underlying "dressed" proxy is friend as well
@@ -74,11 +81,9 @@ class SOAConstIterator
         SOAConstIterator() noexcept : SOAConstIterator(nullptr, 0) { }
 
         /// copy constructor
-        SOAConstIterator(const self_type& other) noexcept :
-            m_proxy(other.m_proxy) { }
+        SOAConstIterator(const self_type& other) noexcept = default;
         /// move constructor
-        SOAConstIterator(self_type&& other) noexcept :
-            m_proxy(std::move(other.m_proxy)) { }
+        SOAConstIterator(self_type&& other) noexcept = default;
 
         /// assignment
         self_type& operator=(const self_type& other) noexcept
@@ -258,6 +263,10 @@ class SOAIterator : public SOAConstIterator<PROXY>
         typedef PROXY proxy;
         // underlying "dressed" proxy is friend as well
         friend proxy;
+        /// corresponding SOAContainers are friends
+        template < template <typename...> class CONTAINER,
+                 template <typename> class SKIN, typename... FIELDS>
+        friend class SOAContainer;
         /// parent's naked proxy type
         typedef typename parent_type::naked_proxy naked_proxy;
         // underlying "naked" proxy is friend as well
@@ -294,12 +303,9 @@ class SOAIterator : public SOAConstIterator<PROXY>
         SOAIterator() noexcept : SOAIterator(nullptr, 0) { }
 
         /// copy constructor
-        SOAIterator(const self_type& other) noexcept :
-            SOAConstIterator<proxy>(other) { }
-
+        SOAIterator(const self_type& other) noexcept = default;
         /// move constructor
-        SOAIterator(self_type&& other) noexcept :
-            SOAConstIterator<proxy>(std::move(other)) { }
+        SOAIterator(self_type&& other) noexcept = default;
 
         /// assignment
         self_type& operator=(const self_type& other) noexcept

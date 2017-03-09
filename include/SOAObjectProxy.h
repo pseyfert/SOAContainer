@@ -19,6 +19,9 @@ template <typename PROXY>
 class SOAConstIterator;
 template <typename PROXY>
 class SOAIterator;
+template < template <typename...> class CONTAINER,
+         template <typename> class SKIN, typename... FIELDS>
+class SOAContainer;
 
 /** @brief proxy object for the elements stored in the container.
  *
@@ -67,6 +70,10 @@ class SOAObjectProxy {
 
         // SOAContainer is allowed to invoke the private constructor
         friend parent_type;
+        /// corresponding SOAContainers are friends
+        template < template <typename...> class CONTAINER,
+                 template <typename> class SKIN, typename... FIELDS>
+        friend class SOAContainer;
         // so is the pointer/iterator type
         friend pointer;
         // and the const pointer/iterator type
@@ -123,12 +130,9 @@ class SOAObjectProxy {
 
     public:
         /// copy constructor
-        SOAObjectProxy(const self_type& other) noexcept :
-            m_storage(other.m_storage), m_index(other.m_index) { }
+        SOAObjectProxy(const self_type& other) noexcept = default;
         /// move constructor
-        SOAObjectProxy(self_type&& other) noexcept :
-            m_storage(std::move(other.m_storage)),
-            m_index(std::move(other.m_index)) { }
+        SOAObjectProxy(self_type&& other) noexcept = default;
 
         /// convert to tuple of member contents
         operator value_type() const noexcept(noexcept(
@@ -219,28 +223,26 @@ class SOAObjectProxy {
         auto get() noexcept -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
         { return std::get<MEMBERNO>(*m_storage)[m_index]; }
         /// access to member by "member tag"
-        template <typename MEMBER>
-        auto get() noexcept -> decltype(std::get<
-                PARENTCONTAINER::template memberno<MEMBER>()>(
-                    *m_storage)[m_index])
+        template <typename MEMBER, size_type MEMBERNO =
+            PARENTCONTAINER::template memberno<MEMBER>()>
+        auto get() noexcept -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
         {
-            return std::get<
-                PARENTCONTAINER::template memberno<MEMBER>()>(
-                        *m_storage)[m_index];
+            static_assert(PARENTCONTAINER::template memberno<MEMBER>() ==
+                    MEMBERNO, "Called with wrong template argument(s).");
+            return std::get<MEMBERNO>(*m_storage)[m_index];
         }
         /// access to member by number (read-only)
         template <size_type MEMBERNO>
         auto get() const noexcept -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
         { return std::get<MEMBERNO>(*m_storage)[m_index]; }
         /// access to member by "member tag" (read-only)
-        template <typename MEMBER>
-        auto get() const noexcept -> decltype(std::get<
-                PARENTCONTAINER::template memberno<MEMBER>()>(
-                    *m_storage)[m_index])
+        template <typename MEMBER, size_type MEMBERNO =
+            PARENTCONTAINER::template memberno<MEMBER>()>
+        auto get() const noexcept -> decltype(std::get<MEMBERNO>(*m_storage)[m_index])
         {
-            return std::get<
-                PARENTCONTAINER::template memberno<MEMBER>()>(
-                        *m_storage)[m_index];
+            static_assert(PARENTCONTAINER::template memberno<MEMBER>() ==
+                    MEMBERNO, "Called with wrong template argument(s).");
+            return std::get<MEMBERNO>(*m_storage)[m_index];
         }
 
         /// swap the contents of two SOAObjectProxy instances

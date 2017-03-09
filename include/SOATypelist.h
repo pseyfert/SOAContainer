@@ -99,9 +99,12 @@ namespace SOATypelist {
         static_assert(typelist<int>::size() == 1, "implementation error");
         static_assert(std::is_same<typelist<int>::at<0>::type, int>::value,
                 "implementation error");
+#if !defined(__clang__) && !defined(INTEL_COMPILER) && (\
+        __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 8))
         static_assert(std::is_same<typelist<const int>,
                 typelist<int>::map_t<add_const_t> >::value,
                 "implementation error");
+#endif
         static_assert(typelist<int>::find<int>() == 0, "implementation error");
         static_assert(typelist<int>::find<float>() == std::size_t(-1),
                 "implementation error");
@@ -113,9 +116,12 @@ namespace SOATypelist {
                 "implementation error");
         static_assert(typelist<int, bool>::find<int>() == 0, "implementation error");
         static_assert(typelist<int, bool>::find<bool>() == 1, "implementation error");
+#if !defined(__clang__) && !defined(INTEL_COMPILER) && (\
+        __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 8))
         static_assert(std::is_same<typelist<const int, const bool>,
                 typelist<int, bool>::map_t<add_const_t> >::value,
                 "implementation error");
+#endif
     }
 }
 

@@ -101,18 +101,26 @@ class DressedTuple : public TUPLE
         { return std::get<MEMBERNO>(*this); }
 
         /// provide the member function template get interface of proxies
-        template<typename MEMBER>
-        auto get() noexcept -> decltype(std::get<
-                CONTAINER::template memberno<MEMBER>()>(
+        template<typename MEMBER, typename CONTAINER::size_type MEMBERNO =
+            CONTAINER::template memberno<MEMBER>()>
+        auto get() noexcept -> decltype(std::get<MEMBERNO>(
                     *static_cast<self_type*>(nullptr)))
-        { return std::get<CONTAINER::template memberno<MEMBER>()>(*this); }
+        {
+            static_assert(CONTAINER::template memberno<MEMBER>() ==
+                    MEMBERNO, "Called with wrong template argument(s).");
+            return std::get<MEMBERNO>(*this);
+        }
 
         /// provide the member function template get interface of proxies
-        template<typename MEMBER>
-        auto get() const noexcept -> decltype(
-                std::get<CONTAINER::template memberno<MEMBER>()>(
+        template<typename MEMBER, typename CONTAINER::size_type MEMBERNO =
+            CONTAINER::template memberno<MEMBER>()>
+        auto get() const noexcept -> decltype(std::get<MEMBERNO>(
                     *static_cast<const self_type*>(nullptr)))
-        { return std::get<CONTAINER::template memberno<MEMBER>()>(*this); }
+        {
+            static_assert(CONTAINER::template memberno<MEMBER>() ==
+                    MEMBERNO, "Called with wrong template argument(s).");
+            return std::get<MEMBERNO>(*this);
+        }
 };
 
 #endif // SOADRESSEDTUPLE_H
