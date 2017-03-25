@@ -574,4 +574,6 @@ TEST (SOAView, SimpleTests) {
                 std::max(std::abs(p.y()), std::abs(vyy[i])));
         ++i;
     }
+    // check that we can access the underlying ranges
+    EXPECT_EQ(&vx, &view.range<field_x>());
 }

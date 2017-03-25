@@ -470,7 +470,8 @@ class SOAView {
         /// constructor from a list of ranges
         template <typename... RANGES, typename std::enable_if<sizeof...(RANGES) == sizeof...(FIELDS), int>::type = 0>
         SOAView(RANGES&&... ranges) :
-            m_storage(std::forward<RANGES>(ranges)...) { }
+            m_storage(std::forward<RANGES>(ranges)...)
+        { /* FIXME: verify size of ranges */ }
         /// copy constructor
         SOAView(const self_type& other) = default;
         /// move constructor
@@ -703,6 +704,26 @@ class SOAView {
         auto crend() const noexcept -> decltype(
                 std::get<memberno<MEMBER>()>(m_storage).crend())
         { return std::get<memberno<MEMBER>()>(m_storage).crend(); }
+
+        /// return a const reference to the underlying SOA storage range MEMBERNO
+        template <size_type MEMBERNO>
+        auto range() const noexcept ->
+            decltype(std::get<MEMBERNO>(m_storage))
+        { return std::get<MEMBERNO>(m_storage); }
+        /// return a reference to the underlying SOA storage range MEMBERNO
+        template <size_type MEMBERNO>
+        auto range() noexcept -> decltype(std::get<MEMBERNO>(m_storage))
+        { return std::get<MEMBERNO>(m_storage); }
+        /// return a const reference to the underlying SOA storage range MEMBER
+        template <typename MEMBER>
+        auto range() const noexcept ->
+            decltype(std::get<memberno<MEMBER>()>(m_storage))
+        { return std::get<memberno<MEMBER>()>(m_storage); }
+        /// return a reference to the underlying SOA storage range MEMBER
+        template <typename MEMBER>
+        auto range() noexcept -> decltype(std::get<memberno<MEMBER>()>(m_storage))
+        { return std::get<memberno<MEMBER>()>(m_storage); }
+
 
         /// assign the vector to contain count copies of val
         void assign(size_type count, const value_type& val)
