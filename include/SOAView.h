@@ -354,6 +354,15 @@ class SOAView {
     protected:
         /// implementation details
         struct impl_detail {
+            /// little helper to check range sizes at construction time
+            struct rangeSizeCheckHelper {
+                size_type m_sz;
+                template <typename T>
+                void operator()(const T& range) const {
+                    if (m_sz != range.size())
+                        throw std::logic_error("SOAView: range sizes must match!");
+                }
+            };
             /// little helper for assign(count, val)
             struct assignHelper {
                 size_type m_cnt;
@@ -471,7 +480,12 @@ class SOAView {
         template <typename... RANGES, typename std::enable_if<sizeof...(RANGES) == sizeof...(FIELDS), int>::type = 0>
         SOAView(RANGES&&... ranges) :
             m_storage(std::forward<RANGES>(ranges)...)
-        { /* FIXME: verify size of ranges */ }
+        {
+            // verify size of ranges
+            SOAUtils::map(typename impl_detail::rangeSizeCheckHelper{
+                        std::get<0>(m_storage).size()},
+                    m_storage, std::make_index_sequence<sizeof...(RANGES)>());
+        }
         /// copy constructor
         SOAView(const self_type& other) = default;
         /// move constructor
@@ -723,7 +737,6 @@ class SOAView {
         template <typename MEMBER>
         auto range() noexcept -> decltype(std::get<memberno<MEMBER>()>(m_storage))
         { return std::get<memberno<MEMBER>()>(m_storage); }
-
 
         /// assign the vector to contain count copies of val
         void assign(size_type count, const value_type& val)
