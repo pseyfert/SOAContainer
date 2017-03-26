@@ -6,7 +6,7 @@
 #ifndef CPP14_COMPAT_H
 #define CPP14_COMPAT_H
 
-#if __cplusplus >= 201402L
+#if __cplusplus > 201103L // well, g++ and icpc have strange values here in c++14 mode
 // C++14 - use the standard's facilities
 #include <utility>
 #elif __cplusplus >= 201103L
