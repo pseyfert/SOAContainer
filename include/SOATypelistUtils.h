@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "SOATypelist.h"
+#include "AlignedAllocator.h"
 #include "c++14_compat.h"
 
 namespace SOATypelist {
@@ -66,6 +67,20 @@ namespace SOATypelist {
 
     }
 
+    /// implementation details for to_tuple below
+    namespace _to_tuple_impl {
+        /// select the concrete container type
+        template <typename T, template <typename...> class CONTAINER>
+        struct select_concrete_container {
+            using _t = CONTAINER<T>;
+        };
+        /// specialisation: std::vectors are cache-line aligned by default
+        template <typename T>
+        struct select_concrete_container<T, std::vector> {
+            using _t = std::vector<T, CacheLineAlignedAllocator<T> >;
+        };
+    }
+
     /// class to give tuple types based on TL's listed types
     template <typename TL>
     class to_tuple {
@@ -73,7 +88,7 @@ namespace SOATypelist {
             template <typename T> using decay_t = typename std::decay<T>::type;
             template <template <typename...> class CONTAINER = std::vector>
             struct container_of {
-                template <typename T> using _t = CONTAINER<T>;
+                template <typename T> using _t = typename _to_tuple_impl::select_concrete_container<T, CONTAINER>::_t;
             };
         public:
             template <typename... ARGS>
@@ -109,7 +124,8 @@ namespace SOATypelist {
                 std::tuple<int&&, float&&> >::value, "implementation error");
         static_assert(std::is_same<
                 typename to_tuple<typelist<int, float> >::template container_tuple<std::vector>,
-                std::tuple<std::vector<int>, std::vector<float> > >::value,
+                std::tuple<std::vector<int, CacheLineAlignedAllocator<int> >,
+                    std::vector<float, CacheLineAlignedAllocator<float> > > >::value,
                 "implementation error");
     }
 }
