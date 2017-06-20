@@ -100,7 +100,9 @@ int main() {
         //list_of_points.push_back(std::make_tuple(2.,3.));
         //list_of_points.push_back({3.0f,4.0f});
 
-        for(const auto& item : list_of_points)
+	// SOA containers return proxy classes, so don't use the reference in
+	// the range-based for!
+	for(auto item : list_of_points)
             cout << item << endl;
         
         cout << "we can access using list_of_points.at(1).x(): " << list_of_points.at(1).x() << endl;
