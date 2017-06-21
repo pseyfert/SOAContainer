@@ -46,6 +46,8 @@ namespace SOA {
 	    public:
 		using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
 		using PrintableNullSkin<NAKEDPROXY>::operator=;
+		using fields_typelist =
+		    SOATypelist::typelist<PointFields::x, PointFields::y>;
 
 		float x() const noexcept
 		{ return this-> template get<PointFields::x>(); }
@@ -62,10 +64,9 @@ namespace SOA {
 
     // define the SOA container type
     typedef SOAContainer<
-	std::vector, // underlying type for each field
-	SOAPointProxy,    // skin to "dress" the tuple of fields with
-	// one or more wrapped types which each tag a member/field
-	PointFields::x, PointFields::y> Points;
+	std::vector,   // underlying type for each field
+	SOAPointProxy> // skin to "dress" the tuple of fields with
+	Points;
     // define the SOAPoint itself
     typedef typename Points::proxy Point;
 }

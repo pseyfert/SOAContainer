@@ -18,7 +18,7 @@ template<typename T>
 std::ostream& operator<<(std::ostream&, const SOAConstIterator<T>&);
 template < template <typename...> class CONTAINER,
     template <typename> class SKIN, typename... FIELDS>
-class SOAContainer;
+class _SOAContainer;
 
 /** @brief class mimicking a const pointer to pointee inidicated by PROXY
  *
@@ -35,10 +35,10 @@ class SOAConstIterator
         typedef typename PROXY::parent_type parent_type;
         // parent container is a friend
         friend parent_type;
-        /// corresponding SOAContainers are friends
+        /// corresponding _SOAContainers are friends
         template < template <typename...> class CONTAINER,
                  template <typename> class SKIN, typename... FIELDS>
-        friend class SOAContainer;
+        friend class _SOAContainer;
         /// parent's proxy type
         typedef PROXY proxy;
         // underlying "dressed" proxy is friend as well
@@ -263,10 +263,10 @@ class SOAIterator : public SOAConstIterator<PROXY>
         typedef PROXY proxy;
         // underlying "dressed" proxy is friend as well
         friend proxy;
-        /// corresponding SOAContainers are friends
+        /// corresponding _SOAContainers are friends
         template < template <typename...> class CONTAINER,
                  template <typename> class SKIN, typename... FIELDS>
-        friend class SOAContainer;
+        friend class _SOAContainer;
         /// parent's naked proxy type
         typedef typename parent_type::naked_proxy naked_proxy;
         // underlying "naked" proxy is friend as well

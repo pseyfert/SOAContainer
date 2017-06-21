@@ -21,16 +21,16 @@ template <typename PROXY>
 class SOAIterator;
 template < template <typename...> class CONTAINER,
          template <typename> class SKIN, typename... FIELDS>
-class SOAContainer;
+class _SOAContainer;
 
 /** @brief proxy object for the elements stored in the container.
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
  * @date 2015-04-10
  *
- * Conceptually, the SOAContainer contains a collection of objects
+ * Conceptually, the _SOAContainer contains a collection of objects
  * which have some data members. To optimise the data access patterns
- * in memory, the SOAContainer doesn't store the objects themselves,
+ * in memory, the _SOAContainer doesn't store the objects themselves,
  * but containers which each store a different member. That means the
  * conceptual objects mentioned above do not exist as such. The
  * SOAObjectProxy class stands in for these objects, and provides
@@ -68,12 +68,12 @@ class SOAObjectProxy {
         SOAStorage* m_storage;  ///< underlying SOA storage of members
         size_type m_index;      ///< index into underlying SOA storage
 
-        // SOAContainer is allowed to invoke the private constructor
+        // _SOAContainer is allowed to invoke the private constructor
         friend parent_type;
-        /// corresponding SOAContainers are friends
+        /// corresponding _SOAContainers are friends
         template < template <typename...> class CONTAINER,
                  template <typename> class SKIN, typename... FIELDS>
-        friend class SOAContainer;
+        friend class _SOAContainer;
         // so is the pointer/iterator type
         friend pointer;
         // and the const pointer/iterator type
