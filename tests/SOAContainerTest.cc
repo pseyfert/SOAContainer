@@ -331,8 +331,12 @@ namespace HitNamespace {
     template <typename NAKEDPROXY>
     class HitSkin : public PrintableNullSkin<NAKEDPROXY> {
         public:
-            template <typename... ARGS>
-            HitSkin(ARGS&&... args) : PrintableNullSkin<NAKEDPROXY>(std::forward<ARGS>(args)...) { }
+	    using fields_typelist = SOATypelist::typelist<
+		Fields::xAtYEq0, Fields::xAtYEq0,
+		Fields::dxdy, Fields::dzdy,
+		Fields::x, Fields::y, Fields::z>;
+	    using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
+	    using PrintableNullSkin<NAKEDPROXY>::operator=;
 
             auto xAtYEq0() const noexcept -> decltype(this->template get<Fields::xAtYEq0>())
             { return this->template get<Fields::xAtYEq0>(); }
@@ -482,14 +486,12 @@ namespace stdarraytest_fields {
     template <typename NAKEDPROXY>
     class ContainerSkin : public PrintableNullSkin<NAKEDPROXY> {
         public:
-            typedef ContainerSkin<NAKEDPROXY> self_type;
-            typedef stdarraytest_fields::Array Array;
+	    using fields_typelist = SOATypelist::typelist<f_array>;
+	    using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
+	    using PrintableNullSkin<NAKEDPROXY>::operator=;
 
-            /// forward constructor to underlying type
-            template <typename... ARGS>
-            ContainerSkin(ARGS&&... args) : PrintableNullSkin<NAKEDPROXY>(
-                    std::forward<ARGS>(args)...) { }
-
+            using self_type = ContainerSkin<NAKEDPROXY>;
+	    using Array = stdarraytest_fields::Array;
 
             /// stupid constructor from an (ignored) bool
             ContainerSkin(bool) : ContainerSkin(Array())
@@ -513,15 +515,9 @@ typedef struct : SOATypelist::wrap_type<float> {} field_y;
 template <typename NAKEDPROXY>
 class SOAPoint : public NAKEDPROXY {
     public:
-        template <typename... ARGS>
-            SOAPoint(ARGS&&... args) :
-                NAKEDPROXY(std::forward<ARGS>(args)...) { }
-        template <typename ARG>
-            SOAPoint<NAKEDPROXY>& operator=(const ARG& arg)
-            { NAKEDPROXY::operator=(arg); return *this; }
-        template <typename ARG>
-            SOAPoint<NAKEDPROXY>& operator=(ARG&& arg)
-            { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+	using fields_typelist = SOATypelist::typelist<field_x, field_y>;
+	using NAKEDPROXY::NAKEDPROXY;
+	using NAKEDPROXY::operator=;
 
         float x() const noexcept
         { return this-> template get<field_x>(); }
@@ -545,7 +541,7 @@ TEST (SOAView, SimpleTests) {
     }
     vxx = vx, vyy = vy;
     // construct a SOAView from vx, vy
-    auto view = make_soaview<SOAPoint, field_x, field_y>(vx, vy);
+    auto view = make_soaview<SOAPoint>(vx, vy);
     const float angle = 42.f / 180.f * M_PI;
     const auto s = std::sin(angle), c = std::cos(angle);
     for (auto p: view) {

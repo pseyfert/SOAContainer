@@ -35,32 +35,30 @@ namespace SOA {
 	// since we can have more than one member of the same type in our
 	// SOA object, we have to do some typedef gymnastics so the compiler
 	// can tell them apart
-	typedef struct : public wrap_type<float> { } x;
-	typedef struct : public wrap_type<float> { } y;
-	// The previous line could be written:
-	//struct y : public wrap_type<float> {};
+	struct x : wrap_type<float> { };
+	struct y : wrap_type<float> { };
     }
 
     template <typename NAKEDPROXY>
-	class SOAPointProxy : public PrintableNullSkin<NAKEDPROXY> {
-	    public:
-		using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
-		using PrintableNullSkin<NAKEDPROXY>::operator=;
-		using fields_typelist =
-		    SOATypelist::typelist<PointFields::x, PointFields::y>;
+    class SOAPointProxy : public PrintableNullSkin<NAKEDPROXY> {
+	public:
+	    using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
+	    using PrintableNullSkin<NAKEDPROXY>::operator=;
+	    using fields_typelist =
+		SOATypelist::typelist<PointFields::x, PointFields::y>;
 
-		float x() const noexcept
-		{ return this-> template get<PointFields::x>(); }
-		float y() const noexcept
-		{ return this-> template get<PointFields::y>(); }
-		void setX(float x) noexcept
-		{ this-> template get<PointFields::x>() = x; }
-		void setY(float y) noexcept
-		{ this-> template get<PointFields::y>() = y; }
+	    float x() const noexcept
+	    { return this-> template get<PointFields::x>(); }
+	    float y() const noexcept
+	    { return this-> template get<PointFields::y>(); }
+	    void setX(float x) noexcept
+	    { this-> template get<PointFields::x>() = x; }
+	    void setY(float y) noexcept
+	    { this-> template get<PointFields::y>() = y; }
 
-		// again, something beyond plain setters/getters
-		float r2() const noexcept { return x() * x() + y() * y(); }
-	};
+	    // again, something beyond plain setters/getters
+	    float r2() const noexcept { return x() * x() + y() * y(); }
+    };
 
     // define the SOA container type
     typedef SOAContainer<
