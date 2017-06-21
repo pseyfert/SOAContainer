@@ -45,35 +45,13 @@ namespace {
 
 /// make tuple convertible to string
 template <typename T>
-class PrintableNullSkin : public T
+class PrintableNullSkin : public NullSkin<T>
 {
     public:
         /// constructor - forward to underlying proxy
-        template <typename... ARGS>
-        constexpr PrintableNullSkin(ARGS&&... args)
-            // ordinarily, we would like to have the following noexcept
-            // specification here:
-            //
-            // noexcept(noexcept(T(std::forward<ARGS>(args)...)))
-            //
-            // however, gcc 4.9 and clang 3.5 insist that T's
-            // constructor is protected and refuse the code in the exception
-            // specification (despite the fact that it's perfectly legal to
-            // call that very constructor in the initializer list below
-            // because T is a friend of T)
-            : T(std::forward<ARGS>(args)...) { }
-
+        using NullSkin<T>::NullSkin;
         /// assignment operator - forward to underlying proxy
-        template <typename ARG>
-        PrintableNullSkin<T>& operator=(const ARG& arg) noexcept(noexcept(
-                    std::declval<T>().operator=(arg)))
-        { T::operator=(arg); return *this; }
-
-        /// move assignment operator - forward to underlying proxy
-        template <typename ARG>
-        PrintableNullSkin<T>& operator=(ARG&& arg) noexcept(noexcept(
-                    std::declval<T>().operator=(std::move(arg))))
-        { T::operator=(std::move(arg)); return *this; }
+        using NullSkin<T>::operator=;
 
         /// conversion to string
         operator std::string() const {

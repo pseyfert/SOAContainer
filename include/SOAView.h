@@ -32,33 +32,10 @@ template <typename NAKEDPROXY>
 class NullSkin : public NAKEDPROXY
 {
     public:
-        /// constructor - forward to underlying proxy
-        template <typename... ARGS>
-        NullSkin(ARGS&&... args)
-            // ordinarily, we would like to have the following noexcept
-            // specification here:
-            //
-            // noexcept(noexcept(NAKEDPROXY(std::forward<ARGS>(args)...)))
-            //
-            // however, gcc 4.9 and clang 3.5 insist that NAKEDPROXY's
-            // constructor is protected and refuse the code in the exception
-            // specification (despite the fact that it's perfectly legal to
-            // call that very constructor in the initializer list below
-            // because NullSkin<NAKEDPROXY> is a friend of NAKEDPROXY)
-            : NAKEDPROXY(std::forward<ARGS>(args)...) { }
-
+        /// constructor(s) - forward to underlying proxy
+        using NAKEDPROXY::NAKEDPROXY;
         /// assignment operator - forward to underlying proxy
-        template <typename ARG>
-        NullSkin<NAKEDPROXY>& operator=(const ARG& arg) noexcept(noexcept(
-                    std::declval<NAKEDPROXY>().operator=(arg)))
-        { NAKEDPROXY::operator=(arg); return *this; }
-
-        /// move assignment operator - forward to underlying proxy
-        template <typename ARG>
-        NullSkin<NAKEDPROXY>& operator=(ARG&& arg) noexcept(noexcept(
-                    std::declval<NAKEDPROXY>().operator=(
-                        std::move(arg))))
-        { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+        using NAKEDPROXY::operator=;
 };
 
 // forward decl.
