@@ -44,10 +44,8 @@ namespace SOA {
     template <typename NAKEDPROXY>
 	class SOAPointProxy : public PrintableNullSkin<NAKEDPROXY> {
 	    public:
-
-		template <typename... ARGS>
-		SOAPointProxy(ARGS&&... args)
-		    : PrintableNullSkin<NAKEDPROXY>(std::forward<ARGS>(args)...) { }
+		using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
+		using PrintableNullSkin<NAKEDPROXY>::operator=;
 
 		float x() const noexcept
 		{ return this-> template get<PointFields::x>(); }

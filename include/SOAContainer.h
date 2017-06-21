@@ -88,19 +88,11 @@
  * class SOAPoint : public NAKEDPROXY {
  *     public:
  *         /// forward constructor to NAKEDPROXY's constructor
- *         template <typename... ARGS>
- *         SOAPoint(ARGS&&... args) :
- *             NAKEDPROXY(std::forward<ARGS>(args)...) { }
- *
+ *         using NAKEDPROXY::NAKEDPROXY;
  *         /// assignment operator - forward to underlying proxy
- *         template <typename ARG>
- *         SOAPoint<NAKEDPROXY>& operator=(const ARG& arg)
- *         { NAKEDPROXY::operator=(arg); return *this; }
+ *         using NAKEDPROXY::operator=;
  *
- *         /// move assignment operator - forward to underlying proxy
- *         template <typename ARG>
- *         SOAPoint<NAKEDPROXY>& operator=(ARG&& arg)
- *         { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+ *         // add your own constructors/assignment operators here
  *
  *         float x() const noexcept
  *         { return this-> template get<PointFields::x>(); }
