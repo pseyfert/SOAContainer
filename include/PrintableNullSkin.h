@@ -45,13 +45,13 @@ namespace {
 
 /// make tuple convertible to string
 template <typename T>
-class PrintableNullSkin : public NullSkin<T>
+class PrintableNullSkin : public T
 {
     public:
         /// constructor - forward to underlying proxy
-        using NullSkin<T>::NullSkin;
+        using T::T;
         /// assignment operator - forward to underlying proxy
-        using NullSkin<T>::operator=;
+        using T::operator=;
 
         /// conversion to string
         operator std::string() const {
