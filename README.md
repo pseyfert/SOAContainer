@@ -14,6 +14,7 @@ To illustrate, I'll bring a very short example here (something more
 realistic is in the test code in git). Consider a minimal point with an x
 and a y coordinate. In the AOS case, you'd code:
 
+```cpp
 class AOSPoint {
     private:
         float m_x;
@@ -30,11 +31,13 @@ class AOSPoint {
 
 typedef std::vector<AOSPoint> AOSPoints;
 typedef Point& AOSPoint;
+```
 
 Then we can all use Points and Point as we know it. Unfortunately, the
 memory layout is AOS, i.e. not what SIMD units like. Converting this to a
 SOA layout is fairly easy, though:
 
+```cpp
 #include "SOAContainer.h"
 
 // first declare member "tags" which describe the members of the notional
@@ -79,24 +82,29 @@ typedef SOAContainer<
         PointFields::x, PointFields::y> SOAPoints;
 // define the SOAPoint itself
 typedef typename SOAPoints::proxy SOAPoint;
+```
 
 From that point on, you can more or less so what you're used to with your
 points, the SOA nature should largely be invisible. For example, the code
 
+```cpp
 // normalise to unit length
 for (AOSPoint p: points) {
     auto ir = 1 / std::sqrt(p.r2());
     p.setX(p.x() * ir), p.setY(p.y() * ir);
 }
+```
 
 would require virtually no changes when going from the AOS point to the SOA
 point class:
 
+```cpp
 // normalise to unit length
 for (SOAPoint p: points) {
     auto ir = 1 / std::sqrt(p.r2());
     p.setX(p.x() * ir), p.setY(p.y() * ir);
 }
+```
 
 The fields (members) in a SOAContainer-contained object can essentially be of
 any POD type or pointer type, and there can be as many as the compiler will
@@ -157,6 +165,7 @@ pre-existing ranges. The resulting container can be changed if the range is not
 const, but its length is fixed. Again, the fields can be pretty much anything.
 A simple example follows:
 
+```cpp
 #include <SOAView.h>
 typedef struct : SOATypelist::wrap_type<float> {} field_x;
 typedef struct : SOATypelist::wrap_type<float> {} field_y;
@@ -197,6 +206,7 @@ for (auto p: view) {
     std::tie(p.x(), p.y()) = std::make_pair(
             c * p.x() + s * p.y(), -s * p.x() + c * p.y());
 }
+```
 
 In this case, two vectors play the role of the ranges, but pretty much anything
 with a range-like interface (i.e. a begin(), and end(), a size() and an empty())
