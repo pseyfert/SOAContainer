@@ -20,17 +20,17 @@ class AOSPoint {
         float m_x;
         float m_y;
     public:
-	Point(float x, float y) : m_x(x), m_y(y) { }
-	float x() const noexcept { return m_x; }
-	float y() const noexcept { return m_y; }
+        Point(float x, float y) : m_x(x), m_y(y) { }
+        float x() const noexcept { return m_x; }
+        float y() const noexcept { return m_y; }
         void setX(float x) noexcept { m_x = x; }
         void setY(float y) noexcept { m_y = y; }
         // plus some routines that do more than just setting/getting members
-	float r2() const noexcept { return m_x * m_x + m_y * m_y; }
+        float r2() const noexcept { return m_x * m_x + m_y * m_y; }
 };
 
-typedef std::vector<AOSPoint> AOSPoints;
-typedef Point& AOSPoint;
+using AOSPoints = std::vector<AOSPoint>;
+using AOSPoint = Point&;
 ```
 
 Then we can all use Points and Point as we know it. Unfortunately, the
@@ -47,8 +47,8 @@ SOA layout is fairly easy, though:
     // since we can have more than one member of the same type in our
     // SOA object, we have to do some typedef gymnastics so the compiler
     // can tell them apart
-    typedef struct : public wrap_type<float> { } x;
-    typedef struct : public wrap_type<float> { } y;
+    using x = struct : public wrap_type<float> {};
+    using y = struct : public wrap_type<float> {};
 };
 
 // define the "skin", i.e. the outer guise that the naked members "wear"
@@ -56,11 +56,15 @@ SOA layout is fairly easy, though:
 template <typename NAKEDPROXY>
 class SOAPoint : public NullSkin<NAKEDPROXY> {
     public:
-        /// forward constructor
-        template <typename... ARGS>
-        SOAPoint(ARGS&&... args) :
-            NullSkin<NAKEDPROXY>(std::forward<ARGS>(args)...) { }
+        // declare which fields (data members) a SOAPoint has
+        using fields_typelist = SOATypelist::typelist<
+            PointFields::x, PointFields::y>;
+        // use the underlying proxy's constructors and assignment operators
+        using NullSkin<NAKEDPROXY>::NullSkin;
+        using NullSkin<NAKEDPROXY>::operator=;
+        // your own constructors go here (if you have any)...
 
+        // setters and getters...
         float x() const noexcept
         { return this-> template get<PointFields::x>(); }
         float y() const noexcept
@@ -75,13 +79,11 @@ class SOAPoint : public NullSkin<NAKEDPROXY> {
 };
 
 // define the SOA container type
-typedef SOAContainer<
+using SOAPoints = SOAContainer<
         std::vector, // underlying type for each field
-        SOAPoint,    // skin to "dress" the tuple of fields with
-        // one or more wrapped types which each tag a member/field
-        PointFields::x, PointFields::y> SOAPoints;
+        SOAPoint>;   // skin to "dress" the tuple of fields with
 // define the SOAPoint itself
-typedef typename SOAPoints::proxy SOAPoint;
+using SOAPoint = typename SOAPoints::proxy;
 ```
 
 From that point on, you can more or less so what you're used to with your
@@ -129,7 +131,7 @@ A few notes at this point seem to be in order:
   field for the first, second, ... field template argument to
   SOAContainer, and it supports the more friendly symbolic lookup with
   get<FieldTag>() I've used in the example above.
-  
+
   You can take the "address" of such a proxy object and get a
   pointer/iterator, which, when deferenced/indexed yields back another
   proxy.
@@ -167,20 +169,14 @@ A simple example follows:
 
 ```cpp
 #include <SOAView.h>
-typedef struct : SOATypelist::wrap_type<float> {} field_x;
-typedef struct : SOATypelist::wrap_type<float> {} field_y;
+using field_x = struct : SOATypelist::wrap_type<float> {};
+using field_y = struct : SOATypelist::wrap_type<float> {};
 template <typename NAKEDPROXY>
 class SOAPoint : public NAKEDPROXY {
     public:
-        template <typename... ARGS>
-            SOAPoint(ARGS&&... args) :
-                NAKEDPROXY(std::forward<ARGS>(args)...) { }
-        template <typename ARG>
-            SOAPoint<NAKEDPROXY>& operator=(const ARG& arg)
-            { NAKEDPROXY::operator=(arg); return *this; }
-        template <typename ARG>
-            SOAPoint<NAKEDPROXY>& operator=(ARG&& arg)
-            { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+        using fields_typelist = SOATypelist::typelist<field_x, field_y>;
+        using NAKEDPROXY::NAKEDPROXY;
+        using NAKEDPROXY::operator=;
 
         float x() const noexcept
         { return this-> template get<field_x>(); }
@@ -196,7 +192,7 @@ std::vector<float> vx, vy;
 // fill vx, vy somehow - same number of elements
 
 // construct a SOAView from vx, vy
-auto view = make_soaview<SOAPoint, field_x, field_y>(vx, vy);
+auto view = make_soaview<SOAPoint>(vx, vy);
 // rotate points inside the unit circle by a given angle
 const float angle = 42.f / 180.f * M_PI;
 const auto s = std::sin(angle), c = std::cos(angle);
