@@ -22,181 +22,10 @@
 #include "SOAUtils.h"
 #include "SOAView.h"
 
-/** @brief container class for objects with given fields (SOA storage)
- *
- * @author Manuel Schiller <Manuel.Schiller@cern.ch>
- * @date 2015-04-10
- *
- * @tparam CONTAINER    underlying container type (anything that follows
- *                      std::vector's interface is fine)
- * @tparam SKIN         "skin" to dress the the interface of the object
- *                      proxying the content elemnts; this can be used to
- *                      augment the interface provided by the get<fieldtag>()
- *                      syntax with something more convenient; NullSkin leaves
- *                      the raw interface intact
- * @tparam FIELDS...    list of "field tags" describing names an types
- *                      of members
- *
- * This class represents a container of objects with the given list of fields,
- * the objects are not stored as such, but each of object's fields gets its own
- * storage array, effectively creating a structure-of-arrays (SOA) layout which
- * is advantageous for vectorisation of algorithms. To illustrate the SOA
- * layout, first consider the normal array-of-structures (AOS) layout:
- *
- * @code
- * class Point {
- *     private:
- *         float m_x;
- *         float m_y;
- *     public:
- *         Point(float x, float y) : m_x(x), m_y(y) { }
- *         float x() const noexcept { return m_x; }
- *         float y() const noexcept { return m_y; }
- *         void setX(float x) noexcept { m_x = x; }
- *         void setY(float y) noexcept { m_y = y; }
- *         // plus some routines that do more than just setting/getting members
- *         float r2() const noexcept
- *         { return m_x * m_x + m_y * m_y; }
- * };
- *
- * typedef std::vector<Point> AOSPoints;
- * typedef Point& AOSPoint;
- * @endcode
- *
- * The memory layout in the example above will be x of element 0, y of element
- * 0, x of element 1, y of element 1, x of element 2, and so on.
- *
- * For the equivalent example in SOA layout, you'd have to do:
- *
- * @code
- * #include "SOAContainer.h"
- *
- * // first declare member "tags" which describe the members of the notional
- * // struct (which will never exist in memory - SOA layout!)
- *  namespace PointFields {
- *     using namespace SOATypelist;
- *     // since we can have more than one member of the same type in our
- *     // SOA object, we have to do some typedef gymnastics so the compiler
- *     // can tell them apart
- *     typedef struct : public wrap_type<float> { } x;
- *     typedef struct : public wrap_type<float> { } y;
- * };
- *
- * // define the "skin", i.e. the outer guise that the naked members "wear"
- * // to make interaction with the class nice
- * template <typename NAKEDPROXY>
- * class SOAPoint : public NAKEDPROXY {
- *     public:
- *         /// forward constructor to NAKEDPROXY's constructor
- *         template <typename... ARGS>
- *         SOAPoint(ARGS&&... args) :
- *             NAKEDPROXY(std::forward<ARGS>(args)...) { }
- *
- *         /// assignment operator - forward to underlying proxy
- *         template <typename ARG>
- *         SOAPoint<NAKEDPROXY>& operator=(const ARG& arg)
- *         { NAKEDPROXY::operator=(arg); return *this; }
- *
- *         /// move assignment operator - forward to underlying proxy
- *         template <typename ARG>
- *         SOAPoint<NAKEDPROXY>& operator=(ARG&& arg)
- *         { NAKEDPROXY::operator=(std::move(arg)); return *this; }
- *
- *         float x() const noexcept
- *         { return this-> template get<PointFields::x>(); }
- *         float y() const noexcept
- *         { return this-> template get<PointFields::y>(); }
- *         void setX(float x) noexcept
- *         { this-> template get<PointFields::x>() = x; }
- *         void setY(float y) noexcept
- *         { this-> template get<PointFields::y>() = y; }
- *
- *         // again, something beyond plain setters/getters
- *         float r2() const noexcept { return x() * x() + y() * y(); }
- * };
- *
- * // define the SOA container type
- * typedef SOAContainer<
- *         std::vector, // underlying type for each field
- *         SOAPoint,    // skin to "dress" the tuple of fields with
- *         // one or more wrapped types which each tag a member/field
- *         PointFields::x, PointFields::y> SOAPoints;
- * // define the SOAPoint itself
- * typedef typename SOAPoints::proxy SOAPoint;
- * @endcode
- *
- * The code is very similar to the AOS layout example above, but the memory
- * layout is very different. Internally, the container has two std::vectors,
- * one which holds all the x "members" of the point structure, and one which
- * holds all the "y" members.
- *
- * Despite all the apparent complexity in defining this container, the use of
- * the contained points is practically the same in both cases. For example,
- * consider a piece of code the "normalises" all points to have unit length:
- *
- * @code
- * // normalise to unit length for the old-style AOSPoint
- * for (AOSPoint p: points) {
- *     auto ir = 1 / std::sqrt(p.r2());
- *     p.setX(p.x() * ir), p.setY(p.y() * ir);
- * }
- * @endcode
- *
- * The only change required is that a different data type is used in
- * conjunction with the SOAPoint implementation from above:
- *
- * @code
- * // normalise to unit length
- * for (SOAPoint p: points) {
- *     auto ir = 1 / std::sqrt(p.r2());
- *     p.setX(p.x() * ir), p.setY(p.y() * ir);
- * }
- * @endcode
- *
- * It is important to realise that there's nothing like the struct Point in the
- * AOS example above - the notion of a point very clearly exists, but the
- * SOAContainer will not create such an object at any point in time. Instead,
- * the container provides an interface to access fields with the get<field_tag>
- * syntax, or via tuples (conversion to or assignment from tuples is
- * implemented), if simultaneous access to all fields is desired.
- *
- * Apart from these points (which are dictated by the SOA layout and efficiency
- * considerations), the class tries to follow the example of the interface of
- * std::vector as closely as possible.
- *
- * When using the SOAContainer class, one must distinguish between elements
- * (and references to elements) which are stored outside the container and
- * those that are stored inside the container:
- *
- * - When stored inside the container, the element itself does not exist as
- *   such because of the SOA storage constraint; (const) references and
- *   pointers are implemented with instances of SKINned SOAObjectProxy and
- *   SOA(Const)Ptr. On the outside, these classes look and feel like
- *   references and pointers, but set up memory access to members/fields such
- *   that the SOA memory layout is preserved.
- * - When a single element is stored outside of the container (a temporary),
- *   the SOA layout doesn't make sense (it's just a single element, after
- *   all), and it is stored as a SKINned std::tuple with the right members.
- *   The value_type, value_reference and const_value_reference typedefs name
- *   the type of these objects.
- *
- * This distinction becomes important when using or implementing generic
- * algorithms (like types in the functor passed to std::sort) which sometimes
- * create a temporary holding a single element outside the container. For
- * illustration, here's how one would sort by increasing y in the SOAPoint
- * example from above:
- *
- * @code
- * SOAPoints& c = get_points_from_elsewhere();
- * std::sort(c.begin(), c.end(),
- *     [] (decltype(c)::value_const_reference a,
- *         decltype(c)::value_const_reference b)
- *     { return a.y() < b.y(); });
- * @endcode
- */
-template < template <typename...> class CONTAINER,
+/// the implementation behind SOAContainer
+template <template <typename...> class CONTAINER,
     template <typename> class SKIN, typename... FIELDS>
-class SOAContainer : public SOAView<
+class _SOAContainer : public SOAView<
             typename SOATypelist::to_tuple<SOATypelist::typelist<FIELDS...>
                      >::template container_tuple<CONTAINER>,
             SKIN, FIELDS...>
@@ -238,10 +67,10 @@ class SOAContainer : public SOAView<
         };
 
         /// give a short and convenient name to base class
-        typedef SOAView<
+        using BASE = SOAView<
             typename SOATypelist::to_tuple<SOATypelist::typelist<FIELDS...>
                      >::template container_tuple<CONTAINER>,
-            SKIN, FIELDS...> BASE;
+            SKIN, FIELDS...>;
     public:
         /// type for sizes
         using size_type = typename BASE::size_type;
@@ -272,8 +101,8 @@ class SOAContainer : public SOAView<
         /// type of the underlying storage
         using SOAStorage = typename BASE::SOAStorage;
         /// type to represent container itself
-        typedef SOAContainer<CONTAINER, SKIN, FIELDS...> self_type;
-        /// typedef holding a typelist with the given fields
+        using self_type = _SOAContainer<CONTAINER, SKIN, FIELDS...>;
+        /// typelist with the given fields
         using fields_typelist = typename BASE::fields_typelist;
 
         /// convenience function to return member number given member tag type
@@ -294,34 +123,34 @@ class SOAContainer : public SOAView<
 
     public:
         /// default constructor
-        SOAContainer() : BASE() { }
+        _SOAContainer() : BASE() { }
         /// copy constructor
-        SOAContainer(const self_type& other) = default;
+        _SOAContainer(const self_type& other) = default;
         /// move constructor
-        SOAContainer(self_type&& other) = default;
-        /// assignment from other SOAContainer
+        _SOAContainer(self_type&& other) = default;
+        /// assignment from other _SOAContainer
         self_type& operator=(const self_type& other) = default;
-        /// move-assignment from other SOAContainer
+        /// move-assignment from other _SOAContainer
         self_type& operator=(self_type&& other) = default;
 
         /// fill container with count copies of val
-        SOAContainer(size_type count, const value_type& val) : BASE()
+        _SOAContainer(size_type count, const value_type& val) : BASE()
         {
             reserve(count);
             assign(count, val);
         }
         /// fill container with count (default constructed) elements
-        SOAContainer(size_type count) : SOAContainer(count, value_type()) { }
+        _SOAContainer(size_type count) : _SOAContainer(count, value_type()) { }
         /// fill container with elements from other container
         template <typename IT>
-        SOAContainer(IT first, IT last) : BASE()
+        _SOAContainer(IT first, IT last) : BASE()
         {
             reserve(std::distance(first, last));
             assign(first, last);
         }
 
         /// std::initializer_list constructor
-        SOAContainer(std::initializer_list<naked_value_tuple_type> listing) :
+        _SOAContainer(std::initializer_list<naked_value_tuple_type> listing) :
             BASE()
         {
             reserve(listing.size());
@@ -840,6 +669,216 @@ class SOAContainer : public SOAView<
                 std::forward<naked_value_tuple_type>(
                     static_cast<naked_value_tuple_type>(val)));
         }
+};
+
+/// more _SOAContainer implementation details
+namespace _SOAContainerImpl {
+    struct dummy {};
+    /// helper to allow flexibility in how fields are supplied
+    template <template <typename...> class CONTAINER,
+             template <typename> class SKIN,
+             class... TYPELISTORFIELDS>
+    struct SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper {
+        using type = _SOAContainer<CONTAINER, SKIN, TYPELISTORFIELDS...>;
+    };
+    /// helper to allow flexibility in how fields are supplied
+    template <template <typename...> class CONTAINER,
+             template <typename> class SKIN,
+             class... FIELDS, class... EXTRA>
+    struct SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper<
+        CONTAINER, SKIN, SOATypelist::typelist<FIELDS...>, EXTRA... >
+    {
+        static_assert(!sizeof...(EXTRA), "typelist or variadic, not both");
+        using type = _SOAContainer<CONTAINER, SKIN, FIELDS...>;
+    };
+    /// helper to allow flexibility in how fields are supplied
+    template <template <typename...> class CONTAINER,
+             template <typename> class SKIN>
+    struct SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper<CONTAINER, SKIN>
+    {
+        using type = typename
+            SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper<
+            CONTAINER, SKIN, typename SKIN<dummy>::fields_typelist>::type;
+    };
+    template <template <typename...> class CONTAINER, template <typename> class SKIN,
+             typename... FIELDS>
+    using SOAContainer = typename
+        _SOAContainerImpl::SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper<
+        CONTAINER, SKIN, FIELDS...>::type;
+}
+
+/** @brief container class for objects (SOA storage)
+ *
+ * @author Manuel Schiller <Manuel.Schiller@cern.ch>
+ * @date 2015-04-10
+ *
+ * @tparam CONTAINER    underlying container type (anything that follows
+ *                      std::vector's interface is fine)
+ * @tparam SKIN         "skin" to dress the the interface of the object
+ *                      proxying the content elemnts; this can be used to
+ *                      augment the interface provided by the get<fieldtag>()
+ *                      syntax with something more convenient; NullSkin leaves
+ *                      the raw interface intact
+ * @tparam FIELDS...    list of "field tags" describing names an types
+ *                      of members (can be omitted if SKIN contains a type
+ *                      fields_typelist that lists the types of fields)
+ *
+ * This class represents a container of objects with the given list of fields,
+ * the objects are not stored as such, but each of object's fields gets its own
+ * storage array, effectively creating a structure-of-arrays (SOA) layout which
+ * is advantageous for vectorisation of algorithms. To illustrate the SOA
+ * layout, first consider the normal array-of-structures (AOS) layout:
+ *
+ * @code
+ * class Point {
+ *     private:
+ *         float m_x;
+ *         float m_y;
+ *     public:
+ *         Point(float x, float y) : m_x(x), m_y(y) { }
+ *         float x() const noexcept { return m_x; }
+ *         float y() const noexcept { return m_y; }
+ *         void setX(float x) noexcept { m_x = x; }
+ *         void setY(float y) noexcept { m_y = y; }
+ *         // plus some routines that do more than just setting/getting members
+ *         float r2() const noexcept
+ *         { return m_x * m_x + m_y * m_y; }
+ * };
+ *
+ * using AOSPoints = std::vector<Point>;
+ * using AOSPoint = Point&;
+ * @endcode
+ *
+ * The memory layout in the example above will be x of element 0, y of element
+ * 0, x of element 1, y of element 1, x of element 2, and so on.
+ *
+ * For the equivalent example in SOA layout, you'd have to do:
+ *
+ * @code
+ * #include "SOAContainer.h"
+ *
+ * // first declare member "tags" which describe the members of the notional
+ * // struct (which will never exist in memory - SOA layout!)
+ *  namespace PointFields {
+ *     using namespace SOATypelist;
+ *     // since we can have more than one member of the same type in our
+ *     // SOA object, we have to do some typedef gymnastics so the compiler
+ *     // can tell them apart
+ *     using x = struct : public wrap_type<float> {};
+ *     using y = struct : public wrap_type<float> {};
+ * };
+ *
+ * // define the "skin", i.e. the outer guise that the naked members "wear"
+ * // to make interaction with the class nice
+ * template <typename NAKEDPROXY>
+ * class SOAPoint : public NAKEDPROXY {
+ *     public:
+ *         /// declare "member fields"
+ *         using fields_typelist = SOATypelist::typelist<
+ *             PointFields::x, PointFields::y>;
+ *
+ *         /// forward constructor to NAKEDPROXY's constructor
+ *         using NAKEDPROXY::NAKEDPROXY;
+ *         /// assignment operator - forward to underlying proxy
+ *         using NAKEDPROXY::operator=;
+ *
+ *         // add your own constructors/assignment operators here
+ *
+ *         float x() const noexcept
+ *         { return this-> template get<PointFields::x>(); }
+ *         float y() const noexcept
+ *         { return this-> template get<PointFields::y>(); }
+ *         void setX(float x) noexcept
+ *         { this-> template get<PointFields::x>() = x; }
+ *         void setY(float y) noexcept
+ *         { this-> template get<PointFields::y>() = y; }
+ *
+ *         // again, something beyond plain setters/getters
+ *         float r2() const noexcept { return x() * x() + y() * y(); }
+ * };
+ *
+ * // define the SOA container type
+ * using SOAPoints = _SOAContainer<
+ *         std::vector, // underlying type for each field
+ *         SOAPoint>;   // skin to "dress" the tuple of fields with
+ * // define the SOAPoint itself
+ * using SOAPoint = typename SOAPoints::proxy;
+ * @endcode
+ *
+ * The code is very similar to the AOS layout example above, but the memory
+ * layout is very different. Internally, the container has two std::vectors,
+ * one which holds all the x "members" of the point structure, and one which
+ * holds all the "y" members.
+ *
+ * Despite all the apparent complexity in defining this container, the use of
+ * the contained points is practically the same in both cases. For example,
+ * consider a piece of code the "normalises" all points to have unit length:
+ *
+ * @code
+ * // normalise to unit length for the old-style AOSPoint
+ * for (AOSPoint p: points) {
+ *     auto ir = 1 / std::sqrt(p.r2());
+ *     p.setX(p.x() * ir), p.setY(p.y() * ir);
+ * }
+ * @endcode
+ *
+ * The only change required is that a different data type is used in
+ * conjunction with the SOAPoint implementation from above:
+ *
+ * @code
+ * // normalise to unit length
+ * for (SOAPoint p: points) {
+ *     auto ir = 1 / std::sqrt(p.r2());
+ *     p.setX(p.x() * ir), p.setY(p.y() * ir);
+ * }
+ * @endcode
+ *
+ * It is important to realise that there's nothing like the struct Point in the
+ * AOS example above - the notion of a point very clearly exists, but the
+ * _SOAContainer will not create such an object at any point in time. Instead,
+ * the container provides an interface to access fields with the get<field_tag>
+ * syntax, or via tuples (conversion to or assignment from tuples is
+ * implemented), if simultaneous access to all fields is desired.
+ *
+ * Apart from these points (which are dictated by the SOA layout and efficiency
+ * considerations), the class tries to follow the example of the interface of
+ * std::vector as closely as possible.
+ *
+ * When using the _SOAContainer class, one must distinguish between elements
+ * (and references to elements) which are stored outside the container and
+ * those that are stored inside the container:
+ *
+ * - When stored inside the container, the element itself does not exist as
+ *   such because of the SOA storage constraint; (const) references and
+ *   pointers are implemented with instances of SKINned SOAObjectProxy and
+ *   SOA(Const)Ptr. On the outside, these classes look and feel like
+ *   references and pointers, but set up memory access to members/fields such
+ *   that the SOA memory layout is preserved.
+ * - When a single element is stored outside of the container (a temporary),
+ *   the SOA layout doesn't make sense (it's just a single element, after
+ *   all), and it is stored as a SKINned std::tuple with the right members.
+ *   The value_type, value_reference and const_value_reference typedefs name
+ *   the type of these objects.
+ *
+ * This distinction becomes important when using or implementing generic
+ * algorithms (like types in the functor passed to std::sort) which sometimes
+ * create a temporary holding a single element outside the container. For
+ * illustration, here's how one would sort by increasing y in the SOAPoint
+ * example from above:
+ *
+ * @code
+ * SOAPoints& c = get_points_from_elsewhere();
+ * std::sort(c.begin(), c.end(),
+ *     [] (decltype(c)::value_const_reference a,
+ *         decltype(c)::value_const_reference b)
+ *     { return a.y() < b.y(); });
+ * @endcode
+ */
+template <template <typename...> class CONTAINER, template <typename> class SKIN,
+         typename... FIELDS>
+class SOAContainer : public _SOAContainerImpl::SOAContainer<CONTAINER, SKIN, FIELDS...>
+{
+    using _SOAContainerImpl::SOAContainer<CONTAINER, SKIN, FIELDS...>::SOAContainer;
 };
 
 #endif // SOACONTAINER_H

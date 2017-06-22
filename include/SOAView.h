@@ -32,221 +32,21 @@ template <typename NAKEDPROXY>
 class NullSkin : public NAKEDPROXY
 {
     public:
-        /// constructor - forward to underlying proxy
-        template <typename... ARGS>
-        NullSkin(ARGS&&... args)
-            // ordinarily, we would like to have the following noexcept
-            // specification here:
-            //
-            // noexcept(noexcept(NAKEDPROXY(std::forward<ARGS>(args)...)))
-            //
-            // however, gcc 4.9 and clang 3.5 insist that NAKEDPROXY's
-            // constructor is protected and refuse the code in the exception
-            // specification (despite the fact that it's perfectly legal to
-            // call that very constructor in the initializer list below
-            // because NullSkin<NAKEDPROXY> is a friend of NAKEDPROXY)
-            : NAKEDPROXY(std::forward<ARGS>(args)...) { }
-
+        /// constructor(s) - forward to underlying proxy
+        using NAKEDPROXY::NAKEDPROXY;
         /// assignment operator - forward to underlying proxy
-        template <typename ARG>
-        NullSkin<NAKEDPROXY>& operator=(const ARG& arg) noexcept(noexcept(
-                    std::declval<NAKEDPROXY>().operator=(arg)))
-        { NAKEDPROXY::operator=(arg); return *this; }
-
-        /// move assignment operator - forward to underlying proxy
-        template <typename ARG>
-        NullSkin<NAKEDPROXY>& operator=(ARG&& arg) noexcept(noexcept(
-                    std::declval<NAKEDPROXY>().operator=(
-                        std::move(arg))))
-        { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+        using NAKEDPROXY::operator=;
 };
 
 // forward decl.
 template < template <typename...> class CONTAINER,
          template <typename> class SKIN, typename... FIELDS>
-class SOAContainer;
+class _SOAContainer;
 
-/** @brief SOA view for objects with given fields (SOA storage)
- *
- * @author Manuel Schiller <Manuel.Schiller@cern.ch>
- * @date 2015-04-10
- *
- * @tparam STORAGE      type to store the underlying ranges
- * @tparam SKIN         "skin" to dress the the interface of the object
- *                      proxying the content elemnts; this can be used to
- *                      augment the interface provided by the get<fieldtag>()
- *                      syntax with something more convenient; NullSkin leaves
- *                      the raw interface intact
- * @tparam FIELDS...    list of "field tags" describing names an types
- *                      of members
- *
- * This class represents an object view of a number of ranges of equal size
- * with the given list of fields.  Objects are not stored as such, but each of
- * object's fields is taken from the corresponding range, effectively creating
- * a structure-of-arrays (SOA) layout which is advantageous for vectorisation
- * of algorithms. To illustrate the SOA layout, first consider the normal
- * array-of-structures (AOS) layout:
- *
- * @code
- * class Point {
- *     private:
- *         float m_x;
- *         float m_y;
- *     public:
- *         Point(float x, float y) : m_x(x), m_y(y) { }
- *         float x() const noexcept { return m_x; }
- *         float y() const noexcept { return m_y; }
- *         void setX(float x) noexcept { m_x = x; }
- *         void setY(float y) noexcept { m_y = y; }
- *         // plus some routines that do more than just setting/getting members
- *         float r2() const noexcept
- *         { return m_x * m_x + m_y * m_y; }
- * };
- *
- * typedef std::vector<Point> AOSPoints;
- * typedef Point& AOSPoint;
- * @endcode
- *
- * The memory layout in the example above will be x of element 0, y of element
- * 0, x of element 1, y of element 1, x of element 2, and so on.
- *
- * For the equivalent example in SOA layout, you'd have to do:
- *
- * @code
- * #include "SOAView.h"
- *
- * // first declare member "tags" which describe the members of the notional
- * // struct (which will never exist in memory - SOA layout!)
- *  namespace PointFields {
- *     using namespace SOATypelist;
- *     // since we can have more than one member of the same type in our
- *     // SOA object, we have to do some typedef gymnastics so the compiler
- *     // can tell them apart
- *     typedef struct : public wrap_type<float> { } x;
- *     typedef struct : public wrap_type<float> { } y;
- * };
- *
- * // define the "skin", i.e. the outer guise that the naked members "wear"
- * // to make interaction with the class nice
- * template <typename NAKEDPROXY>
- * class SOAPoint : public NAKEDPROXY {
- *     public:
- *         /// forward constructor to NAKEDPROXY's constructor
- *         template <typename... ARGS>
- *         SOAPoint(ARGS&&... args) :
- *             NAKEDPROXY(std::forward<ARGS>(args)...) { }
- *
- *         /// assignment operator - forward to underlying proxy
- *         template <typename ARG>
- *         SOAPoint<NAKEDPROXY>& operator=(const ARG& arg)
- *         { NAKEDPROXY::operator=(arg); return *this; }
- *
- *         /// move assignment operator - forward to underlying proxy
- *         template <typename ARG>
- *         SOAPoint<NAKEDPROXY>& operator=(ARG&& arg)
- *         { NAKEDPROXY::operator=(std::move(arg)); return *this; }
- *
- *         float x() const noexcept
- *         { return this-> template get<PointFields::x>(); }
- *         float y() const noexcept
- *         { return this-> template get<PointFields::y>(); }
- *         void setX(float x) noexcept
- *         { this-> template get<PointFields::x>() = x; }
- *         void setY(float y) noexcept
- *         { this-> template get<PointFields::y>() = y; }
- *
- *         // again, something beyond plain setters/getters
- *         float r2() const noexcept { return x() * x() + y() * y(); }
- * };
- *
- * // define the SOA container type
- * typedef SOAView<
- *         // underlying type for storage
- *         std::tuple<std::vector<float>&, std::vector<float>&>,
- *         SOAPoint,    // skin to "dress" the tuple of fields with
- *         // one or more wrapped types which each tag a member/field
- *         PointFields::x, PointFields::y> SOAPoints;
- * // define the SOAPoint itself
- * typedef typename SOAPoints::proxy SOAPoint;
- * @endcode
- *
- * The code is very similar to the AOS layout example above, but the memory
- * layout is very different. Internally, the container has two std::vectors,
- * one which holds all the x "members" of the point structure, and one which
- * holds all the "y" members.
- *
- * Despite all the apparent complexity in defining this container, the use of
- * the contained points is practically the same in both cases. For example,
- * consider a piece of code the "normalises" all points to have unit length:
- *
- * @code
- * // normalise to unit length for the old-style AOSPoint
- * for (AOSPoint p: points) {
- *     auto ir = 1 / std::sqrt(p.r2());
- *     p.setX(p.x() * ir), p.setY(p.y() * ir);
- * }
- * @endcode
- *
- * The only change required is that a different data type is used in
- * conjunction with the SOAPoint implementation from above:
- *
- * @code
- * // normalise to unit length
- * for (SOAPoint p: points) {
- *     auto ir = 1 / std::sqrt(p.r2());
- *     p.setX(p.x() * ir), p.setY(p.y() * ir);
- * }
- * @endcode
- *
- * It is important to realise that there's nothing like the struct Point in the
- * AOS example above - the notion of a point very clearly exists, but the
- * SOAView will not create such an object at any point in time. Instead,
- * the container provides an interface to access fields with the get<field_tag>
- * syntax, or via tuples (conversion to or assignment from tuples is
- * implemented), if simultaneous access to all fields is desired.
- *
- * Apart from these points (which are dictated by the SOA layout and efficiency
- * considerations), the class tries to follow the example of the interface of
- * std::vector as closely as possible.
- *
- * When using the SOAView class, one must distinguish between elements
- * (and references to elements) which are stored outside the container and
- * those that are stored inside the container:
- *
- * - When stored inside the container, the element itself does not exist as
- *   such because of the SOA storage constraint; (const) references and
- *   pointers are implemented with instances of SKINned SOAObjectProxy and
- *   SOA(Const)Ptr. On the outside, these classes look and feel like
- *   references and pointers, but set up memory access to members/fields such
- *   that the SOA memory layout is preserved.
- * - When a single element is stored outside of the container (a temporary),
- *   the SOA layout doesn't make sense (it's just a single element, after
- *   all), and it is stored as a SKINned std::tuple with the right members.
- *   The value_type, value_reference and const_value_reference typedefs name
- *   the type of these objects.
- *
- * This distinction becomes important when using or implementing generic
- * algorithms (like types in the functor passed to std::sort) which sometimes
- * create a temporary holding a single element outside the container. For
- * illustration, here's how one would sort by increasing y in the SOAPoint
- * example from above:
- *
- * @code
- * SOAPoints& c = get_points_from_elsewhere();
- * std::sort(c.begin(), c.end(),
- *     [] (decltype(c)::value_const_reference a,
- *         decltype(c)::value_const_reference b)
- *     { return a.y() < b.y(); });
- * @endcode
- *
- * Since directly constructing a SOAView is a bit stressful, there's a little
- * helper called make_soaview which takes some of the sting out of
- * constructing SOAViews (in much the same way that std::make_pair and
- * std::make_tuple do).
- */
+/// the class that really implements SOAView
 template <class STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-class SOAView {
+class _SOAView {
     private:
         template <template <typename> class PRED, typename... ARGS>
         using ANY = SOAUtils::ANY<PRED, ARGS...>;
@@ -255,7 +55,7 @@ class SOAView {
         /// little helper to find the type contained in a range
         template <typename RANGE>
         struct contained_type {
-            typedef decltype(*std::begin(std::declval<RANGE>())) type;
+            using type = decltype(*std::begin(std::declval<RANGE>()));
         };
         /// hide verification of FIELDS inside struct or doxygen gets confused
         struct fields_verifier {
@@ -328,23 +128,23 @@ class SOAView {
         constexpr static bool is_any_field_constant(const T<ARGS...>*) noexcept
         { return _is_any_field_constant<ARGS...>::value; }
 
-        /// record if the SOAView should be a const one
+        /// record if the _SOAView should be a const one
         enum {
-            is_constant = SOAView<STORAGE, SKIN, FIELDS...
+            is_constant = _SOAView<STORAGE, SKIN, FIELDS...
                 >::is_any_field_constant(static_cast<const STORAGE*>(nullptr))
         };
 
     public:
         /// type to represent sizes and indices
-        typedef std::size_t size_type;
+        using size_type = std::size_t;
         /// type to represent differences of indices
-        typedef std::ptrdiff_t difference_type;
+        using difference_type = std::ptrdiff_t;
         /// type to represent container itself
-        typedef SOAView<STORAGE, SKIN, FIELDS...> self_type;
-        /// typedef holding a typelist with the given fields
-        typedef SOATypelist::typelist<FIELDS...> fields_typelist;
+        using self_type = _SOAView<STORAGE, SKIN, FIELDS...>;
+        /// typelist with the given fields
+        using fields_typelist = SOATypelist::typelist<FIELDS...>;
         /// type of the storage backend
-        typedef STORAGE SOAStorage;
+        using SOAStorage = STORAGE;
 
         /// convenience function to return member number given member tag type
         template <typename MEMBER>
@@ -360,7 +160,7 @@ class SOAView {
                 template <typename T>
                 void operator()(const T& range) const {
                     if (m_sz != range.size())
-                        throw std::logic_error("SOAView: range sizes must match!");
+                        throw std::logic_error("_SOAView: range sizes must match!");
                 }
             };
             /// little helper for assign(count, val)
@@ -418,67 +218,67 @@ class SOAView {
         SOAStorage m_storage;
 
         /// (naked) tuple type used as values
-        typedef typename SOATypelist::to_tuple<
-            fields_typelist>::value_tuple naked_value_tuple_type;
+        using naked_value_tuple_type = typename SOATypelist::to_tuple<
+            fields_typelist>::value_tuple;
         /// (naked) tuple type used as reference
-        typedef typename SOATypelist::to_tuple<
-            fields_typelist>::reference_tuple naked_reference_tuple_type;
+        using naked_reference_tuple_type = typename SOATypelist::to_tuple<
+            fields_typelist>::reference_tuple;
         /// (naked) tuple type used as const reference
-        typedef typename SOATypelist::to_tuple<
-            fields_typelist>::const_reference_tuple naked_const_reference_tuple_type;
+        using naked_const_reference_tuple_type = typename SOATypelist::to_tuple<
+            fields_typelist>::const_reference_tuple;
 
-        SOAView() {}
+        _SOAView() {}
 
     public:
         /// (notion of) type of the contained objects
-        typedef SKIN<DressedTuple<naked_value_tuple_type, self_type> >
-            value_type;
+        using value_type = SKIN<DressedTuple<naked_value_tuple_type, self_type> >;
         /// (notion of) reference to value_type (outside container)
-        typedef SKIN<DressedTuple<naked_reference_tuple_type, self_type> >
-            value_reference;
+        using value_reference = SKIN<DressedTuple<
+            naked_reference_tuple_type, self_type> >;
         /// (notion of) const reference to value_type (outside container)
-        typedef SKIN<DressedTuple<naked_const_reference_tuple_type,
-                self_type> > value_const_reference;
+        using value_const_reference = SKIN<DressedTuple<
+            naked_const_reference_tuple_type, self_type> >;
 
     public:
         /// naked proxy type (to be given a "skin" later)
-        typedef SOAObjectProxy<self_type> naked_proxy;
+        using naked_proxy = SOAObjectProxy<self_type>;
         friend naked_proxy;
-        /// corresponding SOAContainers are friends
+        /// corresponding _SOAContainers are friends
         template < template <typename...> class CONTAINER,
                  template <typename> class SKIN2, typename... FIELDS2>
-        friend class SOAContainer;
+        friend class _SOAContainer;
         /// type of proxy
-        typedef SKIN<naked_proxy> proxy;
+        using proxy = SKIN<naked_proxy>;
         friend proxy;
         /// pointer to contained objects
-        typedef SOAIterator<proxy> pointer;
+        using pointer = SOAIterator<proxy>;
         friend pointer;
         /// iterator type
-        typedef pointer iterator;
+        using iterator = pointer;
         /// reference to contained objects
-        typedef proxy reference;
+        using reference = proxy;
         /// reference to contained objects
-        typedef const reference const_reference;
+        using const_reference = const reference;
         /// const pointer to contained objects
-        typedef SOAConstIterator<proxy> const_pointer;
+        using const_pointer = SOAConstIterator<proxy>;
         friend const_pointer;
         /// const iterator type
-        typedef const_pointer const_iterator;
+        using const_iterator = const_pointer;
         /// reverse iterator type
-        typedef std::reverse_iterator<iterator> reverse_iterator;
+        using reverse_iterator = std::reverse_iterator<iterator>;
         /// const reverse iterator type
-        typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         /// constructor from the underlying storage
-        SOAView(const SOAStorage& other) :
+        _SOAView(const SOAStorage& other) :
             m_storage(other) { }
         /// constructor from the underlying storage
-        SOAView(SOAStorage&& other) :
+        _SOAView(SOAStorage&& other) :
             m_storage(std::move(other)) { }
         /// constructor from a list of ranges
-        template <typename... RANGES, typename std::enable_if<sizeof...(RANGES) == sizeof...(FIELDS), int>::type = 0>
-        SOAView(RANGES&&... ranges) :
+        template <typename... RANGES, typename std::enable_if<
+            sizeof...(RANGES) == sizeof...(FIELDS), int>::type = 0>
+        _SOAView(RANGES&&... ranges) :
             m_storage(std::forward<RANGES>(ranges)...)
         {
             // verify size of ranges
@@ -487,13 +287,13 @@ class SOAView {
                     m_storage, std::make_index_sequence<sizeof...(RANGES)>());
         }
         /// copy constructor
-        SOAView(const self_type& other) = default;
+        _SOAView(const self_type& other) = default;
         /// move constructor
-        SOAView(self_type&& other) = default;
+        _SOAView(self_type&& other) = default;
 
-        /// assignment from other SOAView
+        /// assignment from other _SOAView
         self_type& operator=(const self_type& other) = default;
-        /// move-assignment from other SOAView
+        /// move-assignment from other _SOAView
         self_type& operator=(self_type&& other) = default;
 
         /// return if the container is empty
@@ -777,33 +577,240 @@ class SOAView {
         { std::swap(m_storage, other.m_storage); }
 };
 
-/** @brief construct a SOAView from a skin and a bunch of ranges
+/// more _SOAView implementation details
+namespace _SOAViewImpl {
+    struct dummy {};
+    /// helper to allow flexibility in how fields are supplied
+    template <class STORAGE, template <typename> class SKIN,
+             class... TYPELISTORFIELDS>
+    struct SOAViewFieldsFromTypelistOrTemplateParameterPackHelper {
+        using type = _SOAView<STORAGE, SKIN, TYPELISTORFIELDS...>;
+    };
+    /// helper to allow flexibility in how fields are supplied
+    template <class STORAGE, template <typename> class SKIN,
+             class... FIELDS, class... EXTRA>
+    struct SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<
+        STORAGE, SKIN, SOATypelist::typelist<FIELDS...>, EXTRA... >
+    {
+        static_assert(!sizeof...(EXTRA), "typelist or variadic, not both");
+        using type = _SOAView<STORAGE, SKIN, FIELDS...>;
+    };
+    /// helper to allow flexibility in how fields are supplied
+    template <class STORAGE, template <typename> class SKIN>
+    struct SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<STORAGE, SKIN>
+    {
+        using type = typename
+            SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<
+            STORAGE, SKIN, typename SKIN<dummy>::fields_typelist>::type;
+    };
+template <class STORAGE, template <typename> class SKIN, typename... FIELDS>
+using SOAView = typename
+    _SOAViewImpl::SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<
+    STORAGE, SKIN, FIELDS...>::type;
+}
+
+/** @brief SOA view for objects with given fields (SOA storage)
+ *
+ * @author Manuel Schiller <Manuel.Schiller@cern.ch>
+ * @date 2015-04-10
+ *
+ * @tparam STORAGE      type to store the underlying ranges
+ * @tparam SKIN         "skin" to dress the the interface of the object
+ *                      proxying the content elemnts; this can be used to
+ *                      augment the interface provided by the get<fieldtag>()
+ *                      syntax with something more convenient; NullSkin leaves
+ *                      the raw interface intact
+ * @tparam FIELDS...    list of "field tags" describing names an types
+ *                      of members (can be omitted if SKIN contains a type
+ *                      fields_typelist that lists the types of fields)
+ *
+ * This templated class represents an object view of a number of ranges of
+ * equal size with the given list of fields.  Objects are not stored as such,
+ * but each of object's fields is taken from the corresponding range,
+ * effectively creating a structure-of-arrays (SOA) layout which is
+ * advantageous for vectorisation of algorithms. To illustrate the SOA layout,
+ * first consider the normal array-of-structures (AOS) layout:
+ *
+ * @code
+ * class Point {
+ *     private:
+ *         float m_x;
+ *         float m_y;
+ *     public:
+ *         Point(float x, float y) : m_x(x), m_y(y) { }
+ *         float x() const noexcept { return m_x; }
+ *         float y() const noexcept { return m_y; }
+ *         void setX(float x) noexcept { m_x = x; }
+ *         void setY(float y) noexcept { m_y = y; }
+ *         // plus some routines that do more than just setting/getting members
+ *         float r2() const noexcept
+ *         { return m_x * m_x + m_y * m_y; }
+ * };
+ *
+ * using AOSPoints = std::vector<Point>;
+ * using AOSPoint = Point&;
+ * @endcode
+ *
+ * The memory layout in the example above will be x of element 0, y of element
+ * 0, x of element 1, y of element 1, x of element 2, and so on.
+ *
+ * For the equivalent example in SOA layout, you'd have to do:
+ *
+ * @code
+ * #include "SOAView.h"
+ *
+ * // first declare member "tags" which describe the members of the notional
+ * // struct (which will never exist in memory - SOA layout!)
+ *  namespace PointFields {
+ *     using namespace SOATypelist;
+ *     // since we can have more than one member of the same type in our
+ *     // SOA object, we have to do some typedef gymnastics so the compiler
+ *     // can tell them apart
+ *     struct x : wrap_type<float> { };
+ *     struct y : wrap_type<float> { };
+ * };
+ *
+ * // define the "skin", i.e. the outer guise that the naked members "wear"
+ * // to make interaction with the class nice
+ * template <typename NAKEDPROXY>
+ * class SOAPoint : public NAKEDPROXY {
+ *     public:
+ *         /// define the fields (members) typelist
+ *         using fields_typelist =
+ *             SOATypelist::typelist<PointFields::x, PointFields::y>;
+ *         /// forward constructor to NAKEDPROXY's constructor
+ *         using NAKEDPROXY::NAKEDPROXY;
+ *         /// assignment operator - forward to underlying proxy
+ *         using NAKEDPROXY::operator=;
+ *
+ *         // add your own constructors/assignment operators here
+ *
+ *         float x() const noexcept
+ *         { return this-> template get<PointFields::x>(); }
+ *         float y() const noexcept
+ *         { return this-> template get<PointFields::y>(); }
+ *         void setX(float x) noexcept
+ *         { this-> template get<PointFields::x>() = x; }
+ *         void setY(float y) noexcept
+ *         { this-> template get<PointFields::y>() = y; }
+ *
+ *         // again, something beyond plain setters/getters
+ *         float r2() const noexcept { return x() * x() + y() * y(); }
+ * };
+ *
+ * // define the SOA container type
+ * using SOAPoints = SOAView<
+ *         // underlying type for storage
+ *         std::tuple<std::vector<float>&, std::vector<float>&>,
+ *         SOAPoint>;   // skin to "dress" the tuple of fields with
+ * // define the SOAPoint itself
+ * using SOAPoint = typename SOAPoints::proxy;
+ * @endcode
+ *
+ * The code is very similar to the AOS layout example above, but the memory
+ * layout is very different. Internally, the container has two std::vectors,
+ * one which holds all the x "members" of the point structure, and one which
+ * holds all the "y" members.
+ *
+ * Despite all the apparent complexity in defining this container, the use of
+ * the contained points is practically the same in both cases. For example,
+ * consider a piece of code the "normalises" all points to have unit length:
+ *
+ * @code
+ * // normalise to unit length for the old-style AOSPoint
+ * for (AOSPoint p: points) {
+ *     auto ir = 1 / std::sqrt(p.r2());
+ *     p.setX(p.x() * ir), p.setY(p.y() * ir);
+ * }
+ * @endcode
+ *
+ * The only change required is that a different data type is used in
+ * conjunction with the SOAPoint implementation from above:
+ *
+ * @code
+ * // normalise to unit length
+ * for (SOAPoint p: points) {
+ *     auto ir = 1 / std::sqrt(p.r2());
+ *     p.setX(p.x() * ir), p.setY(p.y() * ir);
+ * }
+ * @endcode
+ *
+ * It is important to realise that there's nothing like the struct Point in the
+ * AOS example above - the notion of a point very clearly exists, but the
+ * SOAView will not create such an object at any point in time. Instead,
+ * the container provides an interface to access fields with the get<field_tag>
+ * syntax, or via tuples (conversion to or assignment from tuples is
+ * implemented), if simultaneous access to all fields is desired.
+ *
+ * Apart from these points (which are dictated by the SOA layout and efficiency
+ * considerations), the class tries to follow the example of the interface of
+ * std::vector as closely as possible.
+ *
+ * When using the SOAView class, one must distinguish between elements
+ * (and references to elements) which are stored outside the container and
+ * those that are stored inside the container:
+ *
+ * - When stored inside the container, the element itself does not exist as
+ *   such because of the SOA storage constraint; (const) references and
+ *   pointers are implemented with instances of SKINned SOAObjectProxy and
+ *   SOA(Const)Ptr. On the outside, these classes look and feel like
+ *   references and pointers, but set up memory access to members/fields such
+ *   that the SOA memory layout is preserved.
+ * - When a single element is stored outside of the container (a temporary),
+ *   the SOA layout doesn't make sense (it's just a single element, after
+ *   all), and it is stored as a SKINned std::tuple with the right members.
+ *   The value_type, value_reference and const_value_reference typedefs name
+ *   the type of these objects.
+ *
+ * This distinction becomes important when using or implementing generic
+ * algorithms (like types in the functor passed to std::sort) which sometimes
+ * create a temporary holding a single element outside the container. For
+ * illustration, here's how one would sort by increasing y in the SOAPoint
+ * example from above:
+ *
+ * @code
+ * SOAPoints& c = get_points_from_elsewhere();
+ * std::sort(c.begin(), c.end(),
+ *     [] (decltype(c)::value_const_reference a,
+ *         decltype(c)::value_const_reference b)
+ *     { return a.y() < b.y(); });
+ * @endcode
+ *
+ * Since directly constructing a SOAView is a bit stressful, there's a little
+ * helper called make_soaview which takes some of the sting out of
+ * constructing SOAViews (in much the same way that std::make_pair and
+ * std::make_tuple do).
+ */
+template <class STORAGE, template <typename> class SKIN, typename... FIELDS>
+class SOAView : public _SOAViewImpl::SOAView<STORAGE, SKIN, FIELDS...> 
+{
+    using _SOAViewImpl::SOAView<STORAGE, SKIN, FIELDS...>::SOAView;
+};
+
+/** @brief construct a _SOAView from a skin and a bunch of ranges
  *
  * @tparam SKIN         type of skin class to use
- * @tparam FIELDS       types of fields
  * @tparam RANGES       types of the ranges supplied
  *
- * @param ranges        ranges from which to construct a SOAView
+ * @param ranges        ranges from which to construct a _SOAView
  *
  * @returns a SOAView of the ranges given
  *
  * @code
  * std::vector<float> vx, vy;
  * // fill vx, vy somehow - same number of elements
- * typedef struct : SOATypelist::wrap_type<float> {} field_x;
- * typedef struct : SOATypelist::wrap_type<float> {} field_y;
+ * using field_x = struct : SOATypelist::wrap_type<float> {};
+ * using field_y = struct : SOATypelist::wrap_type<float> {};
  * template <typename NAKEDPROXY>
  * class SOAPoint : public NAKEDPROXY {
  *     public:
- *         template <typename... ARGS>
- *         SOAPoint(ARGS&&... args) :
- *             NAKEDPROXY(std::forward<ARGS>(args)...) { }
- *         template <typename ARG>
- *         SOAPoint<NAKEDPROXY>& operator=(const ARG& arg)
- *         { NAKEDPROXY::operator=(arg); return *this; }
- *         template <typename ARG>
- *         SOAPoint<NAKEDPROXY>& operator=(ARG&& arg)
- *         { NAKEDPROXY::operator=(std::move(arg)); return *this; }
+ *         /// define a list of "data member" fields
+ *         using fields_typelist = SOATypelist::typelist<field_x, field_y>;
+ *
+ *         /// pull in the standard constructors and assignment operators
+ *         using NAKEDPROXY::NAKEDPROXY;
+ *         using NAKEDPROXY::operator=;
+ *         /// if you define your own, they go here
  *
  *         float x() const noexcept
  *         { return this-> template get<field_x>(); }
@@ -815,8 +822,8 @@ class SOAView {
  *         { return this-> template get<field_y>(); }
  *         float r2() const noexcept { return x() * x() + y() * y(); }
  * };
- * // construct a SOAView from vx, vy
- * auto view = make_soaview<SOAPoint, field_x, field_y>(vx, vy);
+ * // construct a _SOAView from vx, vy
+ * auto view = make_soaview<SOAPoint>(vx, vy);
  * const float angle = 42.f / 180.f * M_PI;
  * const auto s = std::sin(angle), c = std::cos(angle);
  * for (auto p: view) {
@@ -827,12 +834,10 @@ class SOAView {
  * }
  * @endcode
  */
-template <template <typename> class SKIN,
-         typename... FIELDS, typename... RANGES>
-SOAView<std::tuple<RANGES...>, SKIN, FIELDS...>
-make_soaview(RANGES&&... ranges)
+template <template <typename> class SKIN, typename... RANGES>
+SOAView<std::tuple<RANGES...>, SKIN> make_soaview(RANGES&&... ranges)
 {
-    return SOAView<std::tuple<RANGES...>, SKIN, FIELDS...>
+    return SOAView<std::tuple<RANGES...>, SKIN>
         (std::forward<RANGES>(ranges)...);
 }
 
@@ -841,15 +846,14 @@ namespace std {
     template <typename STORAGE,
              template <typename> class SKIN,
              typename... FIELDS>
-    void swap(const SOAView<STORAGE, SKIN, FIELDS...>& a,
-            const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+    void swap(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
+            const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
                 noexcept(a.swap(b)))
     { a.swap(b); }
 }
 
-/// more SOAView implementation details
-namespace SOAViewImpl {
-    /// helper class to compare SOAViews (field by field)
+namespace _SOAViewImpl {
+    /// helper class to compare _SOAViews (field by field)
     template <template <typename> class COMP, std::size_t N> class compare {
         private:
             /// compare field N - 1 element by element
@@ -876,7 +880,7 @@ namespace SOAViewImpl {
             { return compare<COMP, N - 1>()(a, b) && doit(a, b); }
     };
 
-    /// helper class to compare SOAViews, specialised N = 1
+    /// helper class to compare _SOAViews, specialised N = 1
     template <template <typename> class COMP> class compare<COMP, 1> {
         private:
             /// compare field 0 element by element
@@ -904,45 +908,45 @@ namespace SOAViewImpl {
     };
 }
 
-/// compare two SOAViews for equality
+/// compare two _SOAViews for equality
 template <typename STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-bool operator==(const SOAView<STORAGE, SKIN, FIELDS...>& a,
-        const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+bool operator==(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
+        const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
             noexcept(a.size()) && noexcept(
-                SOAViewImpl::compare<std::equal_to,
-                SOAView<STORAGE, SKIN, FIELDS...
+                _SOAViewImpl::compare<std::equal_to,
+                _SOAView<STORAGE, SKIN, FIELDS...
                 >::fields_typelist::size()>()(a, b)))
 {
     if (a.size() != b.size()) return false;
     // compare one field at a time
-    return SOAViewImpl::compare<std::equal_to,
-           SOAView<STORAGE, SKIN, FIELDS...
+    return _SOAViewImpl::compare<std::equal_to,
+           _SOAView<STORAGE, SKIN, FIELDS...
                >::fields_typelist::size()>()(a, b);
 }
 
-/// compare two SOAViews for inequality
+/// compare two _SOAViews for inequality
 template <typename STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-bool operator!=(const SOAView<STORAGE, SKIN, FIELDS...>& a,
-        const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+bool operator!=(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
+        const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
             noexcept(a.size()) && noexcept(
-                SOAViewImpl::compare<std::not_equal_to,
-                SOAView<STORAGE, SKIN, FIELDS...
+                _SOAViewImpl::compare<std::not_equal_to,
+                _SOAView<STORAGE, SKIN, FIELDS...
                 >::fields_typelist::size()>()(a, b)))
 {
     if (a.size() != b.size()) return true;
     // compare one field at a time
-    return SOAViewImpl::compare<std::not_equal_to,
-           SOAView<STORAGE, SKIN, FIELDS...
+    return _SOAViewImpl::compare<std::not_equal_to,
+           _SOAView<STORAGE, SKIN, FIELDS...
                >::fields_typelist::size()>()(a, b);
 }
 
-/// compare two SOAViews lexicographically using <
+/// compare two _SOAViews lexicographically using <
 template <typename STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-bool operator<(const SOAView<STORAGE, SKIN, FIELDS...>& a,
-        const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+bool operator<(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
+        const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
             noexcept(std::lexicographical_compare(a.cbegin(), a.cend(),
                     b.cbegin(), b.cend(),
                     std::less<decltype(a.front())>())))
@@ -951,27 +955,27 @@ bool operator<(const SOAView<STORAGE, SKIN, FIELDS...>& a,
             b.cbegin(), b.cend(), std::less<decltype(a.front())>());
 }
 
-/// compare two SOAViews lexicographically using >
+/// compare two _SOAViews lexicographically using >
 template <typename STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-bool operator>(const SOAView<STORAGE, SKIN, FIELDS...>& a,
-        const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+bool operator>(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
+        const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
             noexcept(b < a))
 { return b < a; }
 
-/// compare two SOAViews lexicographically using <=
+/// compare two _SOAViews lexicographically using <=
 template <typename STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-bool operator<=(const SOAView<STORAGE, SKIN, FIELDS...>& a,
-        const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+bool operator<=(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
+        const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
             noexcept(!(a > b)))
 { return !(a > b); }
 
-/// compare two SOAViews lexicographically using >=
+/// compare two _SOAViews lexicographically using >=
 template <typename STORAGE,
     template <typename> class SKIN, typename... FIELDS>
-bool operator>=(const SOAView<STORAGE, SKIN, FIELDS...>& a,
-        const SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+bool operator>=(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
+        const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
             noexcept(!(a < b)))
 { return !(a < b); }
 

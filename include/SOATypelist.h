@@ -39,18 +39,18 @@ namespace SOATypelist {
 
     /// little switch for typelist
     template <std::size_t LEN, typename... ARGS> struct __typelist {
-        typedef typelist<ARGS...> type;
+        using type = typelist<ARGS...>;
     };
     /// little switch for typelist (specialisation)
     template <typename... ARGS> struct __typelist<0, ARGS...> {
-        typedef empty_typelist type;
+        using type = empty_typelist;
     };
     } // namespace typelist_impl
 
     template <typename HEAD, typename... ARGS>
     struct typelist {
         /// first element
-        typedef HEAD head_type;
+        using head_type = HEAD;
         /// typelist empty?
         constexpr static bool empty() noexcept
         { return std::is_same<HEAD, typelist_impl::empty_typelist>::value; }
@@ -58,8 +58,7 @@ namespace SOATypelist {
         constexpr static std::size_t size() noexcept
         { return (!empty()) + sizeof...(ARGS); }
         /// tail typelist
-        typedef typename typelist_impl::__typelist<size(), ARGS...>::type
-        tail_types;
+        using tail_types = typename typelist_impl::__typelist<size(), ARGS...>::type;
         /// return type at index IDX
         template <std::size_t IDX, bool PASTEND =
             (IDX >= typelist<HEAD, ARGS...>::size()), int DUMMY = 0>
@@ -68,10 +67,10 @@ namespace SOATypelist {
         template <std::size_t IDX, int DUMMY> struct at<IDX, true, DUMMY> {};
         /// specialisation: specialisation for reading types at valid indices
         template <std::size_t IDX, int DUMMY> struct at<IDX, false, DUMMY>
-        { typedef typename tail_types::template at<IDX - 1>::type type; };
+        { using type = typename tail_types::template at<IDX - 1>::type; };
         /// specialisation: specialisation for reading types at valid indices
         template <int DUMMY> struct at<0, false, DUMMY>
-        { typedef head_type type; };
+        { using type = head_type; };
         /// find a type, return its index, or -1 if not found
         template <typename T, std::size_t OFS = 0>
         constexpr static std::size_t find() noexcept

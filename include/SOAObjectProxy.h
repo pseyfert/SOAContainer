@@ -21,16 +21,16 @@ template <typename PROXY>
 class SOAIterator;
 template < template <typename...> class CONTAINER,
          template <typename> class SKIN, typename... FIELDS>
-class SOAContainer;
+class _SOAContainer;
 
 /** @brief proxy object for the elements stored in the container.
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
  * @date 2015-04-10
  *
- * Conceptually, the SOAContainer contains a collection of objects
+ * Conceptually, the _SOAContainer contains a collection of objects
  * which have some data members. To optimise the data access patterns
- * in memory, the SOAContainer doesn't store the objects themselves,
+ * in memory, the _SOAContainer doesn't store the objects themselves,
  * but containers which each store a different member. That means the
  * conceptual objects mentioned above do not exist as such. The
  * SOAObjectProxy class stands in for these objects, and provides
@@ -41,39 +41,39 @@ template <typename PARENTCONTAINER>
 class SOAObjectProxy {
     public:
         /// type of parent container
-        typedef PARENTCONTAINER parent_type;
+        using parent_type = PARENTCONTAINER;
         /// type to refer to this type
-        typedef SOAObjectProxy<PARENTCONTAINER> self_type;
+        using self_type = SOAObjectProxy<PARENTCONTAINER>;
         /// type to hold the distance between two iterators
-        typedef typename parent_type::difference_type difference_type;
+        using difference_type = typename parent_type::difference_type;
         /// type to hold the size of a container
-        typedef typename parent_type::size_type size_type;
+        using size_type = typename parent_type::size_type;
         /// type to which SOAObjectProxy converts and can be assigned from
-        typedef typename parent_type::value_type value_type;
-        /// typedef for tuple of references to members
-        typedef typename parent_type::value_reference reference;
-        /// typedef for tuple of const references to members
-        typedef typename parent_type::value_const_reference const_reference;
-        /// typedef to identify the type of a pointer
-        typedef SOAIterator<typename parent_type::proxy> pointer;
-        /// typedef to identify the type of a const pointer
-        typedef SOAConstIterator<typename parent_type::proxy> const_pointer;
+        using value_type = typename parent_type::value_type;
+        /// type for tuple of references to members
+        using reference = typename parent_type::value_reference;
+        /// type for tuple of const references to members
+        using const_reference = typename parent_type::value_const_reference;
+        /// type of a pointer
+        using pointer = SOAIterator<typename parent_type::proxy>;
+        /// type of a const pointer
+        using const_pointer = SOAConstIterator<typename parent_type::proxy>;
 
     protected:
         /// type used by the parent container to hold the SOA data
-        typedef typename parent_type::SOAStorage SOAStorage;
+        using SOAStorage = typename parent_type::SOAStorage;
         /// typelist of fields
-        typedef typename parent_type::fields_typelist fields_typelist;
+        using fields_typelist = typename parent_type::fields_typelist;
 
         SOAStorage* m_storage;  ///< underlying SOA storage of members
         size_type m_index;      ///< index into underlying SOA storage
 
-        // SOAContainer is allowed to invoke the private constructor
+        // _SOAContainer is allowed to invoke the private constructor
         friend parent_type;
-        /// corresponding SOAContainers are friends
+        /// corresponding _SOAContainers are friends
         template < template <typename...> class CONTAINER,
                  template <typename> class SKIN, typename... FIELDS>
-        friend class SOAContainer;
+        friend class _SOAContainer;
         // so is the pointer/iterator type
         friend pointer;
         // and the const pointer/iterator type

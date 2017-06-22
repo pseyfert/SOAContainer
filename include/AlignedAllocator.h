@@ -58,15 +58,15 @@ class AlignedAllocator {
         AlignedAllocator(const AlignedAllocator<U, ALIGN>&) {}
 
         /// type being allocated
-        typedef T value_type;
+        using value_type = T;
         /// type of pointer
-        typedef T* pointer;
+        using pointer = T*;
         /// type of const pointer
-        typedef const T* const_pointer;
+        using const_pointer = const T*;
         /// type of reference
-        typedef T& reference;
+        using reference = T&;
         /// type of const_reference
-        typedef const T& const_reference;
+        using const_reference = const T&;
         /// type used for sizes
         using size_type = std::size_t;
         /// type used for (pointer) differences
@@ -75,7 +75,7 @@ class AlignedAllocator {
         using propagate_on_container_move_assignment = std::true_type;
         /// allocator type for a different underlying type -- U instead of T
         template <typename U>
-        struct rebind { typedef AlignedAllocator<U, ALIGN> other; };
+        struct rebind { using other = AlignedAllocator<U, ALIGN>; };
         // C++17
         // using is_always_equal = typename std::allocator<T>::is_always_equal;
 

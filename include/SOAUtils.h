@@ -192,9 +192,9 @@ namespace SOAUtils {
 
     /** @brief zip together tuples
      *
-     * @template OBJS... parameter pack of types of tuples to zip
+     * @tparam OBJS... parameter pack of types of tuples to zip
      *
-     * @param objs...    tuples to zip
+     * @param objs       tuples to zip
      * @returns          a tuple of zipped tuples
      *
      * Given N tuples with elements (a0, a1, ..., a_M), (b0, b1, ... b_M), ...,

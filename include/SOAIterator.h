@@ -18,7 +18,7 @@ template<typename T>
 std::ostream& operator<<(std::ostream&, const SOAConstIterator<T>&);
 template < template <typename...> class CONTAINER,
     template <typename> class SKIN, typename... FIELDS>
-class SOAContainer;
+class _SOAContainer;
 
 /** @brief class mimicking a const pointer to pointee inidicated by PROXY
  *
@@ -32,19 +32,19 @@ class SOAConstIterator
 {
     protected:
         /// parent type (underlying container)
-        typedef typename PROXY::parent_type parent_type;
+        using parent_type = typename PROXY::parent_type;
         // parent container is a friend
         friend parent_type;
-        /// corresponding SOAContainers are friends
+        /// corresponding _SOAContainers are friends
         template < template <typename...> class CONTAINER,
                  template <typename> class SKIN, typename... FIELDS>
-        friend class SOAContainer;
+        friend class _SOAContainer;
         /// parent's proxy type
-        typedef PROXY proxy;
+        using proxy = PROXY;
         // underlying "dressed" proxy is friend as well
         friend proxy;
         /// parent's naked proxy type
-        typedef typename parent_type::naked_proxy naked_proxy;
+        using naked_proxy = typename parent_type::naked_proxy;
         // underlying "naked" proxy is friend as well
         friend naked_proxy;
 
@@ -52,24 +52,24 @@ class SOAConstIterator
 
 
     public:
-        /// convenience typedef for our own type
-        typedef SOAConstIterator<proxy> self_type;
+        /// convenience using = for our own type
+        using self_type = SOAConstIterator<proxy>;
         /// import value_type from proxy
-        typedef typename proxy::value_type value_type;
+        using value_type = typename proxy::value_type;
         /// import size_type from proxy
-        typedef typename proxy::size_type size_type;
+        using size_type = typename proxy::size_type;
         /// import difference_type from proxy
-        typedef typename proxy::difference_type difference_type;
-        /// typedef for reference to pointee
-        typedef const proxy reference;
-        /// typedef for const reference to pointee
-        typedef const proxy const_reference;
-        /// typedef for pointer
-        typedef typename proxy::pointer pointer;
-        /// typedef for const pointer
-        typedef typename proxy::const_pointer const_pointer;
+        using difference_type = typename proxy::difference_type;
+        /// using = for reference to pointee
+        using reference = const proxy;
+        /// using = for const reference to pointee
+        using const_reference = const proxy;
+        /// using = for pointer
+        using pointer = typename proxy::pointer;
+        /// using = for const pointer
+        using const_pointer = typename proxy::const_pointer;
         /// iterator category
-        typedef std::random_access_iterator_tag iterator_category;
+        using iterator_category = std::random_access_iterator_tag;
 
     protected:
         /// constructor building proxy in place
@@ -256,41 +256,41 @@ class SOAIterator : public SOAConstIterator<PROXY>
 {
     private:
         /// parent type (underlying container)
-        typedef typename PROXY::parent_type parent_type;
+        using parent_type = typename PROXY::parent_type;
         // parent container is a friend
         friend parent_type;
         /// parent's proxy type
-        typedef PROXY proxy;
+        using proxy = PROXY;
         // underlying "dressed" proxy is friend as well
         friend proxy;
-        /// corresponding SOAContainers are friends
+        /// corresponding _SOAContainers are friends
         template < template <typename...> class CONTAINER,
                  template <typename> class SKIN, typename... FIELDS>
-        friend class SOAContainer;
+        friend class _SOAContainer;
         /// parent's naked proxy type
-        typedef typename parent_type::naked_proxy naked_proxy;
+        using naked_proxy = typename parent_type::naked_proxy;
         // underlying "naked" proxy is friend as well
         friend naked_proxy;
 
     public:
-        /// convenience typedef for our own type
-        typedef SOAIterator<proxy> self_type;
+        /// convenience using = for our own type
+        using self_type = SOAIterator<proxy>;
         /// import value_type from proxy
-        typedef typename proxy::value_type value_type;
+        using value_type = typename proxy::value_type;
         /// import size_type from proxy
-        typedef typename proxy::size_type size_type;
+        using size_type = typename proxy::size_type;
         /// import difference_type from proxy
-        typedef typename proxy::difference_type difference_type;
-        /// typedef for reference to pointee
-        typedef proxy reference;
-        /// typedef for const reference to pointee
-        typedef const proxy const_reference;
-        /// typedef for pointer
-        typedef SOAIterator<proxy> pointer;
-        /// typedef for const pointer
-        typedef SOAConstIterator<proxy> const_pointer;
+        using difference_type = typename proxy::difference_type;
+        /// using = for reference to pointee
+        using reference = proxy;
+        /// using = for const reference to pointee
+        using const_reference = const proxy;
+        /// using = for pointer
+        using pointer = SOAIterator<proxy>;
+        /// using = for const pointer
+        using const_pointer = SOAConstIterator<proxy>;
         /// iterator category
-        typedef std::random_access_iterator_tag iterator_category;
+        using iterator_category = std::random_access_iterator_tag;
 
     private:
         /// constructor building proxy in place
