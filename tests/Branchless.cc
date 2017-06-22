@@ -1,4 +1,4 @@
-/** @file Branchless.cpp
+/** @file Branchless.cc
  *
  * unit test for branchless programming by providing a branchless substitute
  * of the ternary operator, "cond ? vTrue : vFalse"

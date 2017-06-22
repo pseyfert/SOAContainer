@@ -22,7 +22,7 @@ class DressedTuple : public TUPLE
 {
     public:
         /// convenience typedef
-        typedef DressedTuple<TUPLE, CONTAINER> self_type;
+        using self_type = DressedTuple<TUPLE, CONTAINER>;
 
         /// use TUPLE's constructors if possible
         using TUPLE::TUPLE;

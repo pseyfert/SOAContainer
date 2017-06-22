@@ -67,10 +67,10 @@ class _SOAContainer : public SOAView<
         };
 
         /// give a short and convenient name to base class
-        typedef SOAView<
+        using BASE = SOAView<
             typename SOATypelist::to_tuple<SOATypelist::typelist<FIELDS...>
                      >::template container_tuple<CONTAINER>,
-            SKIN, FIELDS...> BASE;
+            SKIN, FIELDS...>;
     public:
         /// type for sizes
         using size_type = typename BASE::size_type;
@@ -101,8 +101,8 @@ class _SOAContainer : public SOAView<
         /// type of the underlying storage
         using SOAStorage = typename BASE::SOAStorage;
         /// type to represent container itself
-        typedef _SOAContainer<CONTAINER, SKIN, FIELDS...> self_type;
-        /// typedef holding a typelist with the given fields
+        using self_type = _SOAContainer<CONTAINER, SKIN, FIELDS...>;
+        /// typelist with the given fields
         using fields_typelist = typename BASE::fields_typelist;
 
         /// convenience function to return member number given member tag type
@@ -700,9 +700,14 @@ namespace _SOAContainerImpl {
             SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper<
             CONTAINER, SKIN, typename SKIN<dummy>::fields_typelist>::type;
     };
+    template <template <typename...> class CONTAINER, template <typename> class SKIN,
+             typename... FIELDS>
+    using SOAContainer = typename
+        _SOAContainerImpl::SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper<
+        CONTAINER, SKIN, FIELDS...>::type;
 }
 
-/** @brief typedef for container class for objects (SOA storage)
+/** @brief container class for objects (SOA storage)
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
  * @date 2015-04-10
@@ -740,8 +745,8 @@ namespace _SOAContainerImpl {
  *         { return m_x * m_x + m_y * m_y; }
  * };
  *
- * typedef std::vector<Point> AOSPoints;
- * typedef Point& AOSPoint;
+ * using AOSPoints = std::vector<Point>;
+ * using AOSPoint = Point&;
  * @endcode
  *
  * The memory layout in the example above will be x of element 0, y of element
@@ -759,8 +764,8 @@ namespace _SOAContainerImpl {
  *     // since we can have more than one member of the same type in our
  *     // SOA object, we have to do some typedef gymnastics so the compiler
  *     // can tell them apart
- *     typedef struct : public wrap_type<float> { } x;
- *     typedef struct : public wrap_type<float> { } y;
+ *     using x = struct : public wrap_type<float> {};
+ *     using y = struct : public wrap_type<float> {};
  * };
  *
  * // define the "skin", i.e. the outer guise that the naked members "wear"
@@ -793,12 +798,11 @@ namespace _SOAContainerImpl {
  * };
  *
  * // define the SOA container type
- * typedef _SOAContainer<
+ * using SOAPoints = _SOAContainer<
  *         std::vector, // underlying type for each field
- *         SOAPoint>    // skin to "dress" the tuple of fields with
- *         SOAPoints;
+ *         SOAPoint>;   // skin to "dress" the tuple of fields with
  * // define the SOAPoint itself
- * typedef typename SOAPoints::proxy SOAPoint;
+ * using SOAPoint = typename SOAPoints::proxy;
  * @endcode
  *
  * The code is very similar to the AOS layout example above, but the memory
@@ -872,9 +876,10 @@ namespace _SOAContainerImpl {
  */
 template <template <typename...> class CONTAINER, template <typename> class SKIN,
          typename... FIELDS>
-using SOAContainer = typename
-    _SOAContainerImpl::SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper<
-    CONTAINER, SKIN, FIELDS...>::type;
+class SOAContainer : public _SOAContainerImpl::SOAContainer<CONTAINER, SKIN, FIELDS...>
+{
+    using _SOAContainerImpl::SOAContainer<CONTAINER, SKIN, FIELDS...>::SOAContainer;
+};
 
 #endif // SOACONTAINER_H
 

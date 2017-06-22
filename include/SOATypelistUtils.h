@@ -26,10 +26,10 @@ namespace SOATypelist {
     template<typename T, bool DUMMY = is_wrapped<T>::value> struct wrap_type;
     /// specialisation: wrapping a wrap_type results in the type itself
     template<typename T> struct wrap_type<T, true>
-    { typedef struct {} wrap_tag; typedef typename T::type type; };
+    { using wrap_tag = struct {}; using type = typename T::type; };
     /// specialisation: wrap a type
     template<typename T> struct wrap_type<T, false>
-    { typedef struct {} wrap_tag; typedef T type; };
+    { using wrap_tag = struct {}; using type = T; };
     /// little helper to "unwrap" wrapped types (wrap_type, see above)
     template <typename T> using unwrap_t = typename wrap_type<T>::type;
 
@@ -42,13 +42,13 @@ namespace SOATypelist {
 
     // compile-time test wrapping and interaction with typelists
     namespace __impl_compile_time_tests {
-        typedef struct : public wrap_type<double> {} xAtYEq0;
-        typedef struct : public wrap_type<double> {} zAtYEq0;
-        typedef struct : public wrap_type<double> {} y;
-        typedef struct : public wrap_type<double> {} dxdy;
-        typedef struct : public wrap_type<double> {} dzdy;
+        using xAtYEq0 = struct : public wrap_type<double> {};
+        using zAtYEq0 = struct : public wrap_type<double> {};
+        using y = struct : public wrap_type<double> {};
+        using dxdy = struct : public wrap_type<double> {};
+        using dzdy = struct : public wrap_type<double> {};
 
-        typedef typelist<xAtYEq0, zAtYEq0, y, dxdy, dzdy> hitfields;
+        using hitfields = typelist<xAtYEq0, zAtYEq0, y, dxdy, dzdy>;
         static_assert(0 == hitfields::find<xAtYEq0>(),
                 "lookup with typedefs won't work");
         static_assert(1 == hitfields::find<zAtYEq0>(),

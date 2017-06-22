@@ -23,15 +23,15 @@
 /// implementation details for sel operator (see below)
 namespace SelImplementation {
     /// operate on 64 bits at a time by default
-    template <unsigned SZ> struct IntType { typedef uint64_t type; };
+    template <unsigned SZ> struct IntType { using type = uint64_t; };
     /// specialisations for smaller objects
-    template <> struct IntType<1> { typedef uint8_t  type; };
+    template <> struct IntType<1> { using type = uint8_t; };
     /// specialisations for smaller objects
-    template <> struct IntType<2> { typedef uint16_t type; };
+    template <> struct IntType<2> { using type = uint16_t; };
     /// specialisations for smaller objects
-    template <> struct IntType<3> { typedef uint32_t type; };
+    template <> struct IntType<3> { using type = uint32_t; };
     /// specialisations for smaller objects
-    template <> struct IntType<4> { typedef uint32_t type; };
+    template <> struct IntType<4> { using type = uint32_t; };
 
     /// force inlining and unrolling at low optimisation levels
     template <unsigned N>
@@ -43,7 +43,7 @@ namespace SelImplementation {
             // tried all sorts of things here, but this seems to be one of
             // the best options, producing reasonable code on all compilers,
             // and vectorising well when used in loops
-            typedef typename BB1::int_type I;
+            using I = typename BB1::int_type;
             bb1.m_i[N - 1] =
                 (bb1.m_i[N - 1] & -I(c)) | (bb2.m_i[N - 1] & ~(-I(c)));
             return doBlend<N - 1>::doit(bb1, bb2, c);
@@ -73,7 +73,7 @@ namespace SelImplementation {
                     "Type T must be trivially copyable, or else!");
             /// how many integers of type I do we need to cover a T
             enum { size = sizeof(T) / sizeof(I) + bool(sizeof(T) % sizeof(I)) };
-        typedef I int_type;
+        using int_type = I;
             /// object of type T...
             T m_t;
             /// ... overlaid with a bunch of integers
@@ -90,7 +90,7 @@ namespace SelImplementation {
     };
 
     /// little helper for the SFINAE idiom we'll use (not required in C++17)
-    template<typename... Ts> struct make_void { typedef void type;};
+    template<typename... Ts> struct make_void { using type = void;};
     /// little helper for the SFINAE idiom we'll use (not required in C++17)
     template<typename... Ts> using void_t = typename make_void<Ts...>::type;
 

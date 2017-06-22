@@ -54,7 +54,7 @@ namespace util {
 	const std::size_t sz_;
 
 	public:
-	typedef const char* const_iterator;
+	using const_iterator = const char*;
 
 	template <std::size_t N>
 	CONSTEXPR11_TN static_string(const char(&a)[N]) NOEXCEPT_TN :

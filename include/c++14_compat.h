@@ -23,13 +23,13 @@ namespace std {
 
     template<size_t...indexes>
     struct make_index_sequence_helper<0, indexes...> {
-        typedef index_sequence<indexes...> type;
+        using type = index_sequence<indexes...>;
     };
 
     template<size_t currentIndex, size_t... indexes>
     struct make_index_sequence_helper {
-        typedef typename make_index_sequence_helper<currentIndex - 1,
-                currentIndex - 1, indexes...>::type type;
+        using type = typename make_index_sequence_helper<currentIndex - 1,
+                currentIndex - 1, indexes...>::type;
     };
 
     template<size_t N>
@@ -47,7 +47,7 @@ namespace std {
 #else
 namespace std {
     /// little helper for the SFINAE idiom we'll use (not required in C++17)
-    template<typename... Ts> struct make_void { typedef void type;};
+    template<typename... Ts> struct make_void { using type = void;};
     /// little helper for the SFINAE idiom we'll use (not required in C++17)
     template<typename... Ts> using void_t = typename make_void<Ts...>::type;
 }

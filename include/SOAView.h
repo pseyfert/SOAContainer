@@ -55,7 +55,7 @@ class _SOAView {
         /// little helper to find the type contained in a range
         template <typename RANGE>
         struct contained_type {
-            typedef decltype(*std::begin(std::declval<RANGE>())) type;
+            using type = decltype(*std::begin(std::declval<RANGE>()));
         };
         /// hide verification of FIELDS inside struct or doxygen gets confused
         struct fields_verifier {
@@ -136,15 +136,15 @@ class _SOAView {
 
     public:
         /// type to represent sizes and indices
-        typedef std::size_t size_type;
+        using size_type = std::size_t;
         /// type to represent differences of indices
-        typedef std::ptrdiff_t difference_type;
+        using difference_type = std::ptrdiff_t;
         /// type to represent container itself
-        typedef _SOAView<STORAGE, SKIN, FIELDS...> self_type;
-        /// typedef holding a typelist with the given fields
-        typedef SOATypelist::typelist<FIELDS...> fields_typelist;
+        using self_type = _SOAView<STORAGE, SKIN, FIELDS...>;
+        /// typelist with the given fields
+        using fields_typelist = SOATypelist::typelist<FIELDS...>;
         /// type of the storage backend
-        typedef STORAGE SOAStorage;
+        using SOAStorage = STORAGE;
 
         /// convenience function to return member number given member tag type
         template <typename MEMBER>
@@ -218,57 +218,56 @@ class _SOAView {
         SOAStorage m_storage;
 
         /// (naked) tuple type used as values
-        typedef typename SOATypelist::to_tuple<
-            fields_typelist>::value_tuple naked_value_tuple_type;
+        using naked_value_tuple_type = typename SOATypelist::to_tuple<
+            fields_typelist>::value_tuple;
         /// (naked) tuple type used as reference
-        typedef typename SOATypelist::to_tuple<
-            fields_typelist>::reference_tuple naked_reference_tuple_type;
+        using naked_reference_tuple_type = typename SOATypelist::to_tuple<
+            fields_typelist>::reference_tuple;
         /// (naked) tuple type used as const reference
-        typedef typename SOATypelist::to_tuple<
-            fields_typelist>::const_reference_tuple naked_const_reference_tuple_type;
+        using naked_const_reference_tuple_type = typename SOATypelist::to_tuple<
+            fields_typelist>::const_reference_tuple;
 
         _SOAView() {}
 
     public:
         /// (notion of) type of the contained objects
-        typedef SKIN<DressedTuple<naked_value_tuple_type, self_type> >
-            value_type;
+        using value_type = SKIN<DressedTuple<naked_value_tuple_type, self_type> >;
         /// (notion of) reference to value_type (outside container)
-        typedef SKIN<DressedTuple<naked_reference_tuple_type, self_type> >
-            value_reference;
+        using value_reference = SKIN<DressedTuple<
+            naked_reference_tuple_type, self_type> >;
         /// (notion of) const reference to value_type (outside container)
-        typedef SKIN<DressedTuple<naked_const_reference_tuple_type,
-                self_type> > value_const_reference;
+        using value_const_reference = SKIN<DressedTuple<
+            naked_const_reference_tuple_type, self_type> >;
 
     public:
         /// naked proxy type (to be given a "skin" later)
-        typedef SOAObjectProxy<self_type> naked_proxy;
+        using naked_proxy = SOAObjectProxy<self_type>;
         friend naked_proxy;
         /// corresponding _SOAContainers are friends
         template < template <typename...> class CONTAINER,
                  template <typename> class SKIN2, typename... FIELDS2>
         friend class _SOAContainer;
         /// type of proxy
-        typedef SKIN<naked_proxy> proxy;
+        using proxy = SKIN<naked_proxy>;
         friend proxy;
         /// pointer to contained objects
-        typedef SOAIterator<proxy> pointer;
+        using pointer = SOAIterator<proxy>;
         friend pointer;
         /// iterator type
-        typedef pointer iterator;
+        using iterator = pointer;
         /// reference to contained objects
-        typedef proxy reference;
+        using reference = proxy;
         /// reference to contained objects
-        typedef const reference const_reference;
+        using const_reference = const reference;
         /// const pointer to contained objects
-        typedef SOAConstIterator<proxy> const_pointer;
+        using const_pointer = SOAConstIterator<proxy>;
         friend const_pointer;
         /// const iterator type
-        typedef const_pointer const_iterator;
+        using const_iterator = const_pointer;
         /// reverse iterator type
-        typedef std::reverse_iterator<iterator> reverse_iterator;
+        using reverse_iterator = std::reverse_iterator<iterator>;
         /// const reverse iterator type
-        typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         /// constructor from the underlying storage
         _SOAView(const SOAStorage& other) :
@@ -604,6 +603,10 @@ namespace _SOAViewImpl {
             SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<
             STORAGE, SKIN, typename SKIN<dummy>::fields_typelist>::type;
     };
+template <class STORAGE, template <typename> class SKIN, typename... FIELDS>
+using SOAView = typename
+    _SOAViewImpl::SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<
+    STORAGE, SKIN, FIELDS...>::type;
 }
 
 /** @brief SOA view for objects with given fields (SOA storage)
@@ -621,7 +624,7 @@ namespace _SOAViewImpl {
  *                      of members (can be omitted if SKIN contains a type
  *                      fields_typelist that lists the types of fields)
  *
- * This templated typedef represents an object view of a number of ranges of
+ * This templated class represents an object view of a number of ranges of
  * equal size with the given list of fields.  Objects are not stored as such,
  * but each of object's fields is taken from the corresponding range,
  * effectively creating a structure-of-arrays (SOA) layout which is
@@ -644,8 +647,8 @@ namespace _SOAViewImpl {
  *         { return m_x * m_x + m_y * m_y; }
  * };
  *
- * typedef std::vector<Point> AOSPoints;
- * typedef Point& AOSPoint;
+ * using AOSPoints = std::vector<Point>;
+ * using AOSPoint = Point&;
  * @endcode
  *
  * The memory layout in the example above will be x of element 0, y of element
@@ -696,13 +699,12 @@ namespace _SOAViewImpl {
  * };
  *
  * // define the SOA container type
- * typedef SOAView<
+ * using SOAPoints = SOAView<
  *         // underlying type for storage
  *         std::tuple<std::vector<float>&, std::vector<float>&>,
- *         SOAPoint>    // skin to "dress" the tuple of fields with
- *         SOAPoints;
+ *         SOAPoint>;   // skin to "dress" the tuple of fields with
  * // define the SOAPoint itself
- * typedef typename SOAPoints::proxy SOAPoint;
+ * using SOAPoint = typename SOAPoints::proxy;
  * @endcode
  *
  * The code is very similar to the AOS layout example above, but the memory
@@ -780,9 +782,10 @@ namespace _SOAViewImpl {
  * std::make_tuple do).
  */
 template <class STORAGE, template <typename> class SKIN, typename... FIELDS>
-using SOAView = typename
-    _SOAViewImpl::SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<
-    STORAGE, SKIN, FIELDS...>::type;
+class SOAView : public _SOAViewImpl::SOAView<STORAGE, SKIN, FIELDS...> 
+{
+    using _SOAViewImpl::SOAView<STORAGE, SKIN, FIELDS...>::SOAView;
+};
 
 /** @brief construct a _SOAView from a skin and a bunch of ranges
  *
@@ -796,8 +799,8 @@ using SOAView = typename
  * @code
  * std::vector<float> vx, vy;
  * // fill vx, vy somehow - same number of elements
- * typedef struct : SOATypelist::wrap_type<float> {} field_x;
- * typedef struct : SOATypelist::wrap_type<float> {} field_y;
+ * using field_x = struct : SOATypelist::wrap_type<float> {};
+ * using field_y = struct : SOATypelist::wrap_type<float> {};
  * template <typename NAKEDPROXY>
  * class SOAPoint : public NAKEDPROXY {
  *     public:
