@@ -19,7 +19,7 @@ struct FieldBase {
 
 
 template <typename BASE, template <typename> class... FIELDS>
-struct SkinBase : BASE, FIELDS<BASE>...
+struct SkinBase : BASE //, FIELDS<BASE>...
 {
     using skin_tag = struct {};
     using fields_typelist = SOATypelist::typelist<FIELDS<BASE>... >;
@@ -46,10 +46,15 @@ struct f_n : FieldBase<BASE, int>
     int const& n() const { return this->operator(); }
 };
 
+template <typename T, template <typename> class... FIELDS>
+SkinBase<T, FIELDS...> _detect_skin_base(const SkinBase<T, FIELDS...>&);
+template <typename T>
+using detect_skin_base = decltype(_detect_skin_base(std::declval<const T&>()));
+
 template <typename BASE>
-struct Skin : PrintableNullSkin<SkinBase<BASE, f_x, f_y, f_n> >
+struct Skin : SkinBase<PrintableNullSkin<BASE>, f_x, f_y, f_n>
 {
-    using B = PrintableNullSkin<SkinBase<BASE, f_x, f_y, f_n> >;
+    using B = detect_skin_base<Skin>;
     using B::B;
     using B::operator=;
 };

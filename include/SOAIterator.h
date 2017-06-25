@@ -73,8 +73,9 @@ class SOAConstIterator
 
     protected:
         /// constructor building proxy in place
-        SOAConstIterator(typename proxy::SOAStorage* storage,
-                size_type index) noexcept : m_proxy(storage, index) { }
+        explicit SOAConstIterator(typename proxy::SOAStorage* storage,
+                size_type index, typename proxy::parent_type::its_safe_tag
+                safe) noexcept : m_proxy(storage, index, safe) { }
 
     public:
         /// default constructor (nullptr equivalent)
@@ -294,9 +295,9 @@ class SOAIterator : public SOAConstIterator<PROXY>
 
     private:
         /// constructor building proxy in place
-        SOAIterator(typename proxy::parent_type::SOAStorage* storage,
-                size_type index) noexcept :
-            SOAConstIterator<proxy>(storage, index) { }
+        explicit SOAIterator(typename proxy::parent_type::SOAStorage* storage,
+                size_type index, typename proxy::parent_type::its_safe_tag safe) noexcept :
+            SOAConstIterator<proxy>(storage, index, safe) { }
 
     public:
         /// default constructor (nullptr equivalent)

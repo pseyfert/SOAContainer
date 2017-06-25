@@ -29,13 +29,12 @@
  * @date 2015-04-21
  */
 template <typename NAKEDPROXY>
-class NullSkin : public NAKEDPROXY
+struct NullSkin : NAKEDPROXY
 {
-    public:
-        /// constructor(s) - forward to underlying proxy
-        using NAKEDPROXY::NAKEDPROXY;
-        /// assignment operator - forward to underlying proxy
-        using NAKEDPROXY::operator=;
+    /// constructor(s) - forward to underlying proxy
+    using NAKEDPROXY::NAKEDPROXY;
+    /// assignment operator - forward to underlying proxy
+    using NAKEDPROXY::operator=;
 };
 
 // forward decl.
@@ -152,6 +151,19 @@ class _SOAView {
         { return fields_typelist::template find<MEMBER>(); }
 
     protected:
+        /** @brief a tag to be used when calling SOAObjectProxy's constructor
+         *
+         * The idea is to forbid user code to call SOAObjectProxy's constructor
+         * that takes a SOAStorage* and an index into it; this constructor is
+         * dangerous, since it can be used to break const-correctness. Since
+         * older versions of gcc/clang cannot see through the complex interplay
+         * of typedefs, inheritance, templates and friend declarations (and
+         * insist that that constructor is protected, despite a friend
+         * declaration), we work around that limitation by requiring safe code
+         * to supply a dummy struct of a type that the user cannot instantiate
+         * or even see.
+         */
+        using its_safe_tag = struct {};
         /// implementation details
         struct impl_detail {
             /// little helper to check range sizes at construction time
@@ -307,10 +319,13 @@ class _SOAView {
         /// access specified element
         typename std::enable_if<!is_constant, reference>::type
         operator[](size_type idx) noexcept
-        { return { &m_storage, idx }; }
+        { return reference{ &m_storage, idx, its_safe_tag() }; }
         /// access specified element (read access only)
         const_reference operator[](size_type idx) const noexcept
-        { return { &const_cast<SOAStorage&>(m_storage), idx }; }
+        {
+            return const_reference{ &const_cast<SOAStorage&>(m_storage), idx,
+                its_safe_tag()  };
+        }
         /// access specified element with out of bounds checking
         typename std::enable_if<!is_constant, reference>::type
         at (size_type idx)
@@ -342,17 +357,25 @@ class _SOAView {
 
         /// iterator pointing to first element
         typename std::enable_if<!is_constant, iterator>::type
-        begin() noexcept { return { &m_storage, 0 }; }
+        begin() noexcept
+        { return iterator{ &m_storage, 0, its_safe_tag() }; }
         /// iterator pointing one element behind the last element
         typename std::enable_if<!is_constant, iterator>::type
-        end() noexcept { return { &m_storage, size() }; }
+        end() noexcept
+        { return iterator{ &m_storage, size(), its_safe_tag() }; }
 
         /// const iterator pointing to first element
         const_iterator begin() const noexcept
-        { return { const_cast<SOAStorage*>(&m_storage), 0 }; }
+        {
+            return const_iterator{ const_cast<SOAStorage*>(&m_storage), 0,
+                its_safe_tag() };
+        }
         /// const iterator pointing one element behind the last element
         const_iterator end() const noexcept
-        { return { const_cast<SOAStorage*>(&m_storage), size() }; }
+        {
+            return const_iterator{ const_cast<SOAStorage*>(&m_storage), size(),
+                its_safe_tag() };
+        }
 
         /// const iterator pointing to first element
         const_iterator cbegin() const noexcept { return begin(); }

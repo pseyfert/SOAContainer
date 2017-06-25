@@ -63,7 +63,7 @@ TEST (BasicTest, More)  {
     c.push_back(val);
     EXPECT_FALSE(c.empty());
     EXPECT_EQ(1u, c.size());
-    
+
     // After this, Clang fails
     EXPECT_EQ(c.front(), c.back());
     EXPECT_EQ(c.end(), 1 + c.begin());
@@ -72,11 +72,11 @@ TEST (BasicTest, More)  {
     EXPECT_EQ(&cc.front(), c.cbegin());
     const decltype(val) val2(c.front());
     EXPECT_EQ(val, val2);
-    
+
     // trigger the move-variant of push_back
     c.push_back(std::make_tuple(2.79, 42, 17));
 
-    
+
     EXPECT_EQ(2u, c.size());
     EXPECT_NE(c.front(), c.back());
     EXPECT_EQ(c.end(), 2 + c.begin());
@@ -217,13 +217,13 @@ TEST (BasicTest, EvenMore) {
             [] (decltype(c)::value_const_reference a,
                 decltype(c)::value_const_reference b)
             { return a.get<1>() > b.get<1>(); });
-    
+
     std::sort(temp.begin(), temp.end(),
             [] (const decltype(temp)::value_type& a,
                 const decltype(temp)::value_type& b)
             { return std::get<1>(a) > std::get<1>(b); });
-    
-    
+
+
     EXPECT_TRUE(std::is_sorted(c.begin(), c.end(),
             [] (decltype(c)::value_const_reference a,
                 decltype(c)::value_const_reference b)
@@ -232,7 +232,7 @@ TEST (BasicTest, EvenMore) {
             [] (const decltype(temp)::value_type& a,
         const decltype(temp)::value_type& b)
             { return std::get<1>(a) > std::get<1>(b); }));
- 
+
     EXPECT_EQ(c.size(), temp.size());
     EXPECT_EQ(temp.size(), std::inner_product(
                 c.begin(), c.end(), temp.begin(), size_type(0),
@@ -245,15 +245,15 @@ TEST (BasicTest, EvenMore) {
     EXPECT_EQ(&(*c.begin<0>()), &((*c.begin()).get<0>()));
     EXPECT_EQ(&(*cc.begin<0>()), &((*cc.begin()).get<0>()));
     EXPECT_EQ(&(*c.cbegin<0>()), &((*c.cbegin()).get<0>()));
-    
+
     EXPECT_EQ(&(*c.end<0>()), &((*c.end()).get<0>()));
     EXPECT_EQ(&(*cc.end<0>()), &((*cc.end()).get<0>()));
     EXPECT_EQ(&(*c.cend<0>()), &((*c.cend()).get<0>()));
-    
+
     // test (some of) the rbegin<fieldno> and rend<fieldno> calls
     EXPECT_EQ(&(*c.rbegin<0>()), &((*c.rbegin()).get<0>()));
     EXPECT_EQ(&(*c.rend<0>()), &((*c.rend()).get<0>()));
-    
+
     // test the begin<fieldtag> and end<fieldtag> calls
     EXPECT_EQ(&(*c.begin<double>()), &((*c.begin()).get<double>()));
     EXPECT_EQ(&(*cc.begin<double>()), &((*cc.begin()).get<double>()));
@@ -261,11 +261,11 @@ TEST (BasicTest, EvenMore) {
     EXPECT_EQ(&(*c.end<double>()), &((*c.end()).get<double>()));
     EXPECT_EQ(&(*cc.end<double>()), &((*cc.end()).get<double>()));
     EXPECT_EQ(&(*c.cend<double>()), &((*c.cend()).get<double>()));
-    
+
     // test (some of) the rbegin<fieldno> and rend<fieldno> calls
     EXPECT_EQ(&(*c.rbegin<double>()), &((*c.rbegin()).get<double>()));
     EXPECT_EQ(&(*c.rend<double>()), &((*c.rend()).get<double>()));
-    
+
     // rudimentary tests of comparison of containers
     decltype(c) d;
     decltype(temp) temp2;
@@ -279,7 +279,7 @@ TEST (BasicTest, EvenMore) {
     EXPECT_LE(temp, temp);
     EXPECT_GE(c, c);
     EXPECT_GE(temp, temp);
-   
+
     {
         // test assign(count, val)
         c.assign(42, std::make_tuple(3.14, 0, -1));
@@ -314,7 +314,6 @@ TEST (BasicTest, EvenMore) {
         const std::tuple<double, int, int> defaultval;
         EXPECT_EQ(c.back(), defaultval);
     }
- 
 }
 
 namespace HitNamespace {
@@ -484,30 +483,30 @@ namespace stdarraytest_fields {
     typedef SOATypelist::wrap_type<Array> f_array;
 
     template <typename NAKEDPROXY>
-    class ContainerSkin : public PrintableNullSkin<NAKEDPROXY> {
-        public:
-	    using fields_typelist = SOATypelist::typelist<f_array>;
-	    using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
-	    using PrintableNullSkin<NAKEDPROXY>::operator=;
+    struct ContainerSkin : PrintableNullSkin<NAKEDPROXY> {
+	// define fields, forward to base class constructors where possible
+	using fields_typelist = SOATypelist::typelist<f_array>;
+	using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
+	using PrintableNullSkin<NAKEDPROXY>::operator=;
 
-            using self_type = ContainerSkin<NAKEDPROXY>;
-	    using Array = stdarraytest_fields::Array;
+	/// Array type to use
+	using Array = stdarraytest_fields::Array;
 
-            /// stupid constructor from an (ignored) bool
-            ContainerSkin(bool) : ContainerSkin(Array())
-            { }
+	/// stupid constructor from an (ignored) bool
+	ContainerSkin(bool) : ContainerSkin(Array())
+	{ }
     };
 
-    typedef SOAContainer<std::vector, ContainerSkin, f_array> SOAArray;
+    using SOAArray = SOAContainer<std::vector, ContainerSkin, f_array>;
 }
 TEST(RealisticTest, Proxy) {
     using namespace stdarraytest_fields;
-        SOAArray a;
-        a.push_back(SOAArray::value_type(true));
-        a.emplace_back(SOAArray::value_type(true));
-        // this won't work since we currently have no way to "dress" an
-        // emplace_back with a skin (may be possible in the future)
-        //a.emplace_back(true);
+    SOAArray a;
+    a.push_back(SOAArray::value_type(true));
+    a.emplace_back(SOAArray::value_type(true));
+    // this won't work since we currently have no way to "dress" an
+    // emplace_back with a skin (may be possible in the future)
+    //a.emplace_back(true);
 }
 
 typedef struct : SOATypelist::wrap_type<float> {} field_x;

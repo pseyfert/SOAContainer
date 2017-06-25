@@ -18,74 +18,51 @@
  * @tparam CONTAINER    underlying SOAContainer
  */
 template <typename TUPLE, typename CONTAINER>
-class DressedTuple : public TUPLE
+struct DressedTuple : TUPLE
 {
-    public:
-        /// convenience typedef
-        using self_type = DressedTuple<TUPLE, CONTAINER>;
+    /// convenience typedef
+    using self_type = DressedTuple<TUPLE, CONTAINER>;
 
-        /// use TUPLE's constructors if possible
-        using TUPLE::TUPLE;
-        /// use TUPLE's assignment operators if possible
-        using TUPLE::operator=;
+    /// copy-construct from base class (TUPLE)
+    DressedTuple(const TUPLE& t) : TUPLE(t) {}
+    /// move-construct from base class (TUPLE)
+    DressedTuple(TUPLE&& t) : TUPLE(std::move(t)) {}
+    /// for everything else, use TUPLE's constructor
+    using TUPLE::TUPLE;
+    /// for everything else, use TUPLE's assignment operators
+    using TUPLE::operator=;
 
-        /// forward to TUPLE's constructor(s) if constructible from args
-        template <typename... ARGS,
-                 typename std::enable_if<
-                     std::is_constructible<TUPLE, ARGS...>::value,
-                    int>::type = 0>
-        constexpr DressedTuple(ARGS&&... args) :
-            TUPLE(std::forward<ARGS>(args)...) { }
+    /// provide the member function template get interface of proxies
+    template<typename CONTAINER::size_type MEMBERNO>
+    auto get() noexcept -> decltype(std::get<MEMBERNO>(std::declval<self_type&>()))
+    { return std::get<MEMBERNO>(*this); }
 
-        /// forward to TUPLE's copy assignment if assignable from args
-        template <typename ARG, typename std::enable_if<
-            std::is_assignable<TUPLE, const ARG&>::value
-            >::type = 0>
-        self_type& operator=(const ARG& other) noexcept(noexcept(
-                    std::declval<TUPLE>().operator=(other)))
-        { TUPLE::operator=(other); return *this; }
+    /// provide the member function template get interface of proxies
+    template<typename CONTAINER::size_type MEMBERNO>
+    auto get() const noexcept -> decltype(std::get<MEMBERNO>(
+                std::declval<const self_type&>()))
+    { return std::get<MEMBERNO>(*this); }
 
-        /// forward to TUPLE's move assignment if assignable from args
-        template <typename ARG, typename std::enable_if<
-            std::is_assignable<TUPLE, ARG&&>::value
-            >::type = 0>
-        self_type& operator=(ARG&& other) noexcept(noexcept(
-                    std::declval<TUPLE>().operator=(std::move(other))))
-        { TUPLE::operator=(std::move(other)); return *this; }
+    /// provide the member function template get interface of proxies
+    template<typename MEMBER, typename CONTAINER::size_type MEMBERNO =
+        CONTAINER::template memberno<MEMBER>()>
+    auto get() noexcept -> decltype(std::get<MEMBERNO>(std::declval<self_type&>()))
+    {
+        static_assert(CONTAINER::template memberno<MEMBER>() ==
+                MEMBERNO, "Called with wrong template argument(s).");
+        return std::get<MEMBERNO>(*this);
+    }
 
-        /// provide the member function template get interface of proxies
-        template<typename CONTAINER::size_type MEMBERNO>
-        auto get() noexcept -> decltype(std::get<MEMBERNO>(
-                    *static_cast<self_type*>(nullptr)))
-        { return std::get<MEMBERNO>(*this); }
-
-        /// provide the member function template get interface of proxies
-        template<typename CONTAINER::size_type MEMBERNO>
-        auto get() const noexcept -> decltype(std::get<MEMBERNO>(
-                    *static_cast<const self_type*>(nullptr)))
-        { return std::get<MEMBERNO>(*this); }
-
-        /// provide the member function template get interface of proxies
-        template<typename MEMBER, typename CONTAINER::size_type MEMBERNO =
-            CONTAINER::template memberno<MEMBER>()>
-        auto get() noexcept -> decltype(std::get<MEMBERNO>(
-                    *static_cast<self_type*>(nullptr)))
-        {
-            static_assert(CONTAINER::template memberno<MEMBER>() ==
-                    MEMBERNO, "Called with wrong template argument(s).");
-            return std::get<MEMBERNO>(*this);
-        }
-
-        /// provide the member function template get interface of proxies
-        template<typename MEMBER, typename CONTAINER::size_type MEMBERNO =
-            CONTAINER::template memberno<MEMBER>()>
-        auto get() const noexcept -> decltype(std::get<MEMBERNO>(
-                    *static_cast<const self_type*>(nullptr)))
-        {
-            static_assert(CONTAINER::template memberno<MEMBER>() ==
-                    MEMBERNO, "Called with wrong template argument(s).");
-            return std::get<MEMBERNO>(*this);
-        }
+    /// provide the member function template get interface of proxies
+    template<typename MEMBER, typename CONTAINER::size_type MEMBERNO =
+        CONTAINER::template memberno<MEMBER>()>
+    auto get() const noexcept -> decltype(std::get<MEMBERNO>(
+                std::declval<const self_type&>()))
+    {
+        static_assert(CONTAINER::template memberno<MEMBER>() ==
+                MEMBERNO, "Called with wrong template argument(s).");
+        return std::get<MEMBERNO>(*this);
+    }
 };
 
 #endif // SOADRESSEDTUPLE_H

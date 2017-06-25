@@ -15,11 +15,15 @@
 #include "SOAUtils.h"
 #include "c++14_compat.h"
 
+// forward declarations
 template <typename PROXY>
 class SOAConstIterator;
 template <typename PROXY>
 class SOAIterator;
-template < template <typename...> class CONTAINER,
+template <class STORAGE,
+         template <typename> class SKIN, typename... FIELDS>
+class _SOAView;
+template <template <typename...> class CONTAINER,
          template <typename> class SKIN, typename... FIELDS>
 class _SOAContainer;
 
@@ -70,20 +74,34 @@ class SOAObjectProxy {
 
         // _SOAContainer is allowed to invoke the private constructor
         friend parent_type;
-        /// corresponding _SOAContainers are friends
-        template < template <typename...> class CONTAINER,
-                 template <typename> class SKIN, typename... FIELDS>
-        friend class _SOAContainer;
         // so is the pointer/iterator type
         friend pointer;
         // and the const pointer/iterator type
         friend const_pointer;
+        /// corresponding _SOAContainers are friends
+        template <template <typename...> class CONTAINER,
+                 template <typename> class SKIN, typename... FIELDS>
+        friend class _SOAContainer;
 
+    public:
         /// constructor is private, but parent container is a friend
-        SOAObjectProxy(
-                SOAStorage* storage = nullptr, size_type index = 0) noexcept :
+        explicit SOAObjectProxy(
+                SOAStorage* storage, size_type index,
+                typename parent_type::its_safe_tag) noexcept :
             m_storage(storage), m_index(index)
-        { }
+        {
+            /* FIXME: This used to be a protected constructor, with the
+             * appropriate friend declarations, but apparently only the latest
+             * C++ compilers saw through that, and compiled things without a
+             * problem. Therefore, the constructor became public, and an
+             * explicit one, and it now has a dummy argument of type
+             * _SOAView<...>::its_safe_tag that is private to _SOAView, and a
+             * few of its friends. That way, user code cannot call this
+             * constructor, since they cannot supply the third argument, which
+             * essentially amounts to the same kind of protection that the old
+             * version enjoyed.
+             */
+        }
 
     private:
         /// little helper to implement conversion to tuple
@@ -129,6 +147,8 @@ class SOAObjectProxy {
         };
 
     public:
+        /// default constructor
+        SOAObjectProxy() noexcept = default;
         /// copy constructor
         SOAObjectProxy(const self_type& other) noexcept = default;
         /// move constructor
@@ -338,12 +358,18 @@ namespace std {
 template <typename PARENTCONTAINER>
 typename SOAObjectProxy<PARENTCONTAINER>::pointer
 SOAObjectProxy<PARENTCONTAINER>::operator&() noexcept
-{ return { m_storage, m_index }; }
+{
+    return pointer{ m_storage, m_index,
+        typename parent_type::its_safe_tag() };
+}
 
 template <typename PARENTCONTAINER>
 typename SOAObjectProxy<PARENTCONTAINER>::const_pointer
 SOAObjectProxy<PARENTCONTAINER>::operator&() const noexcept
-{ return { m_storage, m_index }; }
+{
+    return const_pointer{ m_storage, m_index,
+        typename parent_type::its_safe_tag() };
+}
 
 
 #endif // SOAOBJECTPROXY_H
