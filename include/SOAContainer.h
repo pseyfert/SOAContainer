@@ -120,6 +120,8 @@ class _SOAContainer : public SOAView<
         /// (naked) tuple type used as const reference
         using naked_const_reference_tuple_type =
             typename BASE::naked_const_reference_tuple_type;
+        /// use the parent's its_safe_tag (make sure this stays protected)
+        using its_safe_tag = typename BASE::its_safe_tag;
 
     public:
         /// default constructor
@@ -489,14 +491,16 @@ class _SOAContainer : public SOAView<
                     typename impl_detail::insertHelper{pos.m_proxy.m_index},
                     SOAUtils::zip(this->m_storage, val),
                     std::make_index_sequence<sizeof...(FIELDS)>());
-            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
+            return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
+                its_safe_tag() };
         }
 
         /// insert a value at the given position (move variant)
         iterator insert(const_iterator pos, value_type&& val) noexcept(
                 noexcept(SOAUtils::map(
                     typename impl_detail::insertHelper{pos.m_proxy.m_index},
-                        SOAUtils::zip(std::declval<self_type*>()->m_storage, std::move(val)),
+                        SOAUtils::zip(std::declval<self_type*>()->m_storage,
+                            std::move(val)),
                         std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*pos).m_storage == &this->m_storage);
@@ -504,12 +508,13 @@ class _SOAContainer : public SOAView<
                     typename impl_detail::insertHelper{pos.m_proxy.m_index},
                     SOAUtils::zip(this->m_storage, std::move(val)),
                     std::make_index_sequence<sizeof...(FIELDS)>());
-            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
+            return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
+                its_safe_tag() };
         }
 
         /// insert count copies of value at the given position
-        iterator insert(const_iterator pos, size_type count, const value_type& val) noexcept(
-                noexcept(SOAUtils::map(
+        iterator insert(const_iterator pos, size_type count,
+            const value_type& val) noexcept(noexcept(SOAUtils::map(
                     typename impl_detail::insertHelper2{
                             static_cast<size_type>(pos - pos), count},
                     SOAUtils::zip(std::declval<self_type*>()->m_storage, val),
@@ -521,7 +526,8 @@ class _SOAContainer : public SOAView<
                             pos.m_proxy.m_index, count},
                     SOAUtils::zip(this->m_storage, val),
                     std::make_index_sequence<sizeof...(FIELDS)>());
-            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
+            return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
+                its_safe_tag() };
         }
 
         /// insert elements between first and last at position pos
@@ -534,7 +540,8 @@ class _SOAContainer : public SOAView<
             // moreover, if we can determine the distance between first and
             // last, we should make a hole of the right size to avoid moving
             // data more than once
-            iterator retVal(pos.m_proxy.m_storage, pos.m_proxy.m_index);
+            iterator retVal(pos.m_proxy.m_storage, pos.m_proxy.m_index,
+                    its_safe_tag());
             while (first != last) { insert(pos, *first); ++first; ++pos; }
             return retVal;
         }
@@ -550,7 +557,8 @@ class _SOAContainer : public SOAView<
             SOAUtils::map(
                     typename impl_detail::eraseHelper{ pos.m_proxy.m_index },
                     this->m_storage);
-            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
+            return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
+                its_safe_tag() };
         }
 
         /// erase elements from first to last
@@ -569,7 +577,8 @@ class _SOAContainer : public SOAView<
                             first.m_proxy.m_index,
                             static_cast<size_type>(last - first)},
                         this->m_storage);
-            return { first.m_proxy.m_storage, first.m_proxy.m_index };
+            return iterator{ first.m_proxy.m_storage, first.m_proxy.m_index,
+                its_safe_tag() };
         }
 
         /// assign the vector to contain count copies of val
@@ -606,8 +615,9 @@ class _SOAContainer : public SOAView<
                         std::declval<self_type*>()->m_storage).doIt(
                         std::forward<ARGS>(args)...)))
         {
-            static_assert(std::is_constructible<value_type, ARGS...>::value,
-                    "Wrong arguments to emplace_back.");
+            static_assert(std::is_constructible<naked_value_tuple_type,
+                    ARGS...>::value || std::is_constructible<value_type,
+                    ARGS...>::value, "Wrong arguments to emplace_back.");
             typename impl_detail::template emplace_backHelper<0>(
                     this->m_storage).doIt(std::forward<ARGS>(args)...);
         }
@@ -642,13 +652,15 @@ class _SOAContainer : public SOAView<
                         static_cast<size_type>(pos - pos)).doIt(
                             std::forward<ARGS>(args)...)))
         {
-            static_assert(std::is_constructible<value_type, ARGS...>::value,
-                    "Wrong arguments to emplace.");
+            static_assert(std::is_constructible<naked_value_tuple_type,
+                    ARGS...>::value || std::is_constructible<value_type,
+                    ARGS...>::value, "Wrong arguments to emplace.");
             assert(&this->m_storage == (*pos).m_storage);
             typename impl_detail::template emplaceHelper<0>(
                     this->m_storage, pos.m_proxy.m_index).doIt(
                         std::forward<ARGS>(args)...);
-            return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
+            return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
+                its_safe_tag() };
         }
 
         /// construct a new element at position pos from naked_value_tuple_type

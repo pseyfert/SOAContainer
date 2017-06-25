@@ -45,20 +45,19 @@ namespace {
 
 /// make tuple convertible to string
 template <typename T>
-class PrintableNullSkin : public T
+struct PrintableNullSkin : T
 {
-    public:
-        /// constructor - forward to underlying proxy
-        using T::T;
-        /// assignment operator - forward to underlying proxy
-        using T::operator=;
+    /// constructor - forward to underlying proxy
+    using T::T;
+    /// assignment operator - forward to underlying proxy
+    using T::operator=;
 
-        /// conversion to string
-        operator std::string() const {
-            std::ostringstream os;
-            printer<T::parent_type::fields_typelist::size()>()(os, *this);
-            return os.str();
-        }
+    /// conversion to string
+    operator std::string() const {
+        std::ostringstream os;
+        printer<T::parent_type::fields_typelist::size()>()(os, *this);
+        return os.str();
+    }
 };
 
 //// operator<< on ostream for a PrintableNullSkin<T>
