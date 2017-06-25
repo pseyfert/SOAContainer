@@ -479,7 +479,8 @@ class _SOAContainer : public SOAView<
         /// insert a value at the given position
         iterator insert(const_iterator pos, const value_type& val) noexcept(
                 noexcept(SOAUtils::map(
-                    typename impl_detail::insertHelper{pos.m_proxy.m_index},
+                    typename impl_detail::insertHelper{
+                            static_cast<size_type>(pos - pos)},
                         SOAUtils::zip(std::declval<self_type*>()->m_storage, val),
                         std::make_index_sequence<sizeof...(FIELDS)>())))
         {
@@ -509,13 +510,15 @@ class _SOAContainer : public SOAView<
         /// insert count copies of value at the given position
         iterator insert(const_iterator pos, size_type count, const value_type& val) noexcept(
                 noexcept(SOAUtils::map(
-                    typename impl_detail::insertHelper2{pos.m_proxy.m_index, count},
+                    typename impl_detail::insertHelper2{
+                            static_cast<size_type>(pos - pos), count},
                     SOAUtils::zip(std::declval<self_type*>()->m_storage, val),
                     std::make_index_sequence<sizeof...(FIELDS)>())))
         {
             assert((*pos).m_storage == &this->m_storage);
             SOAUtils::map(
-                    typename impl_detail::insertHelper2{pos.m_proxy.m_index, count},
+                    typename impl_detail::insertHelper2{
+                            pos.m_proxy.m_index, count},
                     SOAUtils::zip(this->m_storage, val),
                     std::make_index_sequence<sizeof...(FIELDS)>());
             return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
@@ -539,12 +542,13 @@ class _SOAContainer : public SOAView<
         /// erase an element at the given position
         iterator erase(const_iterator pos) noexcept(noexcept(
                     SOAUtils::map(
-                        typename impl_detail::eraseHelper{pos.m_proxy.m_index},
+                        typename impl_detail::eraseHelper{
+                                static_cast<size_type>(pos - pos)},
                         std::declval<self_type*>()->m_storage)))
         {
             assert((*pos).m_storage == &this->m_storage);
             SOAUtils::map(
-                    typename impl_detail::eraseHelper{pos.m_proxy.m_index},
+                    typename impl_detail::eraseHelper{ pos.m_proxy.m_index },
                     this->m_storage);
             return { pos.m_proxy.m_storage, pos.m_proxy.m_index };
         }
@@ -554,15 +558,16 @@ class _SOAContainer : public SOAView<
                 noexcept(
                     SOAUtils::map(
                         typename impl_detail::eraseHelper_N{
-                            first.m_proxy.m_index,
-                            last.m_proxy.m_index - first.m_proxy.m_index},
+                            static_cast<size_type>(first - first),
+                            static_cast<size_type>(last - first)},
                             std::declval<self_type*>()->m_storage)))
         {
             assert((*first).m_storage == &this->m_storage);
             assert((*last).m_storage == &this->m_storage);
             SOAUtils::map(
-                    typename impl_detail::eraseHelper_N{first.m_proxy.m_index,
-                        last.m_proxy.m_index - first.m_proxy.m_index},
+                    typename impl_detail::eraseHelper_N{
+                            first.m_proxy.m_index,
+                            static_cast<size_type>(last - first)},
                         this->m_storage);
             return { first.m_proxy.m_storage, first.m_proxy.m_index };
         }
@@ -634,7 +639,7 @@ class _SOAContainer : public SOAView<
         iterator emplace(const_iterator pos, ARGS&&... args) noexcept(
                 noexcept(typename impl_detail::template emplaceHelper<0>(
                         std::declval<self_type*>()->m_storage,
-                        pos.m_proxy.m_index).doIt(
+                        static_cast<size_type>(pos - pos)).doIt(
                             std::forward<ARGS>(args)...)))
         {
             static_assert(std::is_constructible<value_type, ARGS...>::value,
