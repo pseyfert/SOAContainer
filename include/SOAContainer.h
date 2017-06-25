@@ -354,7 +354,7 @@ class _SOAContainer : public SOAView<
 
                 template <typename... ARGS>
                 void operator()(ARGS&&... args) const noexcept(noexcept(
-                    m_obj->emplace_back(std::forward<ARGS>(args)...)))
+                    std::declval<self_type*>()->emplace_back(std::forward<ARGS>(args)...)))
                 { m_obj->emplace_back(std::forward<ARGS>(args)...); }
             };
 
@@ -367,7 +367,7 @@ class _SOAContainer : public SOAView<
 
                 template <typename... ARGS>
                 iterator operator()(ARGS&&... args) const noexcept(noexcept(
-                    m_obj->emplace(m_it, std::forward<ARGS>(args)...)))
+                    std::declval<self_type*>()->emplace(m_it, std::forward<ARGS>(args)...)))
                 { return m_obj->emplace(m_it, std::forward<ARGS>(args)...); }
             };
         }; // end of struct impl_detail
