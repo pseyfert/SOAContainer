@@ -1,0 +1,83 @@
+# work on SLC7, so we have a recent gcc version without too much gymnastics
+#image: docker.cern.ch/linuxsupport/cc7-base
+#before_script:
+#    # install deltarpm for faster updates
+#    - yum -q -y install deltarpm
+#    # make sure latest updates are in place
+#    - yum -q -y update
+#    # make sure GNU make, gcc, and ROOT are available
+#    - yum -q -y install gcc-c++ make # root
+#    # check versions
+#    - make --version
+#    - gcc --version
+#    - g++ --version
+#    # - root-config --version
+
+stages:
+    - build_and_test
+
+build_jessie-gcc48:
+    image: debian:jessie
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake g\+\+-4.8
+    stage: build_and_test
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+build_jessie-gcc49:
+    image: debian:jessie
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake g\+\+-4.9
+    stage: build_and_test
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+build_stretch-gcc63:
+    image: debian:stretch
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake g\+\+-6
+    stage: build_and_test
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+build_stretch-clang38:
+    image: debian:stretch
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-3.8
+    stage: build_and_test
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+build_stretch-clang39:
+    image: debian:stretch
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-3.9
+    stage: build_and_test
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
