@@ -20,7 +20,7 @@ build_jessie-gcc48:
     image: debian:jessie
     before_script:
         - apt-get update
-        - apt-get install -y git cmake g\+\+-4.8
+        - apt-get install -y git cmake ssh-client g\+\+-4.8
     stage: build_and_test
     script:
         - git submodule init
