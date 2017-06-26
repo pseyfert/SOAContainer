@@ -28,3 +28,16 @@ build_jessie-gcc48:
         - cmake -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 ..
         - make
         - make test
+
+build_jessie-gcc49:
+    image: debian:jessie
+    before_script:
+        - apt-get update
+        - apt-get install cmake g\+\+-4.9
+    stage: build_and_test
+    script:
+        - mkdir builddir
+        - cd builddir
+        - cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 ..
+        - make
+        - make test
