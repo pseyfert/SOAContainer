@@ -12,9 +12,9 @@ struct FieldBase {
     static_assert(!SOATypelist::is_wrapped<T>::value,
         "It is an error to nest FieldBase<BASE, FieldBase<T> >!");
     using type = T;
-    type& operator()()
+    type& _get()
     { return static_cast<BASE&>(*this).template get<FieldBase<BASE, type> >(); }
-    type const& operator()() const
+    type const& _get() const
     { return static_cast<const BASE&>(*this).template get<FieldBase<BASE, type> >(); }
 };
 
@@ -23,34 +23,33 @@ struct SkinBase : FIELDS<BASE>..., BASE
                   // order above important for empty base class optimisation
 {
     using skin_tag = struct {};
+    using base_type = SkinBase;
     using fields_typelist = SOATypelist::typelist<FIELDS<BASE>... >;
     using BASE::BASE;
     using BASE::operator=;
 };
 
-template <typename T, template <typename> class... FIELDS>
-auto _detect_skin_base(const SkinBase<T, FIELDS...>&) -> SkinBase<T, FIELDS...>;
 template <typename T>
-using detect_skin_base = decltype(_detect_skin_base(std::declval<const T&>()));
+using detect_skin_base = typename T::base_type; 
 
 /* user code */
 template <typename BASE> // this may be packaged up as a macro...
 struct f_x : FieldBase<BASE, float>
 {
-    float& x() { return this->operator(); }
-    float const& x() const { return this->operator(); }
+    float& x() { return this->_get(); }
+    float const& x() const { return this->_get(); }
 };
 template <typename BASE>
 struct f_y : FieldBase<BASE, float>
 {
-    float& y() { return this->operator(); }
-    float const& y() const { return this->operator(); }
+    float& y() { return this->_get(); }
+    float const& y() const { return this->_get(); }
 };
 template <typename BASE>
 struct f_n : FieldBase<BASE, int>
 {
-    int& n() { return this->operator(); }
-    int const& n() const { return this->operator(); }
+    int& n() { return this->_get(); }
+    int const& n() const { return this->_get(); }
 };
 
 template <typename BASE>
