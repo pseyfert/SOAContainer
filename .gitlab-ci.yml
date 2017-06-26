@@ -24,6 +24,7 @@ build_jessie-gcc48:
     stage: build_and_test
     script:
         - git submodule init
+        - git submodule update
         - mkdir builddir
         - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 ..)
         - (cd builddir; make)
