@@ -1,0 +1,30 @@
+# work on SLC7, so we have a recent gcc version without too much gymnastics
+#image: docker.cern.ch/linuxsupport/cc7-base
+#before_script:
+#    # install deltarpm for faster updates
+#    - yum -q -y install deltarpm
+#    # make sure latest updates are in place
+#    - yum -q -y update
+#    # make sure GNU make, gcc, and ROOT are available
+#    - yum -q -y install gcc-c++ make # root
+#    # check versions
+#    - make --version
+#    - gcc --version
+#    - g++ --version
+#    # - root-config --version
+
+stages:
+    - build_and_test
+
+build_jessie-gcc48:
+    image: debian:jessie
+    before_script:
+        - apt-get update
+        - apt-get install cmake g\+\+-4.8
+    stage: build_and_test
+    script:
+        - mkdir builddir
+        - cd builddir
+        - cmake -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 ..
+        - make
+        - make test
