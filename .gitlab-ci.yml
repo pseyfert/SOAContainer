@@ -20,7 +20,7 @@ build_jessie-gcc48:
     image: debian:jessie
     before_script:
         - apt-get update
-        - apt-get install cmake g\+\+-4.8
+        - apt-get install -y cmake g\+\+-4.8
     stage: build_and_test
     script:
         - mkdir builddir
@@ -33,7 +33,7 @@ build_jessie-gcc49:
     image: debian:jessie
     before_script:
         - apt-get update
-        - apt-get install cmake g\+\+-4.9
+        - apt-get install -y cmake g\+\+-4.9
     stage: build_and_test
     script:
         - mkdir builddir
