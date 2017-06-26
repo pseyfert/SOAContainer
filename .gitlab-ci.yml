@@ -20,11 +20,10 @@ build_jessie-gcc48:
     image: debian:jessie
     before_script:
         - apt-get update
-        - apt-get install -y git cmake openssh-client g\+\+-4.8
+        - apt-get install -y git cmake g\+\+-4.8
     stage: build_and_test
     script:
-        - git submodule init
-        - git submodule update
+        - git submodule update --init
         - mkdir builddir
         - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 ..)
         - (cd builddir; make)
