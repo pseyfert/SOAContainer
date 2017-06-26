@@ -27,7 +27,7 @@ build_jessie-gcc48:
         - mkdir builddir
         - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 ..)
         - (cd builddir; make)
-        - (cd builddik; make test)
+        - (cd builddir; make test)
 
 build_jessie-gcc49:
     image: debian:jessie
@@ -40,7 +40,7 @@ build_jessie-gcc49:
         - mkdir builddir
         - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 ..)
         - (cd builddir; make)
-        - (cd builddik; make test)
+        - (cd builddir; make test)
 
 build_jessie-clang38:
     image: debian:stretch
@@ -53,7 +53,7 @@ build_jessie-clang38:
         - mkdir builddir
         - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 ..)
         - (cd builddir; make)
-        - (cd builddik; make test)
+        - (cd builddir; make test)
 
 build_jessie-clang39:
     image: debian:stretch
@@ -66,5 +66,5 @@ build_jessie-clang39:
         - mkdir builddir
         - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 ..)
         - (cd builddir; make)
-        - (cd builddik; make test)
+        - (cd builddir; make test)
 
