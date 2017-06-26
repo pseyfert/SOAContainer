@@ -29,42 +29,42 @@ build_jessie-gcc48:
         - (cd builddir; make)
         - (cd builddik; make test)
 
-          #build_jessie-gcc49:
-          #    image: debian:jessie
-          #    before_script:
-          #        - apt-get update
-          #        - apt-get install -y git cmake g\+\+-4.9
-          #    stage: build_and_test
-          #    script:
-          #        - git submodule init --recursive
-          #        - mkdir builddir
-          #        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 ..)
-          #        - (cd builddir; make)
-          #        - (cd builddik; make test)
-          #
-          #build_jessie-clang38:
-          #    image: debian:stretch
-          #    before_script:
-          #        - apt-get update
-          #        - apt-get install -y git cmake clang-3.8
-          #    stage: build_and_test
-          #    script:
-          #        - git submodule init --recursive
-          #        - mkdir builddir
-          #        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 ..)
-          #        - (cd builddir; make)
-          #        - (cd builddik; make test)
-          #
-          #build_jessie-clang39:
-          #    image: debian:stretch
-          #    before_script:
-          #        - apt-get update
-          #        - apt-get install -y git cmake clang-3.9
-          #    stage: build_and_test
-          #    script:
-          #        - git submodule init --recursive
-          #        - mkdir builddir
-          #        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 ..)
-          #        - (cd builddir; make)
-          #        - (cd builddik; make test)
+build_jessie-gcc49:
+    image: debian:jessie
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake g\+\+-4.9
+    stage: build_and_test
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 ..)
+        - (cd builddir; make)
+        - (cd builddik; make test)
+
+build_jessie-clang38:
+    image: debian:stretch
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-3.8
+    stage: build_and_test
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 ..)
+        - (cd builddir; make)
+        - (cd builddik; make test)
+
+build_jessie-clang39:
+    image: debian:stretch
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-3.9
+    stage: build_and_test
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 ..)
+        - (cd builddir; make)
+        - (cd builddik; make test)
 
