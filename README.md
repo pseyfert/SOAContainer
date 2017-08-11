@@ -86,7 +86,7 @@ using SOAPoints = SOAContainer<
 using SOAPoint = typename SOAPoints::proxy;
 ```
 
-From that point on, you can more or less so what you're used to with your
+From that point on, you can more or less do what you're used to with your
 points, the SOA nature should largely be invisible. For example, the code
 
 ```cpp
