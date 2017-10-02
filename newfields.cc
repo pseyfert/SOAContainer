@@ -110,6 +110,8 @@ struct Skin : SkinBase<PrintableNullSkin<BASE>, f_x, f_y, f_flags>
     using B = detect_skin_base<Skin>;
     using B::B;
     using B::operator=;
+    // special constructors go here...
+    // special accessors go here...
 };
 
 /* small test driver... */
@@ -118,7 +120,7 @@ int main()
     SOAContainer<std::vector, NullSkin, float, float, int> s;
     SOAContainer<std::vector, Skin> c;
     static_assert(sizeof(s.front()) == sizeof(c.front()),
-            "Fancy field and old-style field peoxies need to have same size.");
+            "Fancy field and old-style field proxies need to have same size.");
     c.push_back(std::make_tuple(3.14f, 2.79f, 42));
     // print c[0]
     std::cout << c[0] << std::endl;
