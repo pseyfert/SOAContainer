@@ -1157,7 +1157,9 @@ auto extract_fields(VIEW&& view, ARGS&&... args) -> decltype(
 }
 
 namespace _SOAViewImpl {
+    /// helper to join a number of views
     template <std::size_t N> struct _joiner;
+    /// specialisation for the hard case: join two views
     template <> struct _joiner<std::size_t(2)> {
         template <class STORAGE1, template <typename> class SKIN1,
                  typename... FIELDS1, class STORAGE2,
@@ -1215,6 +1217,7 @@ namespace _SOAViewImpl {
         // if vX is an rvalue reference, this means that vX is about to go out
         // of scope, so the ranges that vX holds by value should be moved
     };
+    /// specialisation: "joining" a single view is a no-op
     template <> struct _joiner<std::size_t(1)> {
         template <typename VIEW1>
         static VIEW1 doIt(const VIEW1& v)
@@ -1226,6 +1229,7 @@ namespace _SOAViewImpl {
         static VIEW1 doIt(VIEW1&& v)
         { return std::move(v); }
     };
+    /// general case: join views one-by-one
     template <std::size_t N> struct _joiner {
         template <typename VIEW1, typename... VIEWS>
         static auto doIt(VIEW1&& v1, VIEWS&&... views) -> decltype(
@@ -1238,6 +1242,30 @@ namespace _SOAViewImpl {
     };
 }
 
+/** @brief join a number of SOAViews
+ *
+ * @tparam VIEWS...     types of views to join
+ * @param views...      views to join
+ *
+ * @returns a joined view, containing all the fields in the input
+ *
+ * @note This will only work with the new-style convienent SOAFields and
+ * SOASkins defined via SOAFIELD* and SOASKIN* macros.
+ *
+ * Example:
+ * @code
+ * SOAFIELD(x, float);
+ * SOAFIELD(y, float);
+ * SOAFIELD(z, float);
+ * SOASKIN(SOAPoint, f_x, f_y, f_z);
+ * SOAContainer<std::vector, SOAPoint> c = get_from_elsewhere();
+ * // create two views
+ * auto v1 = extract_fields<f_x, f_y>(c);
+ * auto v2 = extract_fields<f_z>(c);
+ * // join two views
+ * auto joint_view = join(v1, v2);
+ * @endcode
+ */
 template <typename... VIEWS>
 auto join(VIEWS&&... views) -> decltype(
     _SOAViewImpl::_joiner<sizeof...(VIEWS)>::doIt(
