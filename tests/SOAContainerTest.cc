@@ -654,4 +654,38 @@ TEST(SOAContainer, ConvenientContainers) {
     // const_cast<const decltype(c)&>(c).front().setUsed();
 }
 
+namespace FieldExtractionTest {
+    SOAFIELD(x, float);
+    SOAFIELD(y, float);
+    SOAFIELD(z, float);
+    SOASKIN(Point, f_x, f_y, f_z);
+}
+TEST(SOAView, FieldExtraction) {
+    using namespace FieldExtractionTest;
+    const auto rnd = [] () { return double(random()) / double(RAND_MAX); };
+    SOAContainer<std::vector, Point> c;
+    // fill the container
+    c.reserve(1024);
+    for (unsigned i = 0; i < 1024; ++i) c.emplace_back(rnd(), rnd(), rnd());
+    // test extraction of some fields into a new view
+    auto v1 = extract_fields<f_x, f_y>(c);
+    EXPECT_EQ(c.size(), v1.size());
+    for (unsigned i = 0; i < 1024; ++i) {
+        EXPECT_EQ(c[i].x(), v1[i].x());
+        EXPECT_EQ(c[i].y(), v1[i].y());
+    }
+    auto v2 = extract_fields<f_y, f_z>(c);
+    EXPECT_EQ(c.size(), v2.size());
+    for (unsigned i = 0; i < 1024; ++i) {
+        EXPECT_EQ(c[i].y(), v2[i].y());
+        EXPECT_EQ(c[i].z(), v2[i].z());
+    }
+    auto v3 = extract_fields<f_x, f_z>(c);
+    EXPECT_EQ(c.size(), v3.size());
+    for (unsigned i = 0; i < 1024; ++i) {
+        EXPECT_EQ(c[i].x(), v3[i].x());
+        EXPECT_EQ(c[i].z(), v3[i].z());
+    }
+}
+
 // vim: sw=4:tw=78:ft=cpp:et

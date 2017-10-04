@@ -96,6 +96,37 @@ namespace SOASkin_impl {
     template <class BASE> struct name : \
         SOASkin_impl::SkinBase<PrintableNullSkin<BASE>, __VA_ARGS__>
 
+/** @brief create a simple SOA skin
+ *
+ * @author Manuel Schiller <Manuel.Schiller@cern.ch>
+ * @date 2017-10-04
+ *
+ * @tparam FIELDS...    fields that the new skin should have
+ *
+ * The class defines a type that represents the desired simple SOA skin.
+ * "Simple" refers to the fact that the skin does not provide any user-defined
+ * methods in addition to those inherited from the fields.
+ *
+ * Usage example:
+ * @code
+ * // define fields f_x and f_y with accessors x() and y()
+ * SOAFIELD(x, float);
+ * SOAFIELD(y, float);
+ * // define a SOA skin class with these fields, and nothing else
+ * template <class BASE>
+ * using SOAPointSimple = SOASkinCreatorSimple<f_x, f_y>::type;
+ * @endcode
+ * @endcode
+ */
+template <class... FIELDS>
+struct SOASkinCreatorSimple {
+    /// type representing the desired skin
+    template <class BASE>
+    struct type : SOASkin_impl::SkinBase<PrintableNullSkin<BASE>, FIELDS...> {
+        SOASKIN_DEFAULT_CONSTRUCTORS_AND_ASSIGNMENTOPERATORS(type);
+    };
+};
+
 /** @brief define a skin which is just the sum of its fields
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
@@ -115,9 +146,8 @@ namespace SOASkin_impl {
  * @endcode
  */
 #define SOASKIN(name, ... /* fields */) \
-    SOASKIN_CUSTOM(name, __VA_ARGS__) { \
-        SOASKIN_DEFAULT_CONSTRUCTORS_AND_ASSIGNMENTOPERATORS(name); \
-    }
+    template <class BASE> \
+    using name = SOASkinCreatorSimple<__VA_ARGS__>::type<BASE>
 
 #endif // SOASKIN_H
 
