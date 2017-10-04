@@ -728,20 +728,8 @@ TEST(SOAView, JoinViews) {
     EXPECT_EQ(c.size(), 16u);
     // test extraction of some fields into a new view
     auto v1 = extract_fields<f_x>(c);
-    EXPECT_EQ(c.size(), v1.size());
-    for (unsigned i = 0; i < c.size(); ++i) {
-        EXPECT_EQ(c[i].x(), v1[i].x());
-    }
     auto v2 = extract_fields<f_y>(c);
-    EXPECT_EQ(c.size(), v2.size());
-    for (unsigned i = 0; i < c.size(); ++i) {
-        EXPECT_EQ(c[i].y(), v2[i].y());
-    }
     auto v3 = extract_fields<f_z>(c);
-    EXPECT_EQ(c.size(), v3.size());
-    for (unsigned i = 0; i < c.size(); ++i) {
-        EXPECT_EQ(c[i].z(), v3[i].z());
-    }
     auto v4 = join(v1, v2, v3);
     EXPECT_EQ(c.size(), v4.size());
     for (unsigned i = 0; i < c.size(); ++i) {
