@@ -15,6 +15,8 @@
 #include <functional>
 #include <initializer_list>
 
+#include "boost/range/iterator_range.hpp"
+
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
 #include "SOAObjectProxy.h"
@@ -551,22 +553,35 @@ class _SOAView {
 
         /// return a const reference to the underlying SOA storage range MEMBERNO
         template <size_type MEMBERNO>
-        auto range() const noexcept ->
-            decltype(std::get<MEMBERNO>(m_storage))
-        { return std::get<MEMBERNO>(m_storage); }
+        auto range() const noexcept -> decltype(
+                    boost::make_iterator_range(
+                        std::get<MEMBERNO>(m_storage).begin(),
+                        std::get<MEMBERNO>(m_storage).end()))
+        {
+            return boost::make_iterator_range(
+                    std::get<MEMBERNO>(m_storage).begin(),
+                    std::get<MEMBERNO>(m_storage).end());
+        }
         /// return a reference to the underlying SOA storage range MEMBERNO
         template <size_type MEMBERNO>
-        auto range() noexcept -> decltype(std::get<MEMBERNO>(m_storage))
-        { return std::get<MEMBERNO>(m_storage); }
+        auto range() noexcept -> decltype(
+                    boost::make_iterator_range(
+                        std::get<MEMBERNO>(m_storage).begin(),
+                        std::get<MEMBERNO>(m_storage).end()))
+        {
+            return boost::make_iterator_range(
+                    std::get<MEMBERNO>(m_storage).begin(),
+                    std::get<MEMBERNO>(m_storage).end());
+        }
         /// return a const reference to the underlying SOA storage range MEMBER
         template <typename MEMBER>
         auto range() const noexcept ->
-            decltype(std::get<memberno<MEMBER>()>(m_storage))
-        { return std::get<memberno<MEMBER>()>(m_storage); }
+            decltype(range<memberno<MEMBER>()>())
+        { return range<memberno<MEMBER>()>(); }
         /// return a reference to the underlying SOA storage range MEMBER
         template <typename MEMBER>
-        auto range() noexcept -> decltype(std::get<memberno<MEMBER>()>(m_storage))
-        { return std::get<memberno<MEMBER>()>(m_storage); }
+        auto range() noexcept -> decltype(range<memberno<MEMBER>()>())
+        { return range<memberno<MEMBER>()>(); }
 
         /// assign the vector to contain count copies of val
         void assign(size_type count, const value_type& val)
@@ -620,9 +635,11 @@ class _SOAView {
          */
         template <typename... FIELDS2, typename... ARGS>
         auto ranges(ARGS&&... args) noexcept(noexcept(
-                    std::make_tuple(std::declval<self_type>().template range<FIELDS2>(
+                    std::make_tuple(
+                        std::declval<self_type&>().template range<FIELDS2>(
                             std::forward<ARGS>(args)...)...))) ->
-            decltype(std::make_tuple(std::declval<self_type>().template range<FIELDS2>(
+            decltype(std::make_tuple(
+                        std::declval<self_type&>().template range<FIELDS2>(
                             std::forward<ARGS>(args)...)...))
         {
             // check that we can honour the request
@@ -650,9 +667,11 @@ class _SOAView {
          */
         template <typename... FIELDS2, typename... ARGS>
         auto ranges(ARGS&&... args) const noexcept(noexcept(
-                    std::make_tuple(range<FIELDS2>(
+                    std::make_tuple(
+                        std::declval<const self_type&>().template range<FIELDS2>(
                             std::forward<ARGS>(args)...)...))) ->
-            decltype(std::make_tuple(range<FIELDS2>(
+            decltype(std::make_tuple(
+                        std::declval<const self_type&>().template range<FIELDS2>(
                             std::forward<ARGS>(args)...)...))
         {
             // check that we can honour the request
@@ -877,6 +896,21 @@ class SOAView : public _SOAViewImpl::SOAView<STORAGE, SKIN, FIELDS...>
     using _SOAViewImpl::SOAView<STORAGE, SKIN, FIELDS...>::SOAView;
 };
 
+namespace _SOAViewImpl {
+    /// decay T&& into T, leave (const) T(&) unchanged
+    template <typename T>
+    struct remove_rvalue_reference { using type = T; };
+    /// decay T&& into T, leave (const) T(&) unchanged (specialisation)
+    template <typename T>
+    struct remove_rvalue_reference<const T&> { using type = const T&; };
+    /// decay T&& into T, leave (const) T(&) unchanged (specialisation)
+    template <typename T>
+    struct remove_rvalue_reference<T&> { using type = T&; };
+    /// decay T&& into T, leave (const) T(&) unchanged (specialisation)
+    template <typename T>
+    struct remove_rvalue_reference<T&&> { using type = T; };
+}
+
 /** @brief construct a _SOAView from a skin and a bunch of ranges
  *
  * @tparam SKIN         type of skin class to use
@@ -925,10 +959,13 @@ class SOAView : public _SOAViewImpl::SOAView<STORAGE, SKIN, FIELDS...>
  * @endcode
  */
 template <template <typename> class SKIN, typename... RANGES>
-SOAView<std::tuple<RANGES...>, SKIN> make_soaview(RANGES&&... ranges)
+SOAView<std::tuple<
+    typename _SOAViewImpl::remove_rvalue_reference<RANGES>::type...>, SKIN>
+make_soaview(RANGES&&... ranges)
 {
-    return SOAView<std::tuple<RANGES...>, SKIN>
-        (std::forward<RANGES>(ranges)...);
+    return SOAView<std::tuple<
+        typename _SOAViewImpl::remove_rvalue_reference<RANGES>::type...>,
+                 SKIN>(std::forward<RANGES>(ranges)...);
 }
 
 namespace std {
@@ -1117,6 +1154,97 @@ auto extract_fields(VIEW&& view, ARGS&&... args) -> decltype(
     return _SOAViewImpl::_extract_fields<SKIN>(
             view.template ranges<FIELDS...>(
                 std::forward<ARGS>(args)...), IDXSQ());
+}
+
+namespace _SOAViewImpl {
+    template <std::size_t N> struct _joiner;
+    template <> struct _joiner<std::size_t(2)> {
+        template <class STORAGE1, template <typename> class SKIN1,
+                 typename... FIELDS1, class STORAGE2,
+                 template <typename> class SKIN2, typename... FIELDS2,
+            template <class> class SKIN =
+            SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+        static auto doIt(const _SOAView<STORAGE1, SKIN1, FIELDS1...>& v1,
+                const _SOAView<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
+                    make_soaview<SKIN>(v1.template range<FIELDS1>()...,
+                        v2.template range<FIELDS2>()...))
+        {
+            return make_soaview<SKIN>(v1.template range<FIELDS1>()...,
+                    v2.template range<FIELDS2>()...);
+        }
+        template <class STORAGE1, template <typename> class SKIN1,
+                 typename... FIELDS1, class STORAGE2,
+                 template <typename> class SKIN2, typename... FIELDS2,
+            template <class> class SKIN =
+            SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+        static auto doIt(_SOAView<STORAGE1, SKIN1, FIELDS1...>& v1,
+                const _SOAView<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
+                    make_soaview<SKIN>(v1.template range<FIELDS1>()...,
+                        v2.template range<FIELDS2>()...))
+        {
+            return make_soaview<SKIN>(v1.template range<FIELDS1>()...,
+                    v2.template range<FIELDS2>()...);
+        }
+        template <class STORAGE1, template <typename> class SKIN1,
+                 typename... FIELDS1, class STORAGE2,
+                 template <typename> class SKIN2, typename... FIELDS2,
+            template <class> class SKIN =
+            SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+        static auto doIt(const _SOAView<STORAGE1, SKIN1, FIELDS1...>& v1,
+                _SOAView<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
+                    make_soaview<SKIN>(v1.template range<FIELDS1>()...,
+                        v2.template range<FIELDS2>()...))
+        {
+            return make_soaview<SKIN>(v1.template range<FIELDS1>()...,
+                    v2.template range<FIELDS2>()...);
+        }
+        template <class STORAGE1, template <typename> class SKIN1,
+                 typename... FIELDS1, class STORAGE2,
+                 template <typename> class SKIN2, typename... FIELDS2,
+            template <class> class SKIN =
+            SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+        static auto doIt(_SOAView<STORAGE1, SKIN1, FIELDS1...>& v1,
+                _SOAView<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
+                    make_soaview<SKIN>(v1.template range<FIELDS1>()...,
+                        v2.template range<FIELDS2>()...))
+        {
+            return make_soaview<SKIN>(v1.template range<FIELDS1>()...,
+                    v2.template range<FIELDS2>()...);
+        }
+        // [FIXME]: special cases missing:
+        // if vX is an rvalue reference, this means that vX is about to go out
+        // of scope, so the ranges that vX holds by value should be moved
+    };
+    template <> struct _joiner<std::size_t(1)> {
+        template <typename VIEW1>
+        static VIEW1 doIt(const VIEW1& v)
+        { return v; }
+        template <typename VIEW1>
+        static VIEW1 doIt(VIEW1& v)
+        { return v; }
+        template <typename VIEW1>
+        static VIEW1 doIt(VIEW1&& v)
+        { return std::move(v); }
+    };
+    template <std::size_t N> struct _joiner {
+        template <typename VIEW1, typename... VIEWS>
+        static auto doIt(VIEW1&& v1, VIEWS&&... views) -> decltype(
+                _joiner<2>::doIt(std::forward<VIEW1>(v1),
+                    _joiner<N - 1>::doIt(std::forward<VIEWS>(views)...)))
+        {
+            return _joiner<2>::doIt(std::forward<VIEW1>(v1),
+                    _joiner<N - 1>::doIt(std::forward<VIEWS>(views)...));
+        }
+    };
+}
+
+template <typename... VIEWS>
+auto join(VIEWS&&... views) -> decltype(
+    _SOAViewImpl::_joiner<sizeof...(VIEWS)>::doIt(
+        std::forward<VIEWS>(views)...))
+{
+    return _SOAViewImpl::_joiner<sizeof...(VIEWS)>::doIt(
+            std::forward<VIEWS>(views)...);
 }
 
 #endif // SOAVIEW_H

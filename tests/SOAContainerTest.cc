@@ -541,6 +541,12 @@ TEST (SOAView, SimpleTests) {
     vxx = vx, vyy = vy;
     // construct a SOAView from vx, vy
     auto view = make_soaview<SOAPoint>(vx, vy);
+    // data must look the same
+    EXPECT_EQ(vx.front(), view.front().x());
+    EXPECT_EQ(vy.front(), view.front().y());
+    // and be at the same address
+    EXPECT_EQ(&vx.front(), &*view.begin<field_x>());
+    EXPECT_EQ(&vy.front(), &*view.begin<field_y>());
     const float angle = 42.f / 180.f * M_PI;
     const auto s = std::sin(angle), c = std::cos(angle);
     for (auto p: view) {
@@ -570,7 +576,8 @@ TEST (SOAView, SimpleTests) {
         ++i;
     }
     // check that we can access the underlying ranges
-    EXPECT_EQ(&vx, &view.range<field_x>());
+    auto rx = view.range<field_x>();
+    EXPECT_EQ(&vx.front(), &rx.front());
 }
 
 #include "SOAField.h"
@@ -634,8 +641,8 @@ TEST(SOAContainer, ConvenientContainers) {
     EXPECT_TRUE(csimple.empty());
     c.push_back(std::make_tuple(3.14f, 2.79f, 42));
     csimple.push_back(std::make_tuple(3.14f, 2.79f, 42));
-    EXPECT_EQ(c.size(), 1);
-    EXPECT_EQ(csimple.size(), 1);
+    EXPECT_EQ(c.size(), 1u);
+    EXPECT_EQ(csimple.size(), 1u);
     EXPECT_EQ(c[0].x(), 3.14f);
     EXPECT_EQ(c[0].y(), 2.79f);
     EXPECT_EQ(c[0].flags(), 42);
@@ -665,26 +672,82 @@ TEST(SOAView, FieldExtraction) {
     const auto rnd = [] () { return double(random()) / double(RAND_MAX); };
     SOAContainer<std::vector, Point> c;
     // fill the container
-    c.reserve(1024);
-    for (unsigned i = 0; i < 1024; ++i) c.emplace_back(rnd(), rnd(), rnd());
+    c.reserve(16);
+    for (unsigned i = 0; i < 16; ++i) c.emplace_back(rnd(), rnd(), rnd());
+    EXPECT_EQ(c.size(), 16u);
     // test extraction of some fields into a new view
-    auto v1 = extract_fields<f_x, f_y>(c);
+    auto v1 = extract_fields<f_x>(c);
     EXPECT_EQ(c.size(), v1.size());
-    for (unsigned i = 0; i < 1024; ++i) {
+    for (unsigned i = 0; i < c.size(); ++i) {
         EXPECT_EQ(c[i].x(), v1[i].x());
-        EXPECT_EQ(c[i].y(), v1[i].y());
     }
-    auto v2 = extract_fields<f_y, f_z>(c);
+    auto v2 = extract_fields<f_y>(c);
     EXPECT_EQ(c.size(), v2.size());
-    for (unsigned i = 0; i < 1024; ++i) {
+    for (unsigned i = 0; i < c.size(); ++i) {
         EXPECT_EQ(c[i].y(), v2[i].y());
-        EXPECT_EQ(c[i].z(), v2[i].z());
     }
-    auto v3 = extract_fields<f_x, f_z>(c);
+    auto v3 = extract_fields<f_z>(c);
     EXPECT_EQ(c.size(), v3.size());
-    for (unsigned i = 0; i < 1024; ++i) {
-        EXPECT_EQ(c[i].x(), v3[i].x());
+    for (unsigned i = 0; i < c.size(); ++i) {
         EXPECT_EQ(c[i].z(), v3[i].z());
+    }
+    auto v4 = extract_fields<f_x, f_y>(c);
+    EXPECT_EQ(c.size(), v4.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].x(), v4[i].x());
+        EXPECT_EQ(c[i].y(), v4[i].y());
+    }
+    auto v5 = extract_fields<f_y, f_z>(c);
+    EXPECT_EQ(c.size(), v5.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].y(), v5[i].y());
+        EXPECT_EQ(c[i].z(), v5[i].z());
+    }
+    auto v6 = extract_fields<f_x, f_z>(c);
+    EXPECT_EQ(c.size(), v6.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].x(), v6[i].x());
+        EXPECT_EQ(c[i].z(), v6[i].z());
+    }
+    auto v7 = extract_fields<f_x, f_y, f_z>(c);
+    EXPECT_EQ(c.size(), v7.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].x(), v7[i].x());
+        EXPECT_EQ(c[i].y(), v7[i].y());
+        EXPECT_EQ(c[i].z(), v7[i].z());
+    }
+}
+
+TEST(SOAView, JoinViews) {
+    using namespace FieldExtractionTest;
+    const auto rnd = [] () { return double(random()) / double(RAND_MAX); };
+    SOAContainer<std::vector, Point> c;
+    // fill the container
+    c.reserve(16);
+    for (unsigned i = 0; i < 16; ++i) c.emplace_back(rnd(), rnd(), rnd());
+    EXPECT_EQ(c.size(), 16u);
+    // test extraction of some fields into a new view
+    auto v1 = extract_fields<f_x>(c);
+    EXPECT_EQ(c.size(), v1.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].x(), v1[i].x());
+    }
+    auto v2 = extract_fields<f_y>(c);
+    EXPECT_EQ(c.size(), v2.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].y(), v2[i].y());
+    }
+    auto v3 = extract_fields<f_z>(c);
+    EXPECT_EQ(c.size(), v3.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].z(), v3[i].z());
+    }
+    auto v4 = join(v1, v2, v3);
+    EXPECT_EQ(c.size(), v4.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].x(), v4[i].x());
+        EXPECT_EQ(c[i].y(), v4[i].y());
+        EXPECT_EQ(c[i].z(), v4[i].z());
     }
 }
 
