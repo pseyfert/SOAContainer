@@ -318,19 +318,19 @@ TEST (BasicTest, EvenMore) {
 
 namespace HitNamespace {
     namespace Fields {
-        typedef struct : public SOATypelist::wrap_type<float> {} xAtYEq0;
-        typedef struct : public SOATypelist::wrap_type<float> {} zAtYEq0;
-        typedef struct : public SOATypelist::wrap_type<float> {} dxdy;
-        typedef struct : public SOATypelist::wrap_type<float> {} dzdy;
-        typedef struct : public SOATypelist::wrap_type<float> {} x;
-        typedef struct : public SOATypelist::wrap_type<float> {} z;
-        typedef struct : public SOATypelist::wrap_type<float> {} y;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} xAtYEq0;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} zAtYEq0;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} dxdy;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} dzdy;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} x;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} z;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} y;
     }
 
     template <typename NAKEDPROXY>
     class HitSkin : public SOA::PrintableNullSkin<NAKEDPROXY> {
         public:
-            using fields_typelist = SOATypelist::typelist<
+            using fields_typelist = SOA::Typelist::typelist<
                 Fields::xAtYEq0, Fields::xAtYEq0,
                 Fields::dxdy, Fields::dzdy,
                 Fields::x, Fields::y, Fields::z>;
@@ -480,12 +480,12 @@ TEST(RealisticTest, Aos)
 
 namespace stdarraytest_fields {
     typedef std::array<unsigned, 16> Array;
-    typedef SOATypelist::wrap_type<Array> f_array;
+    typedef SOA::Typelist::wrap_type<Array> f_array;
 
     template <typename NAKEDPROXY>
     struct ContainerSkin : SOA::PrintableNullSkin<NAKEDPROXY> {
         // define fields, forward to base class constructors where possible
-        using fields_typelist = SOATypelist::typelist<f_array>;
+        using fields_typelist = SOA::Typelist::typelist<f_array>;
         using SOA::PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
         using SOA::PrintableNullSkin<NAKEDPROXY>::operator=;
 
@@ -509,12 +509,12 @@ TEST(RealisticTest, Proxy) {
     //a.emplace_back(true);
 }
 
-typedef struct : SOATypelist::wrap_type<float> {} field_x;
-typedef struct : SOATypelist::wrap_type<float> {} field_y;
+typedef struct : SOA::Typelist::wrap_type<float> {} field_x;
+typedef struct : SOA::Typelist::wrap_type<float> {} field_y;
 template <typename NAKEDPROXY>
 class SOAPoint : public NAKEDPROXY {
     public:
-        using fields_typelist = SOATypelist::typelist<field_x, field_y>;
+        using fields_typelist = SOA::Typelist::typelist<field_x, field_y>;
         using NAKEDPROXY::NAKEDPROXY;
         using NAKEDPROXY::operator=;
 

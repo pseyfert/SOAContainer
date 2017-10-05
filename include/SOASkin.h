@@ -41,7 +41,7 @@ namespace SOA {
             /// we're the base class underlying classes that inherit from us
             using base_type = SkinBase;
             /// typelist listing all fields
-            using fields_typelist = SOATypelist::typelist<FIELDS...>;
+            using fields_typelist = SOA::Typelist::typelist<FIELDS...>;
             /// forward to *underlying constructors operators
             using BASE::BASE;
             /// forward to *underlying assignment operators

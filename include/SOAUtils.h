@@ -124,7 +124,8 @@ namespace SOA {
          * @date 2016-12-12
          */
         template <typename INI, typename FUN, typename TUP, std::size_t... IDXS>
-        typename std::result_of<foldl_impl::foldl_impl<FUN, TUP, sizeof...(IDXS)>(INI, std::index_sequence<IDXS...>)>::type
+        typename std::result_of<foldl_impl::foldl_impl<FUN, TUP,
+                 sizeof...(IDXS)>(INI, std::index_sequence<IDXS...>)>::type
         foldl(FUN fun, const TUP& tup, INI ini, std::index_sequence<IDXS...>) noexcept(
                 noexcept(foldl_impl::foldl_impl<FUN, TUP, sizeof...(IDXS)>{fun, tup}(
                         ini, std::index_sequence<IDXS...>())))

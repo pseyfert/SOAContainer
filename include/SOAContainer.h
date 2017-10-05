@@ -13,7 +13,7 @@
 template <template <typename...> class CONTAINER,
     template <typename> class SKIN, typename... FIELDS>
 class _SOAContainer : public SOAView<
-            typename SOATypelist::to_tuple<SOATypelist::typelist<FIELDS...>
+            typename SOA::Typelist::to_tuple<SOA::Typelist::typelist<FIELDS...>
                      >::template container_tuple<CONTAINER>,
             SKIN, FIELDS...>
 {
@@ -33,7 +33,7 @@ class _SOAContainer : public SOAView<
                 /// true if HEAD and TAIL verify okay
                 enum {
                     value = (std::is_pod<HEAD>::value ||
-                        SOATypelist::is_wrapped<
+                        SOA::Typelist::is_wrapped<
                         HEAD>::value) && verify_fields<TAIL...>::value
                 };
             };
@@ -44,7 +44,7 @@ class _SOAContainer : public SOAView<
                 /// true if HEAD verifies okay
                 enum {
                     value = std::is_pod<HEAD>::value ||
-                        SOATypelist::is_wrapped<HEAD>::value
+                        SOA::Typelist::is_wrapped<HEAD>::value
                 };
             };
             // make sure fields are either POD or wrapped types
@@ -55,7 +55,7 @@ class _SOAContainer : public SOAView<
 
         /// give a short and convenient name to base class
         using BASE = SOAView<
-            typename SOATypelist::to_tuple<SOATypelist::typelist<FIELDS...>
+            typename SOA::Typelist::to_tuple<SOA::Typelist::typelist<FIELDS...>
                      >::template container_tuple<CONTAINER>,
             SKIN, FIELDS...>;
     public:
@@ -690,7 +690,7 @@ namespace _SOAContainerImpl {
              template <typename> class SKIN,
              class... FIELDS, class... EXTRA>
     struct SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper<
-        CONTAINER, SKIN, SOATypelist::typelist<FIELDS...>, EXTRA... >
+        CONTAINER, SKIN, SOA::Typelist::typelist<FIELDS...>, EXTRA... >
     {
         static_assert(!sizeof...(EXTRA), "typelist or variadic, not both");
         using type = _SOAContainer<CONTAINER, SKIN, FIELDS...>;
@@ -764,7 +764,7 @@ namespace _SOAContainerImpl {
  * // first declare member "tags" which describe the members of the notional
  * // struct (which will never exist in memory - SOA layout!)
  *  namespace PointFields {
- *     using namespace SOATypelist;
+ *     using namespace SOA::Typelist;
  *     // since we can have more than one member of the same type in our
  *     // SOA object, we have to do some typedef gymnastics so the compiler
  *     // can tell them apart
@@ -778,7 +778,7 @@ namespace _SOAContainerImpl {
  * class SOAPoint : public NAKEDPROXY {
  *     public:
  *         /// declare "member fields"
- *         using fields_typelist = SOATypelist::typelist<
+ *         using fields_typelist = SOA::Typelist::typelist<
  *             PointFields::x, PointFields::y>;
  *
  *         /// forward constructor to NAKEDPROXY's constructor

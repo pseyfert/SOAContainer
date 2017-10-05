@@ -86,7 +86,7 @@ namespace _SOAViewImpl {
     template <class STORAGE, template <typename> class SKIN,
              class... FIELDS, class... EXTRA>
     struct SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<
-        STORAGE, SKIN, SOATypelist::typelist<FIELDS...>, EXTRA... >
+        STORAGE, SKIN, SOA::Typelist::typelist<FIELDS...>, EXTRA... >
     {
         static_assert(!sizeof...(EXTRA), "typelist or variadic, not both");
         using type = _SOAView<STORAGE, SKIN, FIELDS...>;
@@ -166,7 +166,7 @@ namespace _SOAViewImpl {
  * // first declare member "tags" which describe the members of the notional
  * // struct (which will never exist in memory - SOA layout!)
  *  namespace PointFields {
- *     using namespace SOATypelist;
+ *     using namespace SOA::Typelist;
  *     // since we can have more than one member of the same type in our
  *     // SOA object, we have to do some typedef gymnastics so the compiler
  *     // can tell them apart
@@ -181,7 +181,7 @@ namespace _SOAViewImpl {
  *     public:
  *         /// define the fields (members) typelist
  *         using fields_typelist =
- *             SOATypelist::typelist<PointFields::x, PointFields::y>;
+ *             SOA::Typelist::typelist<PointFields::x, PointFields::y>;
  *         /// forward constructor to NAKEDPROXY's constructor
  *         using NAKEDPROXY::NAKEDPROXY;
  *         /// assignment operator - forward to underlying proxy
@@ -302,13 +302,13 @@ class SOAView : public _SOAViewImpl::SOAView<STORAGE, SKIN, FIELDS...>
  * @code
  * std::vector<float> vx, vy;
  * // fill vx, vy somehow - same number of elements
- * using field_x = struct : SOATypelist::wrap_type<float> {};
- * using field_y = struct : SOATypelist::wrap_type<float> {};
+ * using field_x = struct : SOA::Typelist::wrap_type<float> {};
+ * using field_y = struct : SOA::Typelist::wrap_type<float> {};
  * template <typename NAKEDPROXY>
  * class SOAPoint : public NAKEDPROXY {
  *     public:
  *         /// define a list of "data member" fields
- *         using fields_typelist = SOATypelist::typelist<field_x, field_y>;
+ *         using fields_typelist = SOA::Typelist::typelist<field_x, field_y>;
  *
  *         /// pull in the standard constructors and assignment operators
  *         using NAKEDPROXY::NAKEDPROXY;
@@ -484,7 +484,7 @@ class _SOAView {
             template <typename T>
             struct is_pod_or_wrapped : std::integral_constant<bool,
                 std::is_pod<T>::value ||
-                SOATypelist::is_wrapped<T>::value> {};
+                SOA::Typelist::is_wrapped<T>::value> {};
             // and check that all fields are either pod or wrapped
             static_assert(ALL<is_pod_or_wrapped, FIELDS...>::value,
                 "Fields should be either plain old data (POD) or "
@@ -499,14 +499,14 @@ class _SOAView {
             struct verify_storage_element : public std::integral_constant<bool,
                 std::is_same<typename contained_type<
                     typename std::tuple_element<N, T>::type>::type,
-                    SOATypelist::unwrap_t<FIELD> >::value ||
+                    SOA::Typelist::unwrap_t<FIELD> >::value ||
                 std::is_same<typename std::remove_cv<typename contained_type<
                     typename std::tuple_element<N, T>::type>::type>::type,
-                    SOATypelist::unwrap_t<FIELD> >::value ||
+                    SOA::Typelist::unwrap_t<FIELD> >::value ||
                 std::is_same<typename std::remove_cv<
                     typename std::remove_reference<typename contained_type<
                     typename std::tuple_element<N, T>::type>::type>::type>::type,
-                    SOATypelist::unwrap_t<FIELD> >::value> {};
+                    SOA::Typelist::unwrap_t<FIELD> >::value> {};
 
             /// little helper verifying the storage matches the fields
             template <size_t N, class T, typename... ARGS>
@@ -560,7 +560,7 @@ class _SOAView {
         /// type to represent container itself
         using self_type = _SOAView<STORAGE, SKIN, FIELDS...>;
         /// typelist with the given fields
-        using fields_typelist = SOATypelist::typelist<FIELDS...>;
+        using fields_typelist = SOA::Typelist::typelist<FIELDS...>;
         /// type of the storage backend
         using SOAStorage = STORAGE;
 
@@ -653,13 +653,13 @@ class _SOAView {
         SOAStorage m_storage;
 
         /// (naked) tuple type used as values
-        using naked_value_tuple_type = typename SOATypelist::to_tuple<
+        using naked_value_tuple_type = typename SOA::Typelist::to_tuple<
             fields_typelist>::value_tuple;
         /// (naked) tuple type used as reference
-        using naked_reference_tuple_type = typename SOATypelist::to_tuple<
+        using naked_reference_tuple_type = typename SOA::Typelist::to_tuple<
             fields_typelist>::reference_tuple;
         /// (naked) tuple type used as const reference
-        using naked_const_reference_tuple_type = typename SOATypelist::to_tuple<
+        using naked_const_reference_tuple_type = typename SOA::Typelist::to_tuple<
             fields_typelist>::const_reference_tuple;
 
         _SOAView() {}

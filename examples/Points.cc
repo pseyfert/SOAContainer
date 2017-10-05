@@ -26,12 +26,12 @@ namespace AOS {
     }
 
     typedef std::vector<Point> Points;
-    typedef Point& AOSPoint; 
+    typedef Point& AOSPoint;
 }
 
 namespace SOA {
     namespace PointFields {
-	using namespace SOATypelist;
+	using namespace SOA::Typelist;
 	// since we can have more than one member of the same type in our
 	// SOA object, we have to do some typedef gymnastics so the compiler
 	// can tell them apart
@@ -45,7 +45,7 @@ namespace SOA {
 	    using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
 	    using PrintableNullSkin<NAKEDPROXY>::operator=;
 	    using fields_typelist =
-		SOATypelist::typelist<PointFields::x, PointFields::y>;
+		SOA::Typelist::typelist<PointFields::x, PointFields::y>;
 
 	    float x() const noexcept
 	    { return this-> template get<PointFields::x>(); }
@@ -71,7 +71,7 @@ namespace SOA {
 
 int main() {
     using namespace std;
-    {   
+    {
         using namespace AOS;
         cout << "This is a normal array of structures" << endl;
         Points list_of_points = {Points::value_type(1,2), Point(2,3), Point(3,4)};
@@ -79,11 +79,11 @@ int main() {
 
         for(const auto& item : list_of_points)
             cout << item << endl;
-        
+
         cout << "we can access using list_of_points.at(1).x(): " << list_of_points.at(1).x() << endl;
     }
 
-    {   
+    {
         using namespace SOA;
 
         cout << endl << "This is a SOA wrapper:" << endl;
@@ -93,7 +93,7 @@ int main() {
         list_of_points.emplace_back(4,5);
 
         list_of_points.push_back(std::make_tuple(1.,2.));
-        
+
         //list_of_points.push_back(std::make_tuple(2.,3.));
         //list_of_points.push_back({3.0f,4.0f});
 
@@ -101,13 +101,13 @@ int main() {
 	// the range-based for!
 	for(auto item : list_of_points)
             cout << item << endl;
-        
+
         cout << "we can access using list_of_points.at(1).x(): " << list_of_points.at(1).x() << endl;
 
     }
-    
+
     SOAContainer<std::vector, NullSkin, double, int, int> c;
     c.push_back(make_tuple(1.2,2,3));
-    
+
     return 0;
 }

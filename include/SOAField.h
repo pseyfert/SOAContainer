@@ -27,7 +27,7 @@ namespace SOA {
         class FieldBase {
             public:
                 // make sure that the user doesn't do strange things...
-                static_assert(!SOATypelist::is_wrapped<T>::value,
+                static_assert(!SOA::Typelist::is_wrapped<T>::value,
                         "Error: Do no nest FieldBase<FieldBase<T>, FIELD>!");
                 /// the field tag itself
                 using self_type = FIELD;
