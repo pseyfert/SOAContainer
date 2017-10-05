@@ -16,11 +16,6 @@
 
 /// various other utilities used by SOAContainer
 namespace SOAUtils {
-
-    /// logic "and" of variadic arguments
-    constexpr bool all() { return true; }
-    template <class Head, class... Tail> constexpr bool all(Head head, Tail... tail) { return head && all(tail...); }
-
     /// invoke fun on given arguments, return a dummy int if fun returns void
     template <typename FUN, typename... ARG>
     auto invoke_void2int(FUN fun, ARG&&... arg) noexcept(
