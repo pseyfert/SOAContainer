@@ -13,7 +13,7 @@ namespace SOA {
     /// the implementation behind SOAContainer
     template <template <typename...> class CONTAINER,
         template <typename> class SKIN, typename... FIELDS>
-    class _SOAContainer : public SOA::SOAView<
+    class _SOAContainer : public SOA::View<
                 typename SOA::Typelist::to_tuple<SOA::Typelist::typelist<FIELDS...>
                          >::template container_tuple<CONTAINER>,
                 SKIN, FIELDS...>
@@ -55,7 +55,7 @@ namespace SOA {
             };
     
             /// give a short and convenient name to base class
-            using BASE = SOA::SOAView<
+            using BASE = SOA::View<
                 typename SOA::Typelist::to_tuple<SOA::Typelist::typelist<FIELDS...>
                          >::template container_tuple<CONTAINER>,
                 SKIN, FIELDS...>;

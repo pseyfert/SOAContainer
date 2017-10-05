@@ -34,7 +34,7 @@ class _SOAContainer;
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {
-    /** @brief skin class for SOAView which does nothing and preserved the
+    /** @brief skin class for View which does nothing and preserved the
      * raw proxy interface.
      *
      * @author Manuel Schiller <Manuel.Schiller@cern.ch>
@@ -50,7 +50,7 @@ namespace SOA {
     };
 
 
-    /// more _SOAView implementation details
+    /// more _View implementation details
     namespace impl {
         /// decay T&& into T, leave (const) T(&) unchanged
         template <typename T>
@@ -82,37 +82,37 @@ namespace SOA {
         /// helper to allow flexibility in how fields are supplied
         template <class STORAGE, template <typename> class SKIN,
                  class... TYPELISTORFIELDS>
-        struct SOAViewFieldsFromTypelistOrTemplateParameterPackHelper {
-            using type = _SOAView<STORAGE, SKIN, TYPELISTORFIELDS...>;
+        struct ViewFieldsFromTypelistOrTemplateParameterPackHelper {
+            using type = _View<STORAGE, SKIN, TYPELISTORFIELDS...>;
         };
         /// helper to allow flexibility in how fields are supplied
         template <class STORAGE, template <typename> class SKIN,
                  class... FIELDS, class... EXTRA>
-        struct SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<
+        struct ViewFieldsFromTypelistOrTemplateParameterPackHelper<
             STORAGE, SKIN, SOA::Typelist::typelist<FIELDS...>, EXTRA... >
         {
             static_assert(!sizeof...(EXTRA), "typelist or variadic, not both");
-            using type = _SOAView<STORAGE, SKIN, FIELDS...>;
+            using type = _View<STORAGE, SKIN, FIELDS...>;
         };
         /// helper to allow flexibility in how fields are supplied
         template <class STORAGE, template <typename> class SKIN>
-        struct SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<STORAGE, SKIN>
+        struct ViewFieldsFromTypelistOrTemplateParameterPackHelper<STORAGE, SKIN>
         {
             using type = typename
-                SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<
+                ViewFieldsFromTypelistOrTemplateParameterPackHelper<
                 STORAGE, SKIN, typename SKIN<dummy>::fields_typelist>::type;
         };
         template <class STORAGE, template <typename> class SKIN, typename... FIELDS>
-        using SOAView = typename
-            impl::SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<
+        using View = typename
+            impl::ViewFieldsFromTypelistOrTemplateParameterPackHelper<
             STORAGE, SKIN, FIELDS...>::type;
 
         /// for use by std::swap
         template <typename STORAGE,
                  template <typename> class SKIN,
                  typename... FIELDS>
-        void swap(_SOAView<STORAGE, SKIN, FIELDS...>& a,
-                _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+        void swap(_View<STORAGE, SKIN, FIELDS...>& a,
+                _View<STORAGE, SKIN, FIELDS...>& b) noexcept(
                     noexcept(a.swap(b)))
         { a.swap(b); }
     }
@@ -164,7 +164,7 @@ namespace SOA {
      * For the equivalent example in SOA layout, you'd have to do:
      *
      * @code
-     * #include "SOAView.h"
+     * #include "View.h"
      *
      * // first declare member "tags" which describe the members of the notional
      * // struct (which will never exist in memory - SOA layout!)
@@ -206,7 +206,7 @@ namespace SOA {
      * };
      *
      * // define the SOA container type
-     * using SOAPoints = SOAView<
+     * using SOAPoints = View<
      *         // underlying type for storage
      *         std::tuple<std::vector<float>&, std::vector<float>&>,
      *         SOAPoint>;   // skin to "dress" the tuple of fields with
@@ -244,7 +244,7 @@ namespace SOA {
      *
      * It is important to realise that there's nothing like the struct Point in the
      * AOS example above - the notion of a point very clearly exists, but the
-     * SOAView will not create such an object at any point in time. Instead,
+     * View will not create such an object at any point in time. Instead,
      * the container provides an interface to access fields with the get<field_tag>
      * syntax, or via tuples (conversion to or assignment from tuples is
      * implemented), if simultaneous access to all fields is desired.
@@ -253,7 +253,7 @@ namespace SOA {
      * considerations), the class tries to follow the example of the interface of
      * std::vector as closely as possible.
      *
-     * When using the SOAView class, one must distinguish between elements
+     * When using the View class, one must distinguish between elements
      * (and references to elements) which are stored outside the container and
      * those that are stored inside the container:
      *
@@ -283,24 +283,24 @@ namespace SOA {
      *     { return a.y() < b.y(); });
      * @endcode
      *
-     * Since directly constructing a SOAView is a bit stressful, there's a little
+     * Since directly constructing a View is a bit stressful, there's a little
      * helper called make_soaview which takes some of the sting out of
-     * constructing SOAViews (in much the same way that std::make_pair and
+     * constructing Views (in much the same way that std::make_pair and
      * std::make_tuple do).
      */
     template <class STORAGE, template <typename> class SKIN, typename... FIELDS>
-    class SOAView : public impl::SOAView<STORAGE, SKIN, FIELDS...>
+    class View : public impl::View<STORAGE, SKIN, FIELDS...>
     {
-        using impl::SOAView<STORAGE, SKIN, FIELDS...>::SOAView;
+        using impl::View<STORAGE, SKIN, FIELDS...>::View;
     };
-    /** @brief construct a _SOAView from a skin and a bunch of ranges
+    /** @brief construct a _View from a skin and a bunch of ranges
      *
      * @tparam SKIN         type of skin class to use
      * @tparam RANGES       types of the ranges supplied
      *
-     * @param ranges        ranges from which to construct a _SOAView
+     * @param ranges        ranges from which to construct a _View
      *
-     * @returns a SOAView of the ranges given
+     * @returns a View of the ranges given
      *
      * @code
      * std::vector<float> vx, vy;
@@ -328,7 +328,7 @@ namespace SOA {
      *         { return this-> template get<field_y>(); }
      *         float r2() const noexcept { return x() * x() + y() * y(); }
      * };
-     * // construct a _SOAView from vx, vy
+     * // construct a _View from vx, vy
      * auto view = make_soaview<SOAPoint>(vx, vy);
      * const float angle = 42.f / 180.f * M_PI;
      * const auto s = std::sin(angle), c = std::cos(angle);
@@ -341,25 +341,25 @@ namespace SOA {
      * @endcode
      */
     template <template <typename> class SKIN, typename... RANGES>
-    SOAView<std::tuple<
+    View<std::tuple<
         typename impl::remove_rvalue_reference<RANGES>::type...>, SKIN>
     make_soaview(RANGES&&... ranges)
     {
-        return SOAView<std::tuple<
+        return View<std::tuple<
             typename impl::remove_rvalue_reference<RANGES>::type...>,
                      SKIN>(std::forward<RANGES>(ranges)...);
     }
 
-    /** @brief create a new SOAView from given view, including given fields
+    /** @brief create a new View from given view, including given fields
      *
      * @tparam FIELDS...    fields to extract
-     * @tparam VIEW         SOAView from which to extract
+     * @tparam VIEW         View from which to extract
      * @tparam ARGS...      either nothing, or types of two iterators (first,last(
      *
-     * @param view          SOAView from which to extract given fields
+     * @param view          View from which to extract given fields
      * @param args...       either empty, or two iterators (first, last(
      *
-     * @returns SOAView of the given fields (and given range)
+     * @returns View of the given fields (and given range)
      *
      * @note This will only work with the new-style convienent SOAFields and
      * SOASkins defined via SOAFIELD* and SOASKIN* macros.
@@ -388,16 +388,16 @@ namespace SOA {
                     std::forward<ARGS>(args)...)...);
     }
 
-    /** @brief create a new SOAView from given view, including given fields
+    /** @brief create a new View from given view, including given fields
      *
      * @tparam FIELDS...    fields to extract
-     * @tparam VIEW         SOAView from which to extract
+     * @tparam VIEW         View from which to extract
      * @tparam ARGS...      either nothing, or types of two iterators (first,last(
      *
-     * @param view          SOAView from which to extract given fields
+     * @param view          View from which to extract given fields
      * @param args...       either empty, or two iterators (first, last(
      *
-     * @returns SOAView of the given fields (and given range)
+     * @returns View of the given fields (and given range)
      *
      * @note This will only work with the new-style convienent SOAFields and
      * SOASkins defined via SOAFIELD* and SOASKIN* macros.
@@ -426,16 +426,16 @@ namespace SOA {
                     std::forward<ARGS>(args)...)...);
     }
 
-    /** @brief create a new SOAView from given view, including given fields
+    /** @brief create a new View from given view, including given fields
      *
      * @tparam FIELDS...    fields to extract
-     * @tparam VIEW         SOAView from which to extract
+     * @tparam VIEW         View from which to extract
      * @tparam ARGS...      either nothing, or types of two iterators (first,last(
      *
-     * @param view          SOAView from which to extract given fields
+     * @param view          View from which to extract given fields
      * @param args...       either empty, or two iterators (first, last(
      *
-     * @returns SOAView of the given fields (and given range)
+     * @returns View of the given fields (and given range)
      *
      * @note This will only work with the new-style convienent SOAFields and
      * SOASkins defined via SOAFIELD* and SOASKIN* macros.
@@ -464,10 +464,10 @@ namespace SOA {
                     view.template range<FIELDS>(
                         std::forward<ARGS>(args)...))...);
     }
-    /// the class that really implements SOAView
+    /// the class that really implements View
     template <class STORAGE,
         template <typename> class SKIN, typename... FIELDS>
-    class _SOAView {
+    class _View {
         private:
             template <template <typename> class PRED, typename... ARGS>
             using ANY = SOA::Utils::ANY<PRED, ARGS...>;
@@ -549,9 +549,9 @@ namespace SOA {
             constexpr static bool is_any_field_constant(const T<ARGS...>*) noexcept
             { return _is_any_field_constant<ARGS...>::value; }
 
-            /// record if the _SOAView should be a const one
+            /// record if the _View should be a const one
             enum {
-                is_constant = _SOAView<STORAGE, SKIN, FIELDS...
+                is_constant = _View<STORAGE, SKIN, FIELDS...
                     >::is_any_field_constant(static_cast<const STORAGE*>(nullptr))
             };
 
@@ -561,7 +561,7 @@ namespace SOA {
             /// type to represent differences of indices
             using difference_type = std::ptrdiff_t;
             /// type to represent container itself
-            using self_type = _SOAView<STORAGE, SKIN, FIELDS...>;
+            using self_type = _View<STORAGE, SKIN, FIELDS...>;
             /// typelist with the given fields
             using fields_typelist = SOA::Typelist::typelist<FIELDS...>;
             /// type of the storage backend
@@ -594,7 +594,7 @@ namespace SOA {
                     template <typename T>
                     void operator()(const T& range) const {
                         if (m_sz != range.size())
-                            throw std::logic_error("_SOAView: range sizes must match!");
+                            throw std::logic_error("_View: range sizes must match!");
                     }
                 };
                 /// little helper for assign(count, val)
@@ -665,7 +665,7 @@ namespace SOA {
             using naked_const_reference_tuple_type = typename SOA::Typelist::to_tuple<
                 fields_typelist>::const_reference_tuple;
 
-            _SOAView() {}
+            _View() {}
 
         public:
             /// (notion of) type of the contained objects
@@ -709,15 +709,15 @@ namespace SOA {
             using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
             /// constructor from the underlying storage
-            _SOAView(const SOAStorage& other) :
+            _View(const SOAStorage& other) :
                 m_storage(other) { }
             /// constructor from the underlying storage
-            _SOAView(SOAStorage&& other) :
+            _View(SOAStorage&& other) :
                 m_storage(std::move(other)) { }
             /// constructor from a list of ranges
             template <typename... RANGES, typename std::enable_if<
                 sizeof...(RANGES) == sizeof...(FIELDS), int>::type = 0>
-            _SOAView(RANGES&&... ranges) :
+            _View(RANGES&&... ranges) :
                 m_storage(std::forward<RANGES>(ranges)...)
             {
                 // verify size of ranges
@@ -726,13 +726,13 @@ namespace SOA {
                         m_storage, std::make_index_sequence<sizeof...(RANGES)>());
             }
             /// copy constructor
-            _SOAView(const self_type& other) = default;
+            _View(const self_type& other) = default;
             /// move constructor
-            _SOAView(self_type&& other) = default;
+            _View(self_type&& other) = default;
 
-            /// assignment from other _SOAView
+            /// assignment from other _View
             self_type& operator=(const self_type& other) = default;
-            /// move-assignment from other _SOAView
+            /// move-assignment from other _View
             self_type& operator=(self_type&& other) = default;
 
             /// return if the container is empty
@@ -1061,7 +1061,7 @@ namespace SOA {
     };
 
     namespace impl {
-        /// helper class to compare _SOAViews (field by field)
+        /// helper class to compare _Views (field by field)
         template <template <typename> class COMP, std::size_t N> class compare {
             private:
                 /// compare field N - 1 element by element
@@ -1088,7 +1088,7 @@ namespace SOA {
                 { return compare<COMP, N - 1>()(a, b) && doit(a, b); }
         };
 
-        /// helper class to compare _SOAViews, specialised N = 1
+        /// helper class to compare _Views, specialised N = 1
         template <template <typename> class COMP> class compare<COMP, 1> {
             private:
                 /// compare field 0 element by element
@@ -1116,45 +1116,45 @@ namespace SOA {
         };
     }
 
-    /// compare two _SOAViews for equality
+    /// compare two _Views for equality
     template <typename STORAGE,
         template <typename> class SKIN, typename... FIELDS>
-    bool operator==(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
-            const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+    bool operator==(const _View<STORAGE, SKIN, FIELDS...>& a,
+            const _View<STORAGE, SKIN, FIELDS...>& b) noexcept(
                 noexcept(a.size()) && noexcept(
                     impl::compare<std::equal_to,
-                    _SOAView<STORAGE, SKIN, FIELDS...
+                    _View<STORAGE, SKIN, FIELDS...
                     >::fields_typelist::size()>()(a, b)))
     {
         if (a.size() != b.size()) return false;
         // compare one field at a time
         return impl::compare<std::equal_to,
-               _SOAView<STORAGE, SKIN, FIELDS...
+               _View<STORAGE, SKIN, FIELDS...
                    >::fields_typelist::size()>()(a, b);
     }
 
-    /// compare two _SOAViews for inequality
+    /// compare two _Views for inequality
     template <typename STORAGE,
         template <typename> class SKIN, typename... FIELDS>
-    bool operator!=(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
-            const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+    bool operator!=(const _View<STORAGE, SKIN, FIELDS...>& a,
+            const _View<STORAGE, SKIN, FIELDS...>& b) noexcept(
                 noexcept(a.size()) && noexcept(
                     impl::compare<std::not_equal_to,
-                    _SOAView<STORAGE, SKIN, FIELDS...
+                    _View<STORAGE, SKIN, FIELDS...
                     >::fields_typelist::size()>()(a, b)))
     {
         if (a.size() != b.size()) return true;
         // compare one field at a time
         return impl::compare<std::not_equal_to,
-               _SOAView<STORAGE, SKIN, FIELDS...
+               _View<STORAGE, SKIN, FIELDS...
                    >::fields_typelist::size()>()(a, b);
     }
 
-    /// compare two _SOAViews lexicographically using <
+    /// compare two _Views lexicographically using <
     template <typename STORAGE,
         template <typename> class SKIN, typename... FIELDS>
-    bool operator<(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
-            const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+    bool operator<(const _View<STORAGE, SKIN, FIELDS...>& a,
+            const _View<STORAGE, SKIN, FIELDS...>& b) noexcept(
                 noexcept(std::lexicographical_compare(a.cbegin(), a.cend(),
                         b.cbegin(), b.cend(),
                         std::less<decltype(a.front())>())))
@@ -1163,27 +1163,27 @@ namespace SOA {
                 b.cbegin(), b.cend(), std::less<decltype(a.front())>());
     }
 
-    /// compare two _SOAViews lexicographically using >
+    /// compare two _Views lexicographically using >
     template <typename STORAGE,
         template <typename> class SKIN, typename... FIELDS>
-    bool operator>(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
-            const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+    bool operator>(const _View<STORAGE, SKIN, FIELDS...>& a,
+            const _View<STORAGE, SKIN, FIELDS...>& b) noexcept(
                 noexcept(b < a))
     { return b < a; }
 
-    /// compare two _SOAViews lexicographically using <=
+    /// compare two _Views lexicographically using <=
     template <typename STORAGE,
         template <typename> class SKIN, typename... FIELDS>
-    bool operator<=(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
-            const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+    bool operator<=(const _View<STORAGE, SKIN, FIELDS...>& a,
+            const _View<STORAGE, SKIN, FIELDS...>& b) noexcept(
                 noexcept(!(a > b)))
     { return !(a > b); }
 
-    /// compare two _SOAViews lexicographically using >=
+    /// compare two _Views lexicographically using >=
     template <typename STORAGE,
         template <typename> class SKIN, typename... FIELDS>
-    bool operator>=(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
-            const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+    bool operator>=(const _View<STORAGE, SKIN, FIELDS...>& a,
+            const _View<STORAGE, SKIN, FIELDS...>& b) noexcept(
                 noexcept(!(a < b)))
     { return !(a < b); }
 
@@ -1198,8 +1198,8 @@ namespace SOA {
                      template <typename> class SKIN2, typename... FIELDS2,
                 template <class> class SKIN =
                 SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
-            static auto doIt(const _SOAView<STORAGE1, SKIN1, FIELDS1...>& v1,
-                    const _SOAView<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
+            static auto doIt(const _View<STORAGE1, SKIN1, FIELDS1...>& v1,
+                    const _View<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
                         make_soaview<SKIN>(v1.template range<FIELDS1>()...,
                             v2.template range<FIELDS2>()...))
             {
@@ -1211,8 +1211,8 @@ namespace SOA {
                      template <typename> class SKIN2, typename... FIELDS2,
                 template <class> class SKIN =
                 SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
-            static auto doIt(_SOAView<STORAGE1, SKIN1, FIELDS1...>& v1,
-                    const _SOAView<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
+            static auto doIt(_View<STORAGE1, SKIN1, FIELDS1...>& v1,
+                    const _View<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
                         make_soaview<SKIN>(v1.template range<FIELDS1>()...,
                             v2.template range<FIELDS2>()...))
             {
@@ -1224,8 +1224,8 @@ namespace SOA {
                      template <typename> class SKIN2, typename... FIELDS2,
                 template <class> class SKIN =
                 SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
-            static auto doIt(const _SOAView<STORAGE1, SKIN1, FIELDS1...>& v1,
-                    _SOAView<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
+            static auto doIt(const _View<STORAGE1, SKIN1, FIELDS1...>& v1,
+                    _View<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
                         make_soaview<SKIN>(v1.template range<FIELDS1>()...,
                             v2.template range<FIELDS2>()...))
             {
@@ -1237,8 +1237,8 @@ namespace SOA {
                      template <typename> class SKIN2, typename... FIELDS2,
                 template <class> class SKIN =
                 SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
-            static auto doIt(_SOAView<STORAGE1, SKIN1, FIELDS1...>& v1,
-                    _SOAView<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
+            static auto doIt(_View<STORAGE1, SKIN1, FIELDS1...>& v1,
+                    _View<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
                         make_soaview<SKIN>(v1.template range<FIELDS1>()...,
                             v2.template range<FIELDS2>()...))
             {
@@ -1274,7 +1274,7 @@ namespace SOA {
         };
     }
 
-    /** @brief zip a number of SOAViews
+    /** @brief zip a number of Views
      *
      * @tparam VIEWS...     types of views to zip
      * @param views...      views to zip

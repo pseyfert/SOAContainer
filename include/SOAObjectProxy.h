@@ -22,7 +22,7 @@ namespace SOA {
     template <typename PROXY> class Iterator;
     template <class STORAGE,
              template <typename> class SKIN, typename... FIELDS>
-    class _SOAView;
+    class _View;
     template <template <typename...> class CONTAINER,
              template <typename> class SKIN, typename... FIELDS>
     class _SOAContainer;

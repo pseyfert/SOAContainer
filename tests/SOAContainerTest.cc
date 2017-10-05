@@ -539,7 +539,7 @@ TEST (SOAView, SimpleTests) {
         vy.push_back(rnd());
     }
     vxx = vx, vyy = vy;
-    // construct a SOAView from vx, vy
+    // construct a View from vx, vy
     auto view = SOA::make_soaview<SOAPoint>(vx, vy);
     // data must look the same
     EXPECT_EQ(vx.front(), view.front().x());
