@@ -16,10 +16,11 @@
 #include "c++14_compat.h"
 
 // forward declarations
-template <typename PROXY>
-class SOAConstIterator;
-template <typename PROXY>
-class SOAIterator;
+/// namespace to encapsulate SOA stuff
+namespace SOA {
+    template <typename PROXY> class ConstIterator;
+    template <typename PROXY> class Iterator;
+} // namespace SOA
 template <class STORAGE,
          template <typename> class SKIN, typename... FIELDS>
 class _SOAView;
@@ -27,7 +28,6 @@ template <template <typename...> class CONTAINER,
          template <typename> class SKIN, typename... FIELDS>
 class _SOAContainer;
 
-/// namespace to encapsulate SOA stuff
 namespace SOA {
 /** @brief proxy object for the elements stored in the container.
  *
@@ -61,9 +61,9 @@ class ObjectProxy {
         /// type for tuple of const references to members
         using const_reference = typename parent_type::value_const_reference;
         /// type of a pointer
-        using pointer = SOAIterator<typename parent_type::proxy>;
+        using pointer = SOA::Iterator<typename parent_type::proxy>;
         /// type of a const pointer
-        using const_pointer = SOAConstIterator<typename parent_type::proxy>;
+        using const_pointer = SOA::ConstIterator<typename parent_type::proxy>;
 
     protected:
         /// type used by the parent container to hold the SOA data

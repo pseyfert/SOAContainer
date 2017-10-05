@@ -686,7 +686,7 @@ class _SOAView {
         using proxy = SKIN<naked_proxy>;
         friend proxy;
         /// pointer to contained objects
-        using pointer = SOAIterator<proxy>;
+        using pointer = SOA::Iterator<proxy>;
         friend pointer;
         /// iterator type
         using iterator = pointer;
@@ -695,7 +695,7 @@ class _SOAView {
         /// reference to contained objects
         using const_reference = const reference;
         /// const pointer to contained objects
-        using const_pointer = SOAConstIterator<proxy>;
+        using const_pointer = SOA::ConstIterator<proxy>;
         friend const_pointer;
         /// const iterator type
         using const_iterator = const_pointer;
