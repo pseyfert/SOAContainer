@@ -9,6 +9,7 @@
 
 #include <tuple>
 
+/// namespace to encapsulate SOA stuff
 namespace SOA {
     /** @brief dress std::tuple with the get interface of SOAObjectProxy
      *
@@ -23,23 +24,23 @@ namespace SOA {
     {
         /// convenience typedef
         using self_type = DressedTuple<TUPLE, CONTAINER>;
-    
+
         /// for everything else, use TUPLE's constructor
         using TUPLE::TUPLE;
         /// for everything else, use TUPLE's assignment operators
         using TUPLE::operator=;
-    
+
         /// provide the member function template get interface of proxies
         template<typename CONTAINER::size_type MEMBERNO>
         auto get() noexcept -> decltype(std::get<MEMBERNO>(std::declval<self_type&>()))
         { return std::get<MEMBERNO>(*this); }
-    
+
         /// provide the member function template get interface of proxies
         template<typename CONTAINER::size_type MEMBERNO>
         auto get() const noexcept -> decltype(std::get<MEMBERNO>(
                     std::declval<const self_type&>()))
         { return std::get<MEMBERNO>(*this); }
-    
+
         /// provide the member function template get interface of proxies
         template<typename MEMBER, typename CONTAINER::size_type MEMBERNO =
             CONTAINER::template memberno<MEMBER>()>
@@ -49,7 +50,7 @@ namespace SOA {
                     MEMBERNO, "Called with wrong template argument(s).");
             return std::get<MEMBERNO>(*this);
         }
-    
+
         /// provide the member function template get interface of proxies
         template<typename MEMBER, typename CONTAINER::size_type MEMBERNO =
             CONTAINER::template memberno<MEMBER>()>
