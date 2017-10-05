@@ -15,18 +15,18 @@
 #include "SOAUtils.h"
 #include "c++14_compat.h"
 
-// forward declarations
 /// namespace to encapsulate SOA stuff
 namespace SOA {
+    // forward declarations
     template <typename PROXY> class ConstIterator;
     template <typename PROXY> class Iterator;
+    template <class STORAGE,
+             template <typename> class SKIN, typename... FIELDS>
+    class _SOAView;
+    template <template <typename...> class CONTAINER,
+             template <typename> class SKIN, typename... FIELDS>
+    class _SOAContainer;
 } // namespace SOA
-template <class STORAGE,
-         template <typename> class SKIN, typename... FIELDS>
-class _SOAView;
-template <template <typename...> class CONTAINER,
-         template <typename> class SKIN, typename... FIELDS>
-class _SOAContainer;
 
 namespace SOA {
     /** @brief proxy object for the elements stored in the container.

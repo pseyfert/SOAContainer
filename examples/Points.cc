@@ -40,7 +40,7 @@ namespace SOA {
     }
 
     template <typename NAKEDPROXY>
-    class SOAPointProxy : public PrintableNullSkin<NAKEDPROXY> {
+    class SOAPointProxy : public SOA::PrintableNullSkin<NAKEDPROXY> {
 	public:
 	    using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
 	    using PrintableNullSkin<NAKEDPROXY>::operator=;
@@ -61,7 +61,7 @@ namespace SOA {
     };
 
     // define the SOA container type
-    typedef SOAContainer<
+    typedef SOA::SOAContainer<
 	std::vector,   // underlying type for each field
 	SOAPointProxy> // skin to "dress" the tuple of fields with
 	Points;
@@ -106,7 +106,7 @@ int main() {
 
     }
 
-    SOAContainer<std::vector, NullSkin, double, int, int> c;
+    SOA::SOAContainer<std::vector, SOA::NullSkin, double, int, int> c;
     c.push_back(make_tuple(1.2,2,3));
 
     return 0;

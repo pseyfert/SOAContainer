@@ -68,7 +68,7 @@ namespace SOA {
     std::ostream& operator<<(std::ostream& os,
             const PrintableNullSkin<T>& printable)
     { return os << "{" << std::string(printable) << "}"; }
-} // SOA
+} // namespace SOA
 
 #endif // PRINTABLENULLSKIN_H
 
