@@ -666,12 +666,13 @@ class _SOAView {
 
     public:
         /// (notion of) type of the contained objects
-        using value_type = SKIN<DressedTuple<naked_value_tuple_type, self_type> >;
+        using value_type = SKIN<SOA::DressedTuple<
+            naked_value_tuple_type, self_type> >;
         /// (notion of) reference to value_type (outside container)
-        using value_reference = SKIN<DressedTuple<
+        using value_reference = SKIN<SOA::DressedTuple<
             naked_reference_tuple_type, self_type> >;
         /// (notion of) const reference to value_type (outside container)
-        using value_const_reference = SKIN<DressedTuple<
+        using value_const_reference = SKIN<SOA::DressedTuple<
             naked_const_reference_tuple_type, self_type> >;
 
     public:

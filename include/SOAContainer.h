@@ -7,19 +7,6 @@
 #ifndef SOACONTAINER_H
 #define SOACONTAINER_H
 
-#include <limits>
-#include <cassert>
-#include <stdexcept>
-#include <algorithm>
-#include <functional>
-#include <initializer_list>
-
-#include "SOATypelist.h"
-#include "SOATypelistUtils.h"
-#include "SOAObjectProxy.h"
-#include "SOADressedTuple.h"
-#include "SOAIterator.h"
-#include "SOAUtils.h"
 #include "SOAView.h"
 
 /// the implementation behind SOAContainer
@@ -867,7 +854,7 @@ namespace _SOAContainerImpl {
  *
  * - When stored inside the container, the element itself does not exist as
  *   such because of the SOA storage constraint; (const) references and
- *   pointers are implemented with instances of SKINned SOAObjectProxy and
+ *   pointers are implemented with instances of SKINned ObjectProxy and
  *   SOA(Const)Ptr. On the outside, these classes look and feel like
  *   references and pointers, but set up memory access to members/fields such
  *   that the SOA memory layout is preserved.
