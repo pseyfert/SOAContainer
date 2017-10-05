@@ -103,6 +103,15 @@ namespace _SOAViewImpl {
     using SOAView = typename
         _SOAViewImpl::SOAViewFieldsFromTypelistOrTemplateParameterPackHelper<
         STORAGE, SKIN, FIELDS...>::type;
+
+    /// for use by std::swap
+    template <typename STORAGE,
+             template <typename> class SKIN,
+             typename... FIELDS>
+    void swap(_SOAView<STORAGE, SKIN, FIELDS...>& a,
+            _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
+                noexcept(a.swap(b)))
+    { a.swap(b); }
 }
 /** @brief SOA view for objects with given fields (SOA storage)
  *
@@ -1053,18 +1062,6 @@ class _SOAView {
 
 namespace _SOAViewImpl {
 
-}
-
-
-namespace std {
-    /// specialise std::swap
-    template <typename STORAGE,
-             template <typename> class SKIN,
-             typename... FIELDS>
-    void swap(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
-            const _SOAView<STORAGE, SKIN, FIELDS...>& b) noexcept(
-                noexcept(a.swap(b)))
-    { a.swap(b); }
 }
 
 namespace _SOAViewImpl {
