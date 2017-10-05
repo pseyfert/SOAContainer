@@ -673,40 +673,40 @@ TEST(SOAView, FieldExtraction) {
     for (unsigned i = 0; i < 16; ++i) c.emplace_back(rnd(), rnd(), rnd());
     EXPECT_EQ(c.size(), 16u);
     // test extraction of some fields into a new view
-    auto v1 = extract_fields<f_x>(c);
+    auto v1 = c.view<f_x>();
     EXPECT_EQ(c.size(), v1.size());
     for (unsigned i = 0; i < c.size(); ++i) {
         EXPECT_EQ(c[i].x(), v1[i].x());
     }
-    auto v2 = extract_fields<f_y>(c);
+    auto v2 = c.view<f_y>();
     EXPECT_EQ(c.size(), v2.size());
     for (unsigned i = 0; i < c.size(); ++i) {
         EXPECT_EQ(c[i].y(), v2[i].y());
     }
-    auto v3 = extract_fields<f_z>(c);
+    auto v3 = c.view<f_z>();
     EXPECT_EQ(c.size(), v3.size());
     for (unsigned i = 0; i < c.size(); ++i) {
         EXPECT_EQ(c[i].z(), v3[i].z());
     }
-    auto v4 = extract_fields<f_x, f_y>(c);
+    auto v4 = c.view<f_x, f_y>();
     EXPECT_EQ(c.size(), v4.size());
     for (unsigned i = 0; i < c.size(); ++i) {
         EXPECT_EQ(c[i].x(), v4[i].x());
         EXPECT_EQ(c[i].y(), v4[i].y());
     }
-    auto v5 = extract_fields<f_y, f_z>(c);
+    auto v5 = c.view<f_y, f_z>();
     EXPECT_EQ(c.size(), v5.size());
     for (unsigned i = 0; i < c.size(); ++i) {
         EXPECT_EQ(c[i].y(), v5[i].y());
         EXPECT_EQ(c[i].z(), v5[i].z());
     }
-    auto v6 = extract_fields<f_x, f_z>(c);
+    auto v6 = c.view<f_x, f_z>();
     EXPECT_EQ(c.size(), v6.size());
     for (unsigned i = 0; i < c.size(); ++i) {
         EXPECT_EQ(c[i].x(), v6[i].x());
         EXPECT_EQ(c[i].z(), v6[i].z());
     }
-    auto v7 = extract_fields<f_x, f_y, f_z>(c);
+    auto v7 = c.view<f_x, f_y, f_z>();
     EXPECT_EQ(c.size(), v7.size());
     for (unsigned i = 0; i < c.size(); ++i) {
         EXPECT_EQ(c[i].x(), v7[i].x());
@@ -724,10 +724,10 @@ TEST(SOAView, JoinViews) {
     for (unsigned i = 0; i < 16; ++i) c.emplace_back(rnd(), rnd(), rnd());
     EXPECT_EQ(c.size(), 16u);
     // test extraction of some fields into a new view
-    auto v1 = extract_fields<f_x>(c);
-    auto v2 = extract_fields<f_y>(c);
-    auto v3 = extract_fields<f_z>(c);
-    auto v4 = join(v1, v2, v3);
+    auto v1 = c.view<f_x>();
+    auto v2 = c.view<f_y>();
+    auto v3 = c.view<f_z>();
+    auto v4 = zip(v1, v2, v3);
     EXPECT_EQ(c.size(), v4.size());
     for (unsigned i = 0; i < c.size(); ++i) {
         EXPECT_EQ(c[i].x(), v4[i].x());

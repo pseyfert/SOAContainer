@@ -85,14 +85,16 @@ namespace SOA {
     } // impl
 } // SOA
 
-/** @brief macro to forward default constructors/assignment operators for a skin
+/** @brief macro to "inherit" default constructors/assignment operators from
+ * underlying tuple.
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
  * @date 2017-10-03
  *
  * @param name 	name of the skin class
  *
- * For a usage example, please see SOASKIN below.
+ * For a usage example, please see SOASKIN below. Usually, you will want to
+ * use this...
  */
 #define SOASKIN_INHERIT_DEFAULT_METHODS(name) \
     using __BASE__ = SOA::impl::detect_skin_base<name>; \
