@@ -587,7 +587,7 @@ namespace ConvenientContainersTest_Fields {
     SOAFIELD(x, float);
     SOAFIELD(y, float);
     SOAFIELD_CUSTOM(f_flags, int,
-        SOAFIELD_ACCESSORS(f_flags, int, flags)
+        SOAFIELD_ACCESSORS(flags)
         enum Flag { Used = 0x1, Dead = 0x2 };
         bool isUsed() const { return flags() & Used; }
         bool isDead() const { return flags() & Dead; }

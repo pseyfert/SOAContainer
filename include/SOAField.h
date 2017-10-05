@@ -63,17 +63,15 @@ namespace SOAField_impl {
  * @note The name of the defined field struct starts with "f_" by convention,
  * please adhere to that convention.
  *
- * @param name          name of the field struct
- * @param type          type of the data "contained" in the field
  * @param accessorname  name the accessor routines will get
  *
  * See SOAFIELD_CUSTOM below for an example of this macro's usage.
  */
-#define SOAFIELD_ACCESSORS(name, type, accessorname) \
-    type& accessorname() noexcept(noexcept(\
+#define SOAFIELD_ACCESSORS(accessorname) \
+    FieldBase::type& accessorname() noexcept(noexcept(\
                 std::declval<accessors&>()._get())) \
     { return this->_get(); } \
-    const type& accessorname() const noexcept(noexcept( \
+    const FieldBase::type& accessorname() const noexcept(noexcept( \
                 std::declval<const accessors&>()._get())) \
     { return this->_get(); }
 
@@ -93,7 +91,7 @@ namespace SOAField_impl {
  * with a couple of routines to test/set those flags:
  * @code
  * SOAFIELD_CUSTOM(f_flags, int,
- *     SOAFIELD_ACCESSORS(f_flags, int, flags) // default accessors: flags()
+ *     SOAFIELD_ACCESSORS(flags) // default accessors: flags()
  *     enum Flag { Used = 0x1, Dead = 0x2 };
  *     bool isUsed() const { return flags() & Used; }
  *     bool isDead() const { return flags() & Dead; }
@@ -135,7 +133,7 @@ namespace SOAField_impl {
  * @endcode
  */
 #define SOAFIELD(name, type) \
-    SOAFIELD_CUSTOM(f_##name, type, SOAFIELD_ACCESSORS(f_##name, type, name))
+    SOAFIELD_CUSTOM(f_##name, type, SOAFIELD_ACCESSORS(name))
 
 #endif // SOAFIELD_H
 
