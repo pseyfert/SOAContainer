@@ -1095,7 +1095,7 @@ bool operator>=(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
  */
 template <typename... FIELDS, typename VIEW, typename... ARGS,
     template <class> class SKIN =
-    SOASkinCreatorSimple<FIELDS...>::template type>
+    SOA::impl::SOASkinCreatorSimple<FIELDS...>::template type>
 auto extract_fields(const VIEW& view, ARGS&&... args) -> decltype(
     make_soaview<SKIN>(view.template range<FIELDS>(
                 std::forward<ARGS>(args)...)...))
@@ -1133,7 +1133,7 @@ auto extract_fields(const VIEW& view, ARGS&&... args) -> decltype(
  */
 template <typename... FIELDS, typename VIEW, typename... ARGS,
     template <class> class SKIN =
-    SOASkinCreatorSimple<FIELDS...>::template type>
+    SOA::impl::SOASkinCreatorSimple<FIELDS...>::template type>
 auto extract_fields(VIEW& view, ARGS&&... args) -> decltype(
     make_soaview<SKIN>(view.template range<FIELDS>(
                 std::forward<ARGS>(args)...)...))
@@ -1171,7 +1171,7 @@ auto extract_fields(VIEW& view, ARGS&&... args) -> decltype(
  */
 template <typename... FIELDS, typename VIEW, typename... ARGS,
     template <class> class SKIN =
-    SOASkinCreatorSimple<FIELDS...>::template type>
+    SOA::impl::SOASkinCreatorSimple<FIELDS...>::template type>
 auto extract_fields(VIEW&& view, ARGS&&... args) -> decltype(
     make_soaview<SKIN>(_SOAViewImpl::move_if_not_lvalue_reference(
             view.template range<FIELDS>(std::forward<ARGS>(args)...))...))
@@ -1190,7 +1190,7 @@ namespace _SOAViewImpl {
                  typename... FIELDS1, class STORAGE2,
                  template <typename> class SKIN2, typename... FIELDS2,
             template <class> class SKIN =
-            SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+            SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
         static auto doIt(const _SOAView<STORAGE1, SKIN1, FIELDS1...>& v1,
                 const _SOAView<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
                     make_soaview<SKIN>(v1.template range<FIELDS1>()...,
@@ -1203,7 +1203,7 @@ namespace _SOAViewImpl {
                  typename... FIELDS1, class STORAGE2,
                  template <typename> class SKIN2, typename... FIELDS2,
             template <class> class SKIN =
-            SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+            SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
         static auto doIt(_SOAView<STORAGE1, SKIN1, FIELDS1...>& v1,
                 const _SOAView<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
                     make_soaview<SKIN>(v1.template range<FIELDS1>()...,
@@ -1216,7 +1216,7 @@ namespace _SOAViewImpl {
                  typename... FIELDS1, class STORAGE2,
                  template <typename> class SKIN2, typename... FIELDS2,
             template <class> class SKIN =
-            SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+            SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
         static auto doIt(const _SOAView<STORAGE1, SKIN1, FIELDS1...>& v1,
                 _SOAView<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
                     make_soaview<SKIN>(v1.template range<FIELDS1>()...,
@@ -1229,7 +1229,7 @@ namespace _SOAViewImpl {
                  typename... FIELDS1, class STORAGE2,
                  template <typename> class SKIN2, typename... FIELDS2,
             template <class> class SKIN =
-            SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+            SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
         static auto doIt(_SOAView<STORAGE1, SKIN1, FIELDS1...>& v1,
                 _SOAView<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
                     make_soaview<SKIN>(v1.template range<FIELDS1>()...,

@@ -11,49 +11,55 @@
 
 #include "SOATypelistUtils.h"
 
-/// implementation details for convenient SOA fields
-namespace SOAField_impl {
-    /** @brief class from which a field tag derives
-     *
-     * @tparam T            type of the field
-     * @tparam FIELD        field (child) type to use
-     *
-     * @author Manuel Schiller <Manuel.Schiller@cern.ch>
-     * @date 2017-10-03
-     */
-    template <typename T, class FIELD>
-    class FieldBase {
-        public:
-            // make sure that the user doesn't do strange things...
-            static_assert(!SOATypelist::is_wrapped<T>::value,
-                    "Error: Do no nest FieldBase<FieldBase<T>, FIELD>!");
-            /// the field tag itself
-            using self_type = FIELD;
-            /// tell SOAContainer/View that we wrap a type
-            using wrap_tag = struct {};
-            /// type we wrap
-            using type = T;
-        protected:
-            /** @brief low-level struct for as base class for accessors
-             *
-             * @tparam SKIN skin which this accessor will use
-             *
-             * @author Manuel Schiller <Manuel.Schiller@cern.ch>
-             * @date 2017-10-03
-             */
-            template <class SKIN>
-            struct AccessorBase {
-                /// retrieve reference to the field
-                type& _get() noexcept(noexcept(
-                            std::declval<SKIN&>().template get<FIELD>()))
-                { return static_cast<SKIN&>(*this).template get<FIELD>(); }
-                /// retrieve const reference to the field
-                const type& _get() const noexcept(noexcept(
-                            std::declval<const SKIN&>().template get<FIELD>()))
-                { return static_cast<const SKIN&>(*this).template get<FIELD>(); }
-            };
-    };
-} // SOAField_impl
+/// namespace to encapsulate SOA stuff
+namespace SOA {
+    /// implementation details for convenient SOA fields
+    namespace impl {
+        /** @brief class from which a field tag derives
+         *
+         * @tparam T            type of the field
+         * @tparam FIELD        field (child) type to use
+         *
+         * @author Manuel Schiller <Manuel.Schiller@cern.ch>
+         * @date 2017-10-03
+         */
+        template <typename T, class FIELD>
+        class FieldBase {
+            public:
+                // make sure that the user doesn't do strange things...
+                static_assert(!SOATypelist::is_wrapped<T>::value,
+                        "Error: Do no nest FieldBase<FieldBase<T>, FIELD>!");
+                /// the field tag itself
+                using self_type = FIELD;
+                /// tell SOAContainer/View that we wrap a type
+                using wrap_tag = struct {};
+                /// type we wrap
+                using type = T;
+            protected:
+                /** @brief low-level struct for as base class for accessors
+                 *
+                 * @tparam SKIN skin which this accessor will use
+                 *
+                 * @author Manuel Schiller <Manuel.Schiller@cern.ch>
+                 * @date 2017-10-03
+                 */
+                template <class SKIN>
+                struct AccessorBase {
+                    /// retrieve reference to the field
+                    type& _get() noexcept(noexcept(
+                        std::declval<SKIN&>().template get<FIELD>()))
+                    { return static_cast<SKIN&>(*this).template get<FIELD>(); }
+                    /// retrieve const reference to the field
+                    const type& _get() const noexcept(noexcept(
+                        std::declval<const SKIN&>().template get<FIELD>()))
+                    {
+                        return static_cast<const SKIN&>(
+                                *this).template get<FIELD>();
+                    }
+                };
+        };
+    } // impl
+} // SOA
 
 /** @brief define the standard accessors for use in a field
  *
@@ -65,7 +71,7 @@ namespace SOAField_impl {
  *
  * @param accessorname  name the accessor routines will get
  *
- * See SOAFIELD_CUSTOM below for an example of this macro's usage.
+ * See the SOAFIELD macro below for an example of this macro's usage.
  */
 #define SOAFIELD_ACCESSORS(accessorname) \
     FieldBase::type& accessorname() noexcept(noexcept(\
@@ -90,7 +96,7 @@ namespace SOAField_impl {
  * This is how one would define an integer field which contains flags, along
  * with a couple of routines to test/set those flags:
  * @code
- * SOAFIELD_CUSTOM(f_flags, int,
+ * SOAFIELD(f_flags, int,
  *     SOAFIELD_ACCESSORS(flags) // default accessors: flags()
  *     enum Flag { Used = 0x1, Dead = 0x2 };
  *     bool isUsed() const { return flags() & Used; }
@@ -111,8 +117,8 @@ namespace SOAField_impl {
  * );
  * @endcode
  */
-#define SOAFIELD_CUSTOM(name, type, ... /* body */) \
-    struct name : SOAField_impl::FieldBase<type, name> { \
+#define SOAFIELD(name, type, ... /* body */) \
+    struct name : SOA::impl::FieldBase<type, name> { \
         template <class SKIN> struct accessors : AccessorBase<SKIN> \
         { __VA_ARGS__ }; }
 /** @brief define a field with name f_name, accessors named name, of type type
@@ -123,17 +129,18 @@ namespace SOAField_impl {
  * @note The name of the defined field struct starts with "f_" by convention,
  * please adhere to that convention.
  *
- * @param name  name of the field struct
- * @param type  data type "contained" in the field
+ * @param name          name of the field struct
+ * @param type          data type "contained" in the field
+ * @param accessorname  name of the accessor function (getter/setter)
  *
  * To define a field f_x which contains a float, with standard getters/setters
  * called x() that return a (const) float&, one would write this code:
  * @code
- * SOAFIELD(x, float);
+ * SOAFIELD_TRIVIAL(f_x, x, float);
  * @endcode
  */
-#define SOAFIELD(name, type) \
-    SOAFIELD_CUSTOM(f_##name, type, SOAFIELD_ACCESSORS(name))
+#define SOAFIELD_TRIVIAL(name, accessorname, type) \
+    SOAFIELD(name, type, SOAFIELD_ACCESSORS(accessorname))
 
 #endif // SOAFIELD_H
 

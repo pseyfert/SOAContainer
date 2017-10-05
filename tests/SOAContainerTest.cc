@@ -18,8 +18,8 @@
 
 /// unit test SOAContainer class
 TEST (BasicTest, SimpleTests) {
-    SOAContainer<std::vector, PrintableNullSkin, double, int, int> c;
-    const SOAContainer<std::vector, PrintableNullSkin, double, int, int>& cc = c;
+    SOAContainer<std::vector, SOA::PrintableNullSkin, double, int, int> c;
+    const SOAContainer<std::vector, SOA::PrintableNullSkin, double, int, int>& cc = c;
     // check basic properties
     EXPECT_TRUE(c.empty());
     EXPECT_EQ(0u, c.size());
@@ -56,8 +56,8 @@ TEST (BasicTest, SimpleTests) {
 }
 
 TEST (BasicTest, More)  {
-    SOAContainer<std::vector, PrintableNullSkin, double, int, int> c;
-    const SOAContainer<std::vector, PrintableNullSkin, double, int, int>& cc = c;
+    SOAContainer<std::vector, SOA::PrintableNullSkin, double, int, int> c;
+    const SOAContainer<std::vector, SOA::PrintableNullSkin, double, int, int>& cc = c;
     std::tuple<double, int, int> val(3.14, 17, 42);
     // standard push_back by const reference
     c.push_back(val);
@@ -159,8 +159,8 @@ TEST (BasicTest, More)  {
 }
 
 TEST (BasicTest, EvenMore) {
-   SOAContainer<std::vector, PrintableNullSkin, double, int, int> c;
-   const SOAContainer<std::vector, PrintableNullSkin, double, int, int>& cc = c;
+   SOAContainer<std::vector, SOA::PrintableNullSkin, double, int, int> c;
+   const SOAContainer<std::vector, SOA::PrintableNullSkin, double, int, int>& cc = c;
     // test insert(pos, first, last), erase(pos) and erase(first, last)
     // by comparing to an array-of-structures in a std::vector
     typedef std::size_t size_type;
@@ -328,14 +328,14 @@ namespace HitNamespace {
     }
 
     template <typename NAKEDPROXY>
-    class HitSkin : public PrintableNullSkin<NAKEDPROXY> {
+    class HitSkin : public SOA::PrintableNullSkin<NAKEDPROXY> {
         public:
             using fields_typelist = SOATypelist::typelist<
                 Fields::xAtYEq0, Fields::xAtYEq0,
                 Fields::dxdy, Fields::dzdy,
                 Fields::x, Fields::y, Fields::z>;
-            using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
-            using PrintableNullSkin<NAKEDPROXY>::operator=;
+            using SOA::PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
+            using SOA::PrintableNullSkin<NAKEDPROXY>::operator=;
 
             auto xAtYEq0() const noexcept -> decltype(this->template get<Fields::xAtYEq0>())
             { return this->template get<Fields::xAtYEq0>(); }
@@ -483,11 +483,11 @@ namespace stdarraytest_fields {
     typedef SOATypelist::wrap_type<Array> f_array;
 
     template <typename NAKEDPROXY>
-    struct ContainerSkin : PrintableNullSkin<NAKEDPROXY> {
+    struct ContainerSkin : SOA::PrintableNullSkin<NAKEDPROXY> {
         // define fields, forward to base class constructors where possible
         using fields_typelist = SOATypelist::typelist<f_array>;
-        using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
-        using PrintableNullSkin<NAKEDPROXY>::operator=;
+        using SOA::PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
+        using SOA::PrintableNullSkin<NAKEDPROXY>::operator=;
 
         /// Array type to use
         using Array = stdarraytest_fields::Array;
@@ -580,13 +580,10 @@ TEST (SOAView, SimpleTests) {
     EXPECT_EQ(&vx.front(), &rx.front());
 }
 
-#include "SOAField.h"
-#include "SOASkin.h"
-
 namespace ConvenientContainersTest_Fields {
-    SOAFIELD(x, float);
-    SOAFIELD(y, float);
-    SOAFIELD_CUSTOM(f_flags, int,
+    SOAFIELD_TRIVIAL(f_x, x, float);
+    SOAFIELD_TRIVIAL(f_y, y, float);
+    SOAFIELD(f_flags, int,
         SOAFIELD_ACCESSORS(flags)
         enum Flag { Used = 0x1, Dead = 0x2 };
         bool isUsed() const { return flags() & Used; }
@@ -606,9 +603,9 @@ namespace ConvenientContainersTest_Fields {
         void printflags() { std::printf("flags: %08x\n", flags()); }
     );
 
-    SOASKIN(SkinSimple, f_x, f_y, f_flags);
-    SOASKIN_CUSTOM(Skin, f_x, f_y, f_flags) {
-        SOASKIN_DEFAULT_CONSTRUCTORS_AND_ASSIGNMENTOPERATORS(Skin);
+    SOASKIN_TRIVIAL(SkinSimple, f_x, f_y, f_flags);
+    SOASKIN(Skin, f_x, f_y, f_flags) {
+        SOASKIN_INHERIT_DEFAULT_METHODS(Skin);
         // special constructors go here...
         // special accessors go here...
         void setDeadIfTooFarOut()
@@ -634,7 +631,7 @@ TEST(SOAContainer, ConvenientContainers) {
     static_assert(sizeof(s.front()) == sizeof(c.front()),
             "Fancy field and old-style field proxies need to have same size.");
     struct Foo { int i; };
-    SOASkin_impl::SkinBase<Foo, f_x, f_y, f_flags> sb;
+    SOA::impl::SkinBase<Foo, f_x, f_y, f_flags> sb;
     static_assert(sizeof(int) == sizeof(sb), "skin size behaviour is all wrong.");
     // okay, we're satisfied on that front. Check basic functionality
     EXPECT_TRUE(c.empty());
@@ -662,10 +659,10 @@ TEST(SOAContainer, ConvenientContainers) {
 }
 
 namespace FieldExtractionTest {
-    SOAFIELD(x, float);
-    SOAFIELD(y, float);
-    SOAFIELD(z, float);
-    SOASKIN(Point, f_x, f_y, f_z);
+    SOAFIELD_TRIVIAL(f_x, x, float);
+    SOAFIELD_TRIVIAL(f_y, y, float);
+    SOAFIELD_TRIVIAL(f_z, z, float);
+    SOASKIN_TRIVIAL(Point, f_x, f_y, f_z);
 }
 TEST(SOAView, FieldExtraction) {
     using namespace FieldExtractionTest;
