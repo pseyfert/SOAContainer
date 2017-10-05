@@ -575,13 +575,24 @@ class _SOAView {
         }
         /// return a const reference to the underlying SOA storage range MEMBER
         template <typename MEMBER>
-        auto range() const noexcept ->
-            decltype(range<memberno<MEMBER>()>())
-        { return range<memberno<MEMBER>()>(); }
+        auto range() const noexcept -> decltype(boost::make_iterator_range(
+                        std::get<memberno<MEMBER>()>(m_storage).begin(),
+                        std::get<memberno<MEMBER>()>(m_storage).end()))
+        {
+            return boost::make_iterator_range(
+                    std::get<memberno<MEMBER>()>(m_storage).begin(),
+                    std::get<memberno<MEMBER>()>(m_storage).end());
+        }
         /// return a reference to the underlying SOA storage range MEMBER
         template <typename MEMBER>
-        auto range() noexcept -> decltype(range<memberno<MEMBER>()>())
-        { return range<memberno<MEMBER>()>(); }
+        auto range() noexcept -> decltype(boost::make_iterator_range(
+                        std::get<memberno<MEMBER>()>(m_storage).begin(),
+                        std::get<memberno<MEMBER>()>(m_storage).end()))
+        {
+            return boost::make_iterator_range(
+                    std::get<memberno<MEMBER>()>(m_storage).begin(),
+                    std::get<memberno<MEMBER>()>(m_storage).end());
+        }
 
         /// assign the vector to contain count copies of val
         void assign(size_type count, const value_type& val)
@@ -620,70 +631,6 @@ class _SOAView {
         void swap(self_type& other) noexcept(
                 noexcept(std::swap(m_storage, other.m_storage)))
         { std::swap(m_storage, other.m_storage); }
-
-        /** @brief return a tuple of ranges for each of the given fields
-         *
-         * @tparam FIELDS2...   fields for which to extract ranges
-         * @tparam ARGS...      types of arguments for the range function
-         *                      (either nothing, or two iterators)
-         * @param args...       either no arguments, or a pair of iterators
-         *
-         * @returns a tuple with those ranges
-         *
-         * @note [FIXME] need to implement range<field>(begin, end) set of
-         *               methods
-         */
-        template <typename... FIELDS2, typename... ARGS>
-        auto ranges(ARGS&&... args) noexcept(noexcept(
-                    std::make_tuple(
-                        std::declval<self_type&>().template range<FIELDS2>(
-                            std::forward<ARGS>(args)...)...))) ->
-            decltype(std::make_tuple(
-                        std::declval<self_type&>().template range<FIELDS2>(
-                            std::forward<ARGS>(args)...)...))
-        {
-            // check that we can honour the request
-            static_assert(0 == sizeof...(args) || 2 == sizeof...(args),
-                    "Call either with no arguments, "
-                    "or with a pair of iterators (first, last(.");
-            static_assert(ALL<impl_detail::template fields_contains,
-                    FIELDS2...>::value,
-                    "At least one field is not contained in this view!");
-            return std::make_tuple(range<FIELDS2>(
-                        std::forward<ARGS>(args)...)...);
-        }
-
-        /** @brief return a tuple of ranges for each of the given fields
-         *
-         * @tparam FIELDS2...   fields for which to extract ranges
-         * @tparam ARGS...      types of arguments for the range function
-         *                      (either nothing, or two iterators)
-         * @param args...       either no arguments, or a pair of iterators
-         *
-         * @returns a tuple with those ranges
-         *
-         * @note [FIXME] need to implement range<field>(begin, end) set of
-         *               methods
-         */
-        template <typename... FIELDS2, typename... ARGS>
-        auto ranges(ARGS&&... args) const noexcept(noexcept(
-                    std::make_tuple(
-                        std::declval<const self_type&>().template range<FIELDS2>(
-                            std::forward<ARGS>(args)...)...))) ->
-            decltype(std::make_tuple(
-                        std::declval<const self_type&>().template range<FIELDS2>(
-                            std::forward<ARGS>(args)...)...))
-        {
-            // check that we can honour the request
-            static_assert(0 == sizeof...(args) || 2 == sizeof...(args),
-                    "Call either with no arguments, "
-                    "or with a pair of iterators (first, last(.");
-            static_assert(ALL<impl_detail::template fields_contains,
-                    FIELDS2...>::value,
-                    "At least one field is not contained in this view!");
-            return std::make_tuple(range<FIELDS2>(
-                        std::forward<ARGS>(args)...)...);
-        }
 };
 
 /// more _SOAView implementation details
@@ -909,6 +856,19 @@ namespace _SOAViewImpl {
     /// decay T&& into T, leave (const) T(&) unchanged (specialisation)
     template <typename T>
     struct remove_rvalue_reference<T&&> { using type = T; };
+
+    /// move everything but lvalue references
+    template <typename T>
+    const T& move_if_not_lvalue_reference(const T& t) { return t; }
+    /// move everything but lvalue references
+    template <typename T>
+    T& move_if_not_lvalue_reference(T& t) { return t; }
+    /// move everything but lvalue references
+    template <typename T>
+    T&& move_if_not_lvalue_reference(T&& t) { return std::move(t); }
+    /// move everything but lvalue references
+    template <typename T>
+    T&& move_if_not_lvalue_reference(T t) { return std::move(t); }
 }
 
 /** @brief construct a _SOAView from a skin and a bunch of ranges
@@ -1106,14 +1066,42 @@ bool operator>=(const _SOAView<STORAGE, SKIN, FIELDS...>& a,
             noexcept(!(a < b)))
 { return !(a < b); }
 
-namespace _SOAViewImpl {
-    /// helper for extracting a view with selected fields
-    template <template <class> class SKIN, typename... RANGES,
-             std::size_t... IDXS>
-    auto _extract_fields(std::tuple<RANGES...>&& ranges,
-            std::index_sequence<IDXS...>) -> decltype(
-                make_soaview<SKIN>(std::get<IDXS>(ranges)...))
-    { return make_soaview<SKIN>(std::get<IDXS>(ranges)...); }
+/** @brief create a new SOAView from given view, including given fields
+ *
+ * @tparam FIELDS...    fields to extract
+ * @tparam VIEW         SOAView from which to extract
+ * @tparam ARGS...      either nothing, or types of two iterators (first,last(
+ *
+ * @param view          SOAView from which to extract given fields
+ * @param args...       either empty, or two iterators (first, last(
+ *
+ * @returns SOAView of the given fields (and given range)
+ *
+ * @note This will only work with the new-style convienent SOAFields and
+ * SOASkins defined via SOAFIELD* and SOASKIN* macros.
+ *
+ * Example:
+ * @code
+ * SOAFIELD(x, float);
+ * SOAFIELD(y, float);
+ * SOAFIELD(z, float);
+ * SOASKIN(SOAPoint, f_x, f_y, f_z);
+ * SOAContainer<std::vector, SOAPoint> c = get_from_elsewhere();
+ * // create a view of only the x and y fields in c
+ * auto view = extract_fields<f_x, f_y>(c);
+ * // as before, but only for the first 16 elements
+ * auto subview = extract_fields<f_x, f_y>(c, c.begin(), c.begin() + 16);
+ * @endcode
+ */
+template <typename... FIELDS, typename VIEW, typename... ARGS,
+    template <class> class SKIN =
+    SOASkinCreatorSimple<FIELDS...>::template type>
+auto extract_fields(const VIEW& view, ARGS&&... args) -> decltype(
+    make_soaview<SKIN>(view.template range<FIELDS>(
+                std::forward<ARGS>(args)...)...))
+{
+    return make_soaview<SKIN>(view.template range<FIELDS>(
+                std::forward<ARGS>(args)...)...);
 }
 
 /** @brief create a new SOAView from given view, including given fields
@@ -1145,15 +1133,52 @@ namespace _SOAViewImpl {
  */
 template <typename... FIELDS, typename VIEW, typename... ARGS,
     template <class> class SKIN =
-    SOASkinCreatorSimple<FIELDS...>::template type,
-    typename IDXSQ = std::make_index_sequence<sizeof...(FIELDS)> >
-auto extract_fields(VIEW&& view, ARGS&&... args) -> decltype(
-    _SOAViewImpl::_extract_fields<SKIN>(view.template ranges<FIELDS...>(
-            std::forward<ARGS>(args)...), IDXSQ()))
+    SOASkinCreatorSimple<FIELDS...>::template type>
+auto extract_fields(VIEW& view, ARGS&&... args) -> decltype(
+    make_soaview<SKIN>(view.template range<FIELDS>(
+                std::forward<ARGS>(args)...)...))
 {
-    return _SOAViewImpl::_extract_fields<SKIN>(
-            view.template ranges<FIELDS...>(
-                std::forward<ARGS>(args)...), IDXSQ());
+    return make_soaview<SKIN>(view.template range<FIELDS>(
+                std::forward<ARGS>(args)...)...);
+}
+
+/** @brief create a new SOAView from given view, including given fields
+ *
+ * @tparam FIELDS...    fields to extract
+ * @tparam VIEW         SOAView from which to extract
+ * @tparam ARGS...      either nothing, or types of two iterators (first,last(
+ *
+ * @param view          SOAView from which to extract given fields
+ * @param args...       either empty, or two iterators (first, last(
+ *
+ * @returns SOAView of the given fields (and given range)
+ *
+ * @note This will only work with the new-style convienent SOAFields and
+ * SOASkins defined via SOAFIELD* and SOASKIN* macros.
+ *
+ * Example:
+ * @code
+ * SOAFIELD(x, float);
+ * SOAFIELD(y, float);
+ * SOAFIELD(z, float);
+ * SOASKIN(SOAPoint, f_x, f_y, f_z);
+ * SOAContainer<std::vector, SOAPoint> c = get_from_elsewhere();
+ * // create a view of only the x and y fields in c
+ * auto view = extract_fields<f_x, f_y>(c);
+ * // as before, but only for the first 16 elements
+ * auto subview = extract_fields<f_x, f_y>(c, c.begin(), c.begin() + 16);
+ * @endcode
+ */
+template <typename... FIELDS, typename VIEW, typename... ARGS,
+    template <class> class SKIN =
+    SOASkinCreatorSimple<FIELDS...>::template type>
+auto extract_fields(VIEW&& view, ARGS&&... args) -> decltype(
+    make_soaview<SKIN>(_SOAViewImpl::move_if_not_lvalue_reference(
+            view.template range<FIELDS>(std::forward<ARGS>(args)...))...))
+{
+    return make_soaview<SKIN>(_SOAViewImpl::move_if_not_lvalue_reference(
+                view.template range<FIELDS>(
+                    std::forward<ARGS>(args)...))...);
 }
 
 namespace _SOAViewImpl {
