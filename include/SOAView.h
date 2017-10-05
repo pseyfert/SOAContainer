@@ -256,7 +256,7 @@ namespace _SOAViewImpl {
  *
  * - When stored inside the container, the element itself does not exist as
  *   such because of the SOA storage constraint; (const) references and
- *   pointers are implemented with instances of SKINned SOAObjectProxy and
+ *   pointers are implemented with instances of SKINned ObjectProxy and
  *   SOA(Const)Ptr. On the outside, these classes look and feel like
  *   references and pointers, but set up memory access to members/fields such
  *   that the SOA memory layout is preserved.
@@ -570,9 +570,9 @@ class _SOAView {
         { return fields_typelist::template find<MEMBER>(); }
 
     protected:
-        /** @brief a tag to be used when calling SOAObjectProxy's constructor
+        /** @brief a tag to be used when calling ObjectProxy's constructor
          *
-         * The idea is to forbid user code to call SOAObjectProxy's constructor
+         * The idea is to forbid user code to call ObjectProxy's constructor
          * that takes a SOAStorage* and an index into it; this constructor is
          * dangerous, since it can be used to break const-correctness. Since
          * older versions of gcc/clang cannot see through the complex interplay
@@ -676,7 +676,7 @@ class _SOAView {
 
     public:
         /// naked proxy type (to be given a "skin" later)
-        using naked_proxy = SOAObjectProxy<self_type>;
+        using naked_proxy = SOA::ObjectProxy<self_type>;
         friend naked_proxy;
         /// corresponding _SOAContainers are friends
         template < template <typename...> class CONTAINER,

@@ -27,6 +27,8 @@ template <template <typename...> class CONTAINER,
          template <typename> class SKIN, typename... FIELDS>
 class _SOAContainer;
 
+/// namespace to encapsulate SOA stuff
+namespace SOA {
 /** @brief proxy object for the elements stored in the container.
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
@@ -37,22 +39,22 @@ class _SOAContainer;
  * in memory, the _SOAContainer doesn't store the objects themselves,
  * but containers which each store a different member. That means the
  * conceptual objects mentioned above do not exist as such. The
- * SOAObjectProxy class stands in for these objects, and provides
+ * ObjectProxy class stands in for these objects, and provides
  * support for accessing members, assigment of the whole conceptual
  * object from a tuple of its members, and similar functionality.
  */
 template <typename PARENTCONTAINER>
-class SOAObjectProxy {
+class ObjectProxy {
     public:
         /// type of parent container
         using parent_type = PARENTCONTAINER;
         /// type to refer to this type
-        using self_type = SOAObjectProxy<PARENTCONTAINER>;
+        using self_type = ObjectProxy<PARENTCONTAINER>;
         /// type to hold the distance between two iterators
         using difference_type = typename parent_type::difference_type;
         /// type to hold the size of a container
         using size_type = typename parent_type::size_type;
-        /// type to which SOAObjectProxy converts and can be assigned from
+        /// type to which ObjectProxy converts and can be assigned from
         using value_type = typename parent_type::value_type;
         /// type for tuple of references to members
         using reference = typename parent_type::value_reference;
@@ -85,7 +87,7 @@ class SOAObjectProxy {
 
     public:
         /// constructor is private, but parent container is a friend
-        explicit SOAObjectProxy(
+        explicit ObjectProxy(
                 SOAStorage* storage, size_type index,
                 typename parent_type::its_safe_tag) noexcept :
             m_storage(storage), m_index(index)
@@ -148,11 +150,11 @@ class SOAObjectProxy {
 
     public:
         /// default constructor
-        SOAObjectProxy() noexcept = default;
+        ObjectProxy() noexcept = default;
         /// copy constructor
-        SOAObjectProxy(const self_type& other) noexcept = default;
+        ObjectProxy(const self_type& other) noexcept = default;
         /// move constructor
-        SOAObjectProxy(self_type&& other) noexcept = default;
+        ObjectProxy(self_type&& other) noexcept = default;
 
         /// convert to tuple of member contents
         operator value_type() const noexcept(noexcept(
@@ -265,7 +267,7 @@ class SOAObjectProxy {
             return std::get<MEMBERNO>(*m_storage)[m_index];
         }
 
-        /// swap the contents of two SOAObjectProxy instances
+        /// swap the contents of two ObjectProxy instances
         void swap(self_type& other) noexcept(noexcept(
                     SOAUtils::map(swapHelper{ m_index, other.m_index },
                     SOAUtils::zip(*m_storage, *other.m_storage),
@@ -322,55 +324,55 @@ class SOAObjectProxy {
 
 /// comparison (equality)
 template <typename T>
-bool operator==(const typename SOAObjectProxy<T>::value_type& a,
-        const SOAObjectProxy<T>& b) noexcept { return b == a; }
+bool operator==(const typename ObjectProxy<T>::value_type& a,
+        const ObjectProxy<T>& b) noexcept { return b == a; }
 /// comparison (inequality)
 template <typename T>
-bool operator!=(const typename SOAObjectProxy<T>::value_type& a,
-        const SOAObjectProxy<T>& b) noexcept { return b != a; }
+bool operator!=(const typename ObjectProxy<T>::value_type& a,
+        const ObjectProxy<T>& b) noexcept { return b != a; }
 /// comparison (less than)
 template <typename T>
-bool operator<(const typename SOAObjectProxy<T>::value_type& a,
-        const SOAObjectProxy<T>& b) noexcept { return b > a; }
+bool operator<(const typename ObjectProxy<T>::value_type& a,
+        const ObjectProxy<T>& b) noexcept { return b > a; }
 /// comparison (greater than)
 template <typename T>
-bool operator>(const typename SOAObjectProxy<T>::value_type& a,
-        const SOAObjectProxy<T>& b) noexcept { return b < a; }
+bool operator>(const typename ObjectProxy<T>::value_type& a,
+        const ObjectProxy<T>& b) noexcept { return b < a; }
 /// comparison (less than or equal to)
 template <typename T>
-bool operator<=(const typename SOAObjectProxy<T>::value_type& a,
-        const SOAObjectProxy<T>& b) noexcept { return b >= a; }
+bool operator<=(const typename ObjectProxy<T>::value_type& a,
+        const ObjectProxy<T>& b) noexcept { return b >= a; }
 /// comparison (greater than or equal to)
 template <typename T>
-bool operator>=(const typename SOAObjectProxy<T>::value_type& a,
-        const SOAObjectProxy<T>& b) noexcept { return b <= a; }
+bool operator>=(const typename ObjectProxy<T>::value_type& a,
+        const ObjectProxy<T>& b) noexcept { return b <= a; }
 
-namespace std {
-    /// specialise std::swap for SOAObjectProxy<T>
-    template <typename T>
-    void swap(SOAObjectProxy<T> a, SOAObjectProxy<T> b) noexcept(
-            noexcept(a.swap(b)))
-    { a.swap(b); }
-}
+/// helper for std::swap for ObjectProxy<T>
+template <typename T>
+void swap(ObjectProxy<T> a, ObjectProxy<T> b) noexcept(
+        noexcept(a.swap(b)))
+{ a.swap(b); }
+} // namespace SOA
 
 #include "SOAIterator.h"
 
+namespace SOA {
 template <typename PARENTCONTAINER>
-typename SOAObjectProxy<PARENTCONTAINER>::pointer
-SOAObjectProxy<PARENTCONTAINER>::operator&() noexcept
+typename ObjectProxy<PARENTCONTAINER>::pointer
+ObjectProxy<PARENTCONTAINER>::operator&() noexcept
 {
     return pointer{ m_storage, m_index,
         typename parent_type::its_safe_tag() };
 }
 
 template <typename PARENTCONTAINER>
-typename SOAObjectProxy<PARENTCONTAINER>::const_pointer
-SOAObjectProxy<PARENTCONTAINER>::operator&() const noexcept
+typename ObjectProxy<PARENTCONTAINER>::const_pointer
+ObjectProxy<PARENTCONTAINER>::operator&() const noexcept
 {
     return const_pointer{ m_storage, m_index,
         typename parent_type::its_safe_tag() };
 }
-
+} // namespace SOA
 
 #endif // SOAOBJECTPROXY_H
 
