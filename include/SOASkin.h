@@ -10,6 +10,7 @@
 #define SOASKIN_H
 
 #include "SOATypelist.h"
+#include "SOAUtils.h"
 #include "PrintableNullSkin.h"
 
 /// namespace to encapsulate SOA stuff
@@ -30,9 +31,9 @@ namespace SOA {
             FIELDS::template accessors<SkinBase<BASE, FIELDS...> >..., BASE
         {
             // make sure that no user puts data in a field...
-            static_assert(SOAUtils::ALL<std::is_empty, FIELDS...>::value,
+            static_assert(SOA::Utils::ALL<std::is_empty, FIELDS...>::value,
                     "Fields may not contain data or virtual methods!");
-            static_assert(SOAUtils::ALL<std::is_empty,
+            static_assert(SOA::Utils::ALL<std::is_empty,
                     typename FIELDS::template accessors<BASE>...>::value,
                     "Field accessors may not contain data or virtual methods!");
             /// inform the framework that we're a skin

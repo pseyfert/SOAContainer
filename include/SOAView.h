@@ -467,9 +467,9 @@ template <class STORAGE,
 class _SOAView {
     private:
         template <template <typename> class PRED, typename... ARGS>
-        using ANY = SOAUtils::ANY<PRED, ARGS...>;
+        using ANY = SOA::Utils::ANY<PRED, ARGS...>;
         template <template <typename> class PRED, typename... ARGS>
-        using ALL = SOAUtils::ALL<PRED, ARGS...>;
+        using ALL = SOA::Utils::ALL<PRED, ARGS...>;
         /// little helper to find the type contained in a range
         template <typename RANGE>
         struct contained_type {
@@ -718,7 +718,7 @@ class _SOAView {
             m_storage(std::forward<RANGES>(ranges)...)
         {
             // verify size of ranges
-            SOAUtils::map(typename impl_detail::rangeSizeCheckHelper{
+            SOA::Utils::map(typename impl_detail::rangeSizeCheckHelper{
                         std::get<0>(m_storage).size()},
                     m_storage, std::make_index_sequence<sizeof...(RANGES)>());
         }
@@ -1018,8 +1018,8 @@ class _SOAView {
                     __LINE__ << "): count must not exceed length of range.";
                 throw std::out_of_range(str.str());
             }
-            SOAUtils::map(typename impl_detail::assignHelper{count},
-                    SOAUtils::zip(m_storage, val),
+            SOA::Utils::map(typename impl_detail::assignHelper{count},
+                    SOA::Utils::zip(m_storage, val),
                     std::make_index_sequence<sizeof...(FIELDS)>());
         }
 
@@ -1033,8 +1033,8 @@ class _SOAView {
                     __LINE__ << "): supplied range too large.";
                 throw std::out_of_range(str.str());
             }
-            SOAUtils::map(typename impl_detail::assignHelper2(),
-                    SOAUtils::zip(m_storage,
+            SOA::Utils::map(typename impl_detail::assignHelper2(),
+                    SOA::Utils::zip(m_storage,
                         impl_detail::template make_tuple_element_iterators<
                             sizeof...(FIELDS)>(first),
                         impl_detail::template make_tuple_element_iterators<
