@@ -31,7 +31,7 @@ namespace SOA {
                         "Error: Do no nest FieldBase<FieldBase<T>, FIELD>!");
                 /// the field tag itself
                 using self_type = FIELD;
-                /// tell SOAContainer/View that we wrap a type
+                /// tell Container/View that we wrap a type
                 using wrap_tag = struct {};
                 /// type we wrap
                 using type = T;

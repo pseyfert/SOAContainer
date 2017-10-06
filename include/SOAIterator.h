@@ -20,7 +20,7 @@ namespace SOA {
 } // namespace SOA
 template < template <typename...> class CONTAINER,
     template <typename> class SKIN, typename... FIELDS>
-class _SOAContainer;
+class _Container;
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {
@@ -39,10 +39,10 @@ namespace SOA {
             using parent_type = typename PROXY::parent_type;
             // parent container is a friend
             friend parent_type;
-            /// corresponding _SOAContainers are friends
+            /// corresponding _Containers are friends
             template < template <typename...> class CONTAINER,
                      template <typename> class SKIN, typename... FIELDS>
-            friend class _SOAContainer;
+            friend class _Container;
             /// parent's proxy type
             using proxy = PROXY;
             // underlying "dressed" proxy is friend as well
@@ -268,10 +268,10 @@ namespace SOA {
             using proxy = PROXY;
             // underlying "dressed" proxy is friend as well
             friend proxy;
-            /// corresponding _SOAContainers are friends
+            /// corresponding _Containers are friends
             template < template <typename...> class CONTAINER,
                      template <typename> class SKIN, typename... FIELDS>
-            friend class _SOAContainer;
+            friend class _Container;
             /// parent's naked proxy type
             using naked_proxy = typename parent_type::naked_proxy;
             // underlying "naked" proxy is friend as well

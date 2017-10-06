@@ -1,4 +1,4 @@
-/** @file SOAContainer.h
+/** @file Container.h
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
  * @date 2015-04-10
@@ -10,10 +10,10 @@
 #include "SOAView.h"
 
 namespace SOA {
-    /// the implementation behind SOAContainer
+    /// the implementation behind Container
     template <template <typename...> class CONTAINER,
         template <typename> class SKIN, typename... FIELDS>
-    class _SOAContainer : public SOA::View<
+    class _Container : public SOA::View<
                 typename SOA::Typelist::to_tuple<SOA::Typelist::typelist<FIELDS...>
                          >::template container_tuple<CONTAINER>,
                 SKIN, FIELDS...>
@@ -89,7 +89,7 @@ namespace SOA {
             /// type of the underlying storage
             using SOAStorage = typename BASE::SOAStorage;
             /// type to represent container itself
-            using self_type = _SOAContainer<CONTAINER, SKIN, FIELDS...>;
+            using self_type = _Container<CONTAINER, SKIN, FIELDS...>;
             /// typelist with the given fields
             using fields_typelist = typename BASE::fields_typelist;
     
@@ -113,34 +113,34 @@ namespace SOA {
     
         public:
             /// default constructor
-            _SOAContainer() : BASE() { }
+            _Container() : BASE() { }
             /// copy constructor
-            _SOAContainer(const self_type& other) = default;
+            _Container(const self_type& other) = default;
             /// move constructor
-            _SOAContainer(self_type&& other) = default;
-            /// assignment from other _SOAContainer
+            _Container(self_type&& other) = default;
+            /// assignment from other _Container
             self_type& operator=(const self_type& other) = default;
-            /// move-assignment from other _SOAContainer
+            /// move-assignment from other _Container
             self_type& operator=(self_type&& other) = default;
     
             /// fill container with count copies of val
-            _SOAContainer(size_type count, const value_type& val) : BASE()
+            _Container(size_type count, const value_type& val) : BASE()
             {
                 reserve(count);
                 assign(count, val);
             }
             /// fill container with count (default constructed) elements
-            _SOAContainer(size_type count) : _SOAContainer(count, value_type()) { }
+            _Container(size_type count) : _Container(count, value_type()) { }
             /// fill container with elements from other container
             template <typename IT>
-            _SOAContainer(IT first, IT last) : BASE()
+            _Container(IT first, IT last) : BASE()
             {
                 reserve(std::distance(first, last));
                 assign(first, last);
             }
     
             /// std::initializer_list constructor
-            _SOAContainer(std::initializer_list<naked_value_tuple_type> listing) :
+            _Container(std::initializer_list<naked_value_tuple_type> listing) :
                 BASE()
             {
                 reserve(listing.size());
@@ -676,39 +676,39 @@ namespace SOA {
             }
     };
     
-    /// more _SOAContainer implementation details
-    namespace _SOAContainerImpl {
+    /// more _Container implementation details
+    namespace _ContainerImpl {
         struct dummy {};
         /// helper to allow flexibility in how fields are supplied
         template <template <typename...> class CONTAINER,
                  template <typename> class SKIN,
                  class... TYPELISTORFIELDS>
-        struct SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper {
-            using type = _SOAContainer<CONTAINER, SKIN, TYPELISTORFIELDS...>;
+        struct ContainerFieldsFromTypelistOrTemplateParameterPackHelper {
+            using type = _Container<CONTAINER, SKIN, TYPELISTORFIELDS...>;
         };
         /// helper to allow flexibility in how fields are supplied
         template <template <typename...> class CONTAINER,
                  template <typename> class SKIN,
                  class... FIELDS, class... EXTRA>
-        struct SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper<
+        struct ContainerFieldsFromTypelistOrTemplateParameterPackHelper<
             CONTAINER, SKIN, SOA::Typelist::typelist<FIELDS...>, EXTRA... >
         {
             static_assert(!sizeof...(EXTRA), "typelist or variadic, not both");
-            using type = _SOAContainer<CONTAINER, SKIN, FIELDS...>;
+            using type = _Container<CONTAINER, SKIN, FIELDS...>;
         };
         /// helper to allow flexibility in how fields are supplied
         template <template <typename...> class CONTAINER,
                  template <typename> class SKIN>
-        struct SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper<CONTAINER, SKIN>
+        struct ContainerFieldsFromTypelistOrTemplateParameterPackHelper<CONTAINER, SKIN>
         {
             using type = typename
-                SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper<
+                ContainerFieldsFromTypelistOrTemplateParameterPackHelper<
                 CONTAINER, SKIN, typename SKIN<dummy>::fields_typelist>::type;
         };
         template <template <typename...> class CONTAINER, template <typename> class SKIN,
                  typename... FIELDS>
-        using SOAContainer = typename
-            _SOAContainerImpl::SOAContainerFieldsFromTypelistOrTemplateParameterPackHelper<
+        using Container = typename
+            _ContainerImpl::ContainerFieldsFromTypelistOrTemplateParameterPackHelper<
             CONTAINER, SKIN, FIELDS...>::type;
     }
     
@@ -760,7 +760,7 @@ namespace SOA {
      * For the equivalent example in SOA layout, you'd have to do:
      *
      * @code
-     * #include "SOAContainer.h"
+     * #include "Container.h"
      *
      * // first declare member "tags" which describe the members of the notional
      * // struct (which will never exist in memory - SOA layout!)
@@ -803,7 +803,7 @@ namespace SOA {
      * };
      *
      * // define the SOA container type
-     * using SOAPoints = _SOAContainer<
+     * using SOAPoints = _Container<
      *         std::vector, // underlying type for each field
      *         SOAPoint>;   // skin to "dress" the tuple of fields with
      * // define the SOAPoint itself
@@ -840,7 +840,7 @@ namespace SOA {
      *
      * It is important to realise that there's nothing like the struct Point in the
      * AOS example above - the notion of a point very clearly exists, but the
-     * _SOAContainer will not create such an object at any point in time. Instead,
+     * _Container will not create such an object at any point in time. Instead,
      * the container provides an interface to access fields with the get<field_tag>
      * syntax, or via tuples (conversion to or assignment from tuples is
      * implemented), if simultaneous access to all fields is desired.
@@ -849,7 +849,7 @@ namespace SOA {
      * considerations), the class tries to follow the example of the interface of
      * std::vector as closely as possible.
      *
-     * When using the _SOAContainer class, one must distinguish between elements
+     * When using the _Container class, one must distinguish between elements
      * (and references to elements) which are stored outside the container and
      * those that are stored inside the container:
      *
@@ -881,9 +881,9 @@ namespace SOA {
      */
     template <template <typename...> class CONTAINER, template <typename> class SKIN,
              typename... FIELDS>
-    class SOAContainer : public _SOAContainerImpl::SOAContainer<CONTAINER, SKIN, FIELDS...>
+    class Container : public _ContainerImpl::Container<CONTAINER, SKIN, FIELDS...>
     {
-        using _SOAContainerImpl::SOAContainer<CONTAINER, SKIN, FIELDS...>::SOAContainer;
+        using _ContainerImpl::Container<CONTAINER, SKIN, FIELDS...>::Container;
     };
 } // namespace SOA
 

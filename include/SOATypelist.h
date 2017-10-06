@@ -17,7 +17,7 @@
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {
-    /// namespace for typelist type used by SOAContainer and related utilities
+    /// namespace for typelist type used by Container and related utilities
     namespace Typelist {
         // forward declarations
         namespace typelist_impl { struct empty_typelist; }

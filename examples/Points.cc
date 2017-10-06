@@ -61,7 +61,7 @@ namespace SOA {
     };
 
     // define the SOA container type
-    typedef SOA::SOAContainer<
+    typedef SOA::Container<
 	std::vector,   // underlying type for each field
 	SOAPointProxy> // skin to "dress" the tuple of fields with
 	Points;
@@ -106,7 +106,7 @@ int main() {
 
     }
 
-    SOA::SOAContainer<std::vector, SOA::NullSkin, double, int, int> c;
+    SOA::Container<std::vector, SOA::NullSkin, double, int, int> c;
     c.push_back(make_tuple(1.2,2,3));
 
     return 0;

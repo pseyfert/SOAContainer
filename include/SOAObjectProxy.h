@@ -25,7 +25,7 @@ namespace SOA {
     class _View;
     template <template <typename...> class CONTAINER,
              template <typename> class SKIN, typename... FIELDS>
-    class _SOAContainer;
+    class _Container;
 } // namespace SOA
 
 namespace SOA {
@@ -34,9 +34,9 @@ namespace SOA {
      * @author Manuel Schiller <Manuel.Schiller@cern.ch>
      * @date 2015-04-10
      *
-     * Conceptually, the _SOAContainer contains a collection of objects
+     * Conceptually, the _Container contains a collection of objects
      * which have some data members. To optimise the data access patterns
-     * in memory, the _SOAContainer doesn't store the objects themselves,
+     * in memory, the _Container doesn't store the objects themselves,
      * but containers which each store a different member. That means the
      * conceptual objects mentioned above do not exist as such. The
      * ObjectProxy class stands in for these objects, and provides
@@ -74,16 +74,16 @@ namespace SOA {
             SOAStorage* m_storage;  ///< underlying SOA storage of members
             size_type m_index;      ///< index into underlying SOA storage
 
-            // _SOAContainer is allowed to invoke the private constructor
+            // _Container is allowed to invoke the private constructor
             friend parent_type;
             // so is the pointer/iterator type
             friend pointer;
             // and the const pointer/iterator type
             friend const_pointer;
-            /// corresponding _SOAContainers are friends
+            /// corresponding _Containers are friends
             template <template <typename...> class CONTAINER,
                      template <typename> class SKIN, typename... FIELDS>
-            friend class _SOAContainer;
+            friend class _Container;
 
         public:
             /// constructor is private, but parent container is a friend

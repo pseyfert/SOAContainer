@@ -30,7 +30,7 @@
 // forward decl.
 template < template <typename...> class CONTAINER,
          template <typename> class SKIN, typename... FIELDS>
-class _SOAContainer;
+class _Container;
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {
@@ -370,7 +370,7 @@ namespace SOA {
      * SOAFIELD(y, float);
      * SOAFIELD(z, float);
      * SOASKIN(SOAPoint, f_x, f_y, f_z);
-     * SOAContainer<std::vector, SOAPoint> c = get_from_elsewhere();
+     * Container<std::vector, SOAPoint> c = get_from_elsewhere();
      * // create a view of only the x and y fields in c
      * auto view = view<f_x, f_y>(c);
      * // as before, but only for the first 16 elements
@@ -408,7 +408,7 @@ namespace SOA {
      * SOAFIELD(y, float);
      * SOAFIELD(z, float);
      * SOASKIN(SOAPoint, f_x, f_y, f_z);
-     * SOAContainer<std::vector, SOAPoint> c = get_from_elsewhere();
+     * Container<std::vector, SOAPoint> c = get_from_elsewhere();
      * // create a view of only the x and y fields in c
      * auto view = view<f_x, f_y>(c);
      * // as before, but only for the first 16 elements
@@ -446,7 +446,7 @@ namespace SOA {
      * SOAFIELD(y, float);
      * SOAFIELD(z, float);
      * SOASKIN(SOAPoint, f_x, f_y, f_z);
-     * SOAContainer<std::vector, SOAPoint> c = get_from_elsewhere();
+     * Container<std::vector, SOAPoint> c = get_from_elsewhere();
      * // create a view of only the x and y fields in c
      * auto view = view<f_x, f_y>(c);
      * // as before, but only for the first 16 elements
@@ -682,10 +682,10 @@ namespace SOA {
             /// naked proxy type (to be given a "skin" later)
             using naked_proxy = SOA::ObjectProxy<self_type>;
             friend naked_proxy;
-            /// corresponding _SOAContainers are friends
+            /// corresponding _Containers are friends
             template < template <typename...> class CONTAINER,
                      template <typename> class SKIN2, typename... FIELDS2>
-            friend class _SOAContainer;
+            friend class _Container;
             /// type of proxy
             using proxy = SKIN<naked_proxy>;
             friend proxy;
@@ -1290,7 +1290,7 @@ namespace SOA {
      * SOAFIELD(y, float);
      * SOAFIELD(z, float);
      * SOASKIN(SOAPoint, f_x, f_y, f_z);
-     * SOAContainer<std::vector, SOAPoint> c = get_from_elsewhere();
+     * Container<std::vector, SOAPoint> c = get_from_elsewhere();
      * // create two views
      * auto v1 = view<f_x, f_y>(c);
      * auto v2 = view<f_z>(c);

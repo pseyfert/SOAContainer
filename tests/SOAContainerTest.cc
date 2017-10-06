@@ -1,9 +1,9 @@
-/** @file SOAContainerTest.cc
+/** @file ContainerTest.cc
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
  * @date 2015-04-11
  *
- * unit test for SOAContainer class
+ * unit test for Container class
  */
 
 #include <numeric>
@@ -16,10 +16,10 @@
 #include "PrintableNullSkin.h"
 #include "gtest/gtest.h"
 
-/// unit test SOAContainer class
-TEST (BasicTest, SimpleTests) {
-    SOA::SOAContainer<std::vector, SOA::PrintableNullSkin, double, int, int> c;
-    const SOA::SOAContainer<std::vector, SOA::PrintableNullSkin, double, int, int>& cc = c;
+/// unit test Container class
+TEST(BasicTest, SimpleTests) {
+    SOA::Container<std::vector, SOA::PrintableNullSkin, double, int, int> c;
+    const SOA::Container<std::vector, SOA::PrintableNullSkin, double, int, int>& cc = c;
     // check basic properties
     EXPECT_TRUE(c.empty());
     EXPECT_EQ(0u, c.size());
@@ -56,8 +56,8 @@ TEST (BasicTest, SimpleTests) {
 }
 
 TEST (BasicTest, More)  {
-    SOA::SOAContainer<std::vector, SOA::PrintableNullSkin, double, int, int> c;
-    const SOA::SOAContainer<std::vector, SOA::PrintableNullSkin, double, int, int>& cc = c;
+    SOA::Container<std::vector, SOA::PrintableNullSkin, double, int, int> c;
+    const SOA::Container<std::vector, SOA::PrintableNullSkin, double, int, int>& cc = c;
     std::tuple<double, int, int> val(3.14, 17, 42);
     // standard push_back by const reference
     c.push_back(val);
@@ -159,8 +159,8 @@ TEST (BasicTest, More)  {
 }
 
 TEST (BasicTest, EvenMore) {
-    SOA::SOAContainer<std::vector, SOA::PrintableNullSkin, double, int, int> c;
-    const SOA::SOAContainer<std::vector, SOA::PrintableNullSkin, double, int, int>& cc = c;
+    SOA::Container<std::vector, SOA::PrintableNullSkin, double, int, int> c;
+    const SOA::Container<std::vector, SOA::PrintableNullSkin, double, int, int>& cc = c;
     // test insert(pos, first, last), erase(pos) and erase(first, last)
     // by comparing to an array-of-structures in a std::vector
     typedef std::size_t size_type;
@@ -376,7 +376,7 @@ namespace HitNamespace {
     };
 
     using namespace Fields;
-    typedef SOA::SOAContainer<std::vector, HitSkin, xAtYEq0, zAtYEq0, dxdy, dzdy, x, z, y> Hits;
+    typedef SOA::Container<std::vector, HitSkin, xAtYEq0, zAtYEq0, dxdy, dzdy, x, z, y> Hits;
     typedef typename Hits::reference Hit;
 }
 
@@ -497,7 +497,7 @@ namespace stdarraytest_fields {
         { }
     };
 
-    using SOAArray = SOA::SOAContainer<std::vector, ContainerSkin, f_array>;
+    using SOAArray = SOA::Container<std::vector, ContainerSkin, f_array>;
 }
 TEST(RealisticTest, Proxy) {
     using namespace stdarraytest_fields;
@@ -617,17 +617,17 @@ namespace ConvenientContainersTest_Fields {
         }
     };
 }
-TEST(SOAContainer, ConvenientContainers) {
+TEST(Container, ConvenientContainers) {
     using namespace ConvenientContainersTest_Fields;
 
     // start by testing that skins of convenient containers are well-behaved,
     // i.e. the storage size is minimal, and there's no difference to stupid
     // SOA containers
-    SOA::SOAContainer<std::vector, SOA::NullSkin, float, float, int> s;
-    SOA::SOAContainer<std::vector, SkinSimple> csimple;
+    SOA::Container<std::vector, SOA::NullSkin, float, float, int> s;
+    SOA::Container<std::vector, SkinSimple> csimple;
     static_assert(sizeof(s.front()) == sizeof(csimple.front()),
             "Fancy field and old-style field proxies need to have same size.");
-    SOA::SOAContainer<std::vector, Skin> c;
+    SOA::Container<std::vector, Skin> c;
     static_assert(sizeof(s.front()) == sizeof(c.front()),
             "Fancy field and old-style field proxies need to have same size.");
     struct Foo { int i; };
@@ -667,7 +667,7 @@ namespace FieldExtractionTest {
 TEST(SOAView, FieldExtraction) {
     using namespace FieldExtractionTest;
     const auto rnd = [] () { return double(random()) / double(RAND_MAX); };
-    SOA::SOAContainer<std::vector, Point> c;
+    SOA::Container<std::vector, Point> c;
     // fill the container
     c.reserve(16);
     for (unsigned i = 0; i < 16; ++i) c.emplace_back(rnd(), rnd(), rnd());
@@ -718,7 +718,7 @@ TEST(SOAView, FieldExtraction) {
 TEST(SOAView, JoinViews) {
     using namespace FieldExtractionTest;
     const auto rnd = [] () { return double(random()) / double(RAND_MAX); };
-    SOA::SOAContainer<std::vector, Point> c;
+    SOA::Container<std::vector, Point> c;
     // fill the container
     c.reserve(16);
     for (unsigned i = 0; i < 16; ++i) c.emplace_back(rnd(), rnd(), rnd());

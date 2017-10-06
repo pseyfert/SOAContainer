@@ -16,7 +16,7 @@
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {
-    /// various other utilities used by SOAContainer
+    /// various other utilities used by Container
     namespace Utils {
         /// invoke fun on given arguments, return a dummy int if fun returns void
         template <typename FUN, typename... ARG>
