@@ -51,10 +51,10 @@ namespace SOA {
             using naked_proxy = typename parent_type::naked_proxy;
             // underlying "naked" proxy is friend as well
             friend naked_proxy;
-    
+
             proxy m_proxy; ///< pointee
-    
-    
+
+
         public:
             /// convenience using = for our own type
             using self_type = ConstIterator<proxy>;
@@ -74,29 +74,29 @@ namespace SOA {
             using const_pointer = typename proxy::const_pointer;
             /// iterator category
             using iterator_category = std::random_access_iterator_tag;
-    
+
         protected:
             /// constructor building proxy in place
             explicit ConstIterator(typename proxy::SOAStorage* storage,
                     size_type index, typename proxy::parent_type::its_safe_tag
                     safe) noexcept : m_proxy(storage, index, safe) { }
-    
+
         public:
             /// default constructor (nullptr equivalent)
             ConstIterator() noexcept : ConstIterator(nullptr, 0) { }
-    
+
             /// copy constructor
             ConstIterator(const self_type& other) noexcept = default;
             /// move constructor
             ConstIterator(self_type&& other) noexcept = default;
-    
+
             /// assignment
             self_type& operator=(const self_type& other) noexcept
             { m_proxy.assign(other.m_proxy); return *this; }
             /// assignment (move semantics)
             self_type& operator=(self_type&& other) noexcept
             { m_proxy.assign(std::move(other.m_proxy)); return *this; }
-    
+
             /// deference pointer (*p)
             reference operator*() noexcept
             { return m_proxy; }
@@ -109,7 +109,7 @@ namespace SOA {
             /// deference pointer (p->blah)
             const_reference* operator->() const noexcept
             { return std::addressof(m_proxy); }
-    
+
             /// (pre-)increment
             self_type& operator++() noexcept
             { ++m_proxy.m_index; return *this; }
@@ -182,14 +182,14 @@ namespace SOA {
                     std::numeric_limits<difference_type>::max();
 #endif
             }
-    
+
             /// indexing
             reference operator[](size_type idx) noexcept
             { return { m_proxy.m_storage, m_proxy.m_index + idx }; }
             /// indexing
             const_reference operator[](size_type idx) const noexcept
             { return { m_proxy.m_storage, m_proxy.m_index + idx }; }
-    
+
             /// comparison (equality)
             bool operator==(const self_type& other) const noexcept
             {
@@ -236,7 +236,7 @@ namespace SOA {
                 return m_proxy.m_storage &&
                     m_proxy.m_index < std::get<0>(*m_proxy.m_storage).size();
             }
-    
+
         protected:
             /// give access to underlying storage pointer
             auto storage() const noexcept -> decltype(&*m_proxy.m_storage)
@@ -248,7 +248,7 @@ namespace SOA {
             template <typename T>
             friend std::ostream& operator<<(std::ostream&, const ConstIterator<T>&);
     };
-    
+
     /** @brief class mimicking a pointer to pointee inidicated by PROXY
      *
      * @author Manuel Schiller <Manuel.Schiller@cern.ch>
@@ -276,7 +276,7 @@ namespace SOA {
             using naked_proxy = typename parent_type::naked_proxy;
             // underlying "naked" proxy is friend as well
             friend naked_proxy;
-    
+
         public:
             /// convenience using = for our own type
             using self_type = Iterator<proxy>;
@@ -296,29 +296,29 @@ namespace SOA {
             using const_pointer = ConstIterator<proxy>;
             /// iterator category
             using iterator_category = std::random_access_iterator_tag;
-    
+
         private:
             /// constructor building proxy in place
             explicit Iterator(typename proxy::parent_type::SOAStorage* storage,
                     size_type index, typename proxy::parent_type::its_safe_tag safe) noexcept :
                 ConstIterator<proxy>(storage, index, safe) { }
-    
+
         public:
             /// default constructor (nullptr equivalent)
             Iterator() noexcept : Iterator(nullptr, 0) { }
-    
+
             /// copy constructor
             Iterator(const self_type& other) noexcept = default;
             /// move constructor
             Iterator(self_type&& other) noexcept = default;
-    
+
             /// assignment
             self_type& operator=(const self_type& other) noexcept
             { ConstIterator<proxy>::operator=(other); return *this; }
             /// assignment (move semantics)
             self_type& operator=(self_type&& other) noexcept
             { ConstIterator<proxy>::operator=(std::move(other)); return *this; }
-    
+
             /// deference pointer (*p)
             reference operator*() noexcept
             { return ConstIterator<proxy>::m_proxy; }
@@ -331,7 +331,7 @@ namespace SOA {
             /// deference pointer (p->blah)
             const_reference* operator->() const noexcept
             { return std::addressof(ConstIterator<proxy>::m_proxy); }
-    
+
             /// (pre-)increment
             self_type& operator++() noexcept
             { ConstIterator<proxy>::operator++(); return *this; }
@@ -388,7 +388,7 @@ namespace SOA {
             difference_type operator-(
                     const ConstIterator<proxy>& other) const noexcept
             { return ConstIterator<proxy>::operator-(other); }
-    
+
             /// indexing
             reference operator[](size_type idx) noexcept
             { return { ConstIterator<proxy>::m_proxy.m_storage,
@@ -398,7 +398,7 @@ namespace SOA {
             { return { ConstIterator<proxy>::m_proxy.m_storage,
                          Iterator<proxy>::m_proxy.m_index + idx }; }
     };
-    
+
     /// implement integer + Iterator
     template <typename PROXY, typename T>
     typename std::enable_if<
@@ -407,7 +407,7 @@ namespace SOA {
         Iterator<PROXY> >::type
         operator+(T dist, const Iterator<PROXY>& other) noexcept
     { return other + dist; }
-    
+
     /// implement integer + ConstIterator
     template <typename PROXY, typename T>
     typename std::enable_if<
@@ -416,7 +416,7 @@ namespace SOA {
         ConstIterator<PROXY> >::type
         operator+(T dist, const ConstIterator<PROXY>& other) noexcept
     { return other + dist; }
-    
+
     /// operator<< for supporting idioms like "std::cout << it" (mostly debugging)
     template<typename T>
     std::ostream& operator<<(std::ostream& os, const ConstIterator<T>& it) {
