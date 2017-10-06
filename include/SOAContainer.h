@@ -645,7 +645,7 @@ class _SOAContainer : public SOAView<
         }
 
         /// construct a new element by calling the user-defined constructor of the proxy object
-        template <typename... ARGS>
+        template <typename... ARGS, typename std::enable_if<!SOAUtils::all(std::is_convertible<ARGS, SOATypelist::unwrap_t<FIELDS>>::value...)>::type* = nullptr>
         void
         emplace_back( ARGS&&... args ) noexcept( noexcept( std::declval<self_type>().push_back( value_type( std::forward<ARGS>( args )... ) ) ) )
         {
