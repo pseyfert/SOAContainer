@@ -37,6 +37,8 @@ namespace SOA {
             template <typename T, std::size_t = 0>
             constexpr static std::size_t find() noexcept
             { return -1; }
+            template <typename T>
+            constexpr static std::size_t count() noexcept { return 0; }
         };
     
         /// little switch for typelist
@@ -79,6 +81,13 @@ namespace SOA {
             {
                 return std::is_same<T, head_type>::value ? OFS :
                     tail_types::template find<T, OFS + 1>();
+            }
+            /// count how often T appears in the type list
+            template <typename T>
+            constexpr static std::size_t count() noexcept
+            {
+                return std::is_same<T, HEAD>::value +
+                    tail_types::template count<T>();
             }
             /// little helper to map over the types in the typelist
             template <template <typename ARG> class OP>
@@ -123,6 +132,12 @@ namespace SOA {
                     typelist<int, bool>::map_t<add_const_t> >::value,
                     "implementation error");
 #endif
+            static_assert(0 == typelist<int, int, bool>::template count<char>(),
+                    "implementation error");
+            static_assert(1 == typelist<int, int, bool>::template count<bool>(),
+                    "implementation error");
+            static_assert(2 == typelist<int, int, bool>::template count<int>(),
+                    "implementation error");
         }
     } // namespace Typelist
 } // namespace SOA

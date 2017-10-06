@@ -17,6 +17,30 @@
 namespace SOA {
     /// implementation details for convenient SOA skins
     namespace impl {
+        /// little helper checking for duplicate fields
+        template <typename... FIELDS>
+        struct has_duplicate_fields {
+            using TL = SOA::Typelist::typelist<FIELDS...>;
+            /// predicate to test if field T is duplicate in FIELDS...
+            template <typename T>
+            struct type : std::integral_constant<bool,
+                (TL::template count<T>() > 1)> {};
+        };
+        /// little helper checking for duplicate fields
+        template <bool HASDUPLICATES, typename BASE, typename... FIELDS>
+        struct _NoDuplicateFieldsVerifier {
+            static_assert(!HASDUPLICATES, "Duplicate fields are not allowed.");
+        };
+        /// specialisation: no duplicate fields
+        template <typename BASE, typename... FIELDS>
+        struct _NoDuplicateFieldsVerifier<false, BASE, FIELDS...> :
+            FIELDS::template accessors<BASE>... {};
+        /// little helper checking for duplicate fields
+        template <typename BASE, typename... FIELDS>
+        using NoDuplicateFieldsVerifier = _NoDuplicateFieldsVerifier<
+            SOA::Utils::ANY<
+            has_duplicate_fields<FIELDS...>::template type,
+            FIELDS...>::value, BASE, FIELDS...>;
         /** @brief base class of all convenient SOA skins
          *
          * @author Manuel Schiller <Manuel.Schiller@cern.ch>
@@ -28,7 +52,7 @@ namespace SOA {
         template <typename BASE, class... FIELDS>
         struct SkinBase :
             // order important for empty base class optimisation
-            FIELDS::template accessors<SkinBase<BASE, FIELDS...> >..., BASE
+            NoDuplicateFieldsVerifier<SkinBase<BASE, FIELDS...>, FIELDS...>, BASE
         {
             // make sure that no user puts data in a field...
             static_assert(SOA::Utils::ALL<std::is_empty, FIELDS...>::value,
