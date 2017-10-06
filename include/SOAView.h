@@ -469,10 +469,6 @@ namespace SOA {
         template <typename> class SKIN, typename... FIELDS>
     class _View {
         private:
-            template <template <typename> class PRED, typename... ARGS>
-            using ANY = SOA::Utils::ANY<PRED, ARGS...>;
-            template <template <typename> class PRED, typename... ARGS>
-            using ALL = SOA::Utils::ALL<PRED, ARGS...>;
             /// little helper to find the type contained in a range
             template <typename RANGE>
             struct contained_type {
@@ -489,7 +485,8 @@ namespace SOA {
                     std::is_pod<T>::value ||
                     SOA::Typelist::is_wrapped<T>::value> {};
                 // and check that all fields are either pod or wrapped
-                static_assert(ALL<is_pod_or_wrapped, FIELDS...>::value,
+                static_assert(SOA::Utils::ALL(
+                            is_pod_or_wrapped<FIELDS>::value...),
                     "Fields should be either plain old data (POD) or "
                     "wrapped types.");
 
@@ -542,7 +539,8 @@ namespace SOA {
 
             /// is any field a constant range?
             template <typename... ARGS>
-            struct _is_any_field_constant : ANY<is_contained_constant, ARGS...> { };
+            struct _is_any_field_constant : std::integral_constant<bool,
+                SOA::Utils::ANY(is_contained_constant<ARGS>::value...)> { };
 
             /// helper for _is_any_field_constant: extract parameter pack
             template <template <typename...> class T, typename... ARGS>

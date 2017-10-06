@@ -38,9 +38,9 @@ namespace SOA {
         /// little helper checking for duplicate fields
         template <typename BASE, typename... FIELDS>
         using NoDuplicateFieldsVerifier = _NoDuplicateFieldsVerifier<
-            SOA::Utils::ANY<
-            has_duplicate_fields<FIELDS...>::template type,
-            FIELDS...>::value, BASE, FIELDS...>;
+            SOA::Utils::ANY(
+            has_duplicate_fields<FIELDS...>::template type<
+            FIELDS>::value...), BASE, FIELDS...>;
         /** @brief base class of all convenient SOA skins
          *
          * @author Manuel Schiller <Manuel.Schiller@cern.ch>
@@ -55,10 +55,10 @@ namespace SOA {
             NoDuplicateFieldsVerifier<SkinBase<BASE, FIELDS...>, FIELDS...>, BASE
         {
             // make sure that no user puts data in a field...
-            static_assert(SOA::Utils::ALL<std::is_empty, FIELDS...>::value,
+            static_assert(SOA::Utils::ALL(std::is_empty<FIELDS>::value...),
                     "Fields may not contain data or virtual methods!");
-            static_assert(SOA::Utils::ALL<std::is_empty,
-                    typename FIELDS::template accessors<BASE>...>::value,
+            static_assert(SOA::Utils::ALL(std::is_empty<
+                    typename FIELDS::template accessors<BASE> >::value...),
                     "Field accessors may not contain data or virtual methods!");
             /// inform the framework that we're a skin
             using skin_tag = struct {};
