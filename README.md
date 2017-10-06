@@ -23,8 +23,8 @@ class AOSPoint {
         Point(float x, float y) : m_x(x), m_y(y) { }
         float x() const noexcept { return m_x; }
         float y() const noexcept { return m_y; }
-        void setX(float x) noexcept { m_x = x; }
-        void setY(float y) noexcept { m_y = y; }
+	float& x() noexcept { return m_x; }
+	float& y() noexcept { return m_y; }
         // plus some routines that do more than just setting/getting members
         float r2() const noexcept { return m_x * m_x + m_y * m_y; }
 };
@@ -43,45 +43,27 @@ SOA layout is fairly easy, though:
 // first declare member "tags" which describe the members of the notional
 // struct (which will never exist in memory - SOA layout!)
  namespace PointFields {
-    using namespace SOATypelist;
-    // since we can have more than one member of the same type in our
-    // SOA object, we have to do some typedef gymnastics so the compiler
-    // can tell them apart
-    using x = struct : public wrap_type<float> {};
-    using y = struct : public wrap_type<float> {};
+    SOAFIELDS_TRIVIAL(x, x, float); // field struct x, getter/setter x(), type float
+    SOAFIELDS_TRIVIAL(y, y, float);
 };
 
 // define the "skin", i.e. the outer guise that the naked members "wear"
 // to make interaction with the class nice
-template <typename NAKEDPROXY>
-class SOAPoint : public NullSkin<NAKEDPROXY> {
-    public:
-        // declare which fields (data members) a SOAPoint has
-        using fields_typelist = SOATypelist::typelist<
-            PointFields::x, PointFields::y>;
-        // use the underlying proxy's constructors and assignment operators
-        using NullSkin<NAKEDPROXY>::NullSkin;
-        using NullSkin<NAKEDPROXY>::operator=;
-        // your own constructors go here (if you have any)...
+SOASKIN(SOAPointSkin, PointFields::x, PointFields::y) {
+    // fall back on defaults...
+    SOASKIN_INHERIT_DEFAULT_METHODS;
+    // your own constructors etc. go here (if you have any)...
 
-        // setters and getters...
-        float x() const noexcept
-        { return this-> template get<PointFields::x>(); }
-        float y() const noexcept
-        { return this-> template get<PointFields::y>(); }
-        void setX(float x) noexcept
-        { this-> template get<PointFields::x>() = x; }
-        void setY(float y) noexcept
-        { this-> template get<PointFields::y>() = y; }
+    // we inherit getters/setters from fields
 
-        // again, something beyond plain setters/getters
-        float r2() const noexcept { return x() * x() + y() * y(); }
+    // again, something beyond plain setters/getters
+    float r2() const noexcept { return x() * x() + y() * y(); }
 };
 
 // define the SOA container type
-using SOAPoints = SOAContainer<
-        std::vector, // underlying type for each field
-        SOAPoint>;   // skin to "dress" the tuple of fields with
+using SOAPoints = SOA::Container<
+        std::vector,	// underlying type for each field
+        SOAPointSkin>;  // skin to "dress" the tuple of fields with
 // define the SOAPoint itself
 using SOAPoint = typename SOAPoints::proxy;
 ```
@@ -168,6 +150,7 @@ const, but its length is fixed. Again, the fields can be pretty much anything.
 A simple example follows:
 
 ```cpp
+// FIXME: new style example
 #include <SOAView.h>
 using field_x = struct : SOATypelist::wrap_type<float> {};
 using field_y = struct : SOATypelist::wrap_type<float> {};
