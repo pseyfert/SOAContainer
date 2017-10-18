@@ -285,12 +285,10 @@ namespace SOA {
             /// swap the contents of two ObjectProxy instances
             void swap(self_type& other) noexcept(noexcept(
                         SOA::Utils::map(swapHelper{ m_index, other.m_index },
-                        SOA::Utils::zip(*m_storage, *other.m_storage),
-                        std::make_index_sequence<fields_typelist::size()>())))
+                        SOA::Utils::zip(*m_storage, *other.m_storage))))
             {
                 SOA::Utils::map(swapHelper{ m_index, other.m_index },
-                        SOA::Utils::zip(*m_storage, *other.m_storage),
-                        std::make_index_sequence<fields_typelist::size()>());
+                        SOA::Utils::zip(*m_storage, *other.m_storage));
             }
 
             /// comparison (equality)

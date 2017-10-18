@@ -18,44 +18,116 @@
 namespace SOA {
     /// various other utilities used by Container
     namespace Utils {
-        /// invoke fun on given arguments, return a dummy int if fun returns void
-        template <typename FUN, typename... ARG>
-        auto invoke_void2int(FUN fun, ARG&&... arg) noexcept(
-            noexcept(fun(std::forward<ARG>(arg)...))) ->
-            typename std::enable_if<
-                !std::is_same<void, typename std::result_of<FUN(ARG...)>::type>::value,
-                typename std::result_of<FUN(ARG...)>::type>::type
-        { return fun(std::forward<ARG>(arg)...); }
-        /// invoke fun on given arguments, return a dummy int if fun returns void
-        template <typename FUN, typename... ARG>
-        auto invoke_void2int(FUN fun, ARG&&... arg) noexcept(
-            noexcept(fun(std::forward<ARG>(arg)...))) ->
-            typename std::enable_if<
-                std::is_same<void, typename std::result_of<FUN(ARG...)>::type>::value,
-                int>::type
-        { fun(std::forward<ARG>(arg)...); return 0; }
+        /// logic "and" of variadic arguments
+        constexpr bool ALL() noexcept { return true; }
+        template <class HEAD, class... TAIL>
+        constexpr bool ALL(HEAD head, TAIL... tail) noexcept
+        { return head && ALL(tail...); }
+        /// logic "or" of variadic arguments
+        constexpr bool ANY() noexcept { return false; }
+        template <class HEAD, class... TAIL>
+        constexpr bool ANY(HEAD head, TAIL... tail) noexcept
+        { return head || ANY(tail...); }
 
-        /// apply functor fn to each element of tuple, and return tuple with results
-        template <typename FUNCTOR, typename OBJ, std::size_t... IDX>
-        auto map(FUNCTOR fn, OBJ&& obj, std::index_sequence<IDX...>) noexcept(
-            noexcept(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)))...))) ->
-            decltype(std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)))...))
-        { return std::make_tuple(invoke_void2int(fn, std::get<IDX>(std::forward<OBJ>(obj)))...); }
+        /// ignores all its arguments
+        template <typename... ARGS>
+        void ignore(ARGS&&...) noexcept {}
 
-        /// apply functor fn to each element of tuple, and return tuple with results
-        template <typename FUNCTOR, typename OBJ>
-        auto map(FUNCTOR fn, OBJ&& obj) noexcept(
-            noexcept(map(fn, std::forward<OBJ>(obj),
-                    std::make_index_sequence<
-                    std::tuple_size<typename std::decay<OBJ>::type>::value>()))) ->
-            decltype(map(fn, std::forward<OBJ>(obj),
-                    std::make_index_sequence<
-                    std::tuple_size<typename std::decay<OBJ>::type>::value>()))
-        {
-            return map(fn, std::forward<OBJ>(obj),
-                std::make_index_sequence<
-                std::tuple_size<typename std::decay<OBJ>::type>::value>());
+        /// little helper to call callable f with contents of t as arguments
+        template <typename F, typename... ARGS, typename RETVAL = decltype(std::forward<F>(std::declval<F>())(std::forward<ARGS>(std::declval<ARGS>())...))>
+        constexpr typename std::enable_if<!std::is_same<void, RETVAL>::value, RETVAL>::type
+        invoke(F&& f, ARGS&&... args) noexcept(
+                noexcept(std::forward<F>(f)(std::forward<ARGS>(args)...)))
+        { return std::forward<F>(f)(std::forward<ARGS>(args)...); }
+        /// little helper to call callable f with contents of t as arguments
+        template <typename F, typename... ARGS, typename RETVAL = decltype(std::forward<F>(std::declval<F>())(std::forward<ARGS>(std::declval<ARGS>())...))>
+        typename std::enable_if<std::is_same<void, RETVAL>::value, RETVAL>::type
+        invoke(F&& f, ARGS&&... args) noexcept(
+                noexcept(std::forward<F>(f)(std::forward<ARGS>(args)...)))
+        { std::forward<F>(f)(std::forward<ARGS>(args)...); }
+
+        // implementation details
+        namespace impl {
+            template <typename F, typename T, std::size_t... IDXS, typename RETVAL = decltype(invoke(std::forward<F>(std::declval<F>()), std::get<IDXS>(std::forward<T>(std::declval<T>()))...))>
+            constexpr typename std::enable_if<!std::is_same<void, RETVAL>::value, RETVAL>::type
+            apply_impl(F&& f, T&& t, std::index_sequence<IDXS...>) noexcept(noexcept(
+                        invoke(std::forward<F>(f), std::get<IDXS>(std::forward<T>(t))...)))
+            { return invoke(std::forward<F>(f), std::get<IDXS>(std::forward<T>(t))...); }
+            template <typename F, typename T, std::size_t... IDXS, typename RETVAL = decltype(invoke(std::forward<F>(std::declval<F>()), std::get<IDXS>(std::forward<T>(std::declval<T>()))...))>
+            typename std::enable_if<std::is_same<void, RETVAL>::value, RETVAL>::type
+            apply_impl(F&& f, T&& t, std::index_sequence<IDXS...>) noexcept(noexcept(
+                        invoke(std::forward<F>(f), std::get<IDXS>(std::forward<T>(t))...)))
+            { invoke(std::forward<F>(f), std::get<IDXS>(std::forward<T>(t))...); }
+        } // namespace impl
+
+        /// little helper to call callable f with contents of t as arguments
+        template<typename F, typename T, typename RETVAL = decltype(impl::apply_impl(std::forward<F>(std::declval<F>()), std::forward<T>(std::declval<T>()), std::make_index_sequence<std::tuple_size<typename std::decay<T>::type>::value>())), std::size_t N = std::tuple_size<typename std::decay<T>::type>::value>
+        constexpr typename std::enable_if<!std::is_same<void, RETVAL>::value, RETVAL>::type
+        apply(F&& f, T&& t) noexcept(noexcept(
+                    impl::apply_impl(std::forward<F>(f), std::forward<T>(t),
+                        std::make_index_sequence<N>())))
+        { return impl::apply_impl(std::forward<F>(f), std::forward<T>(t),
+                        std::make_index_sequence<N>()); }
+        template<typename F, typename T, typename RETVAL = decltype(impl::apply_impl(std::forward<F>(std::declval<F>()), std::forward<T>(std::declval<T>()), std::make_index_sequence<std::tuple_size<typename std::decay<T>::type>::value>())), std::size_t N = std::tuple_size<typename std::decay<T>::type>::value>
+        typename std::enable_if<std::is_same<void, RETVAL>::value, void>::type
+        apply(F&& f, T&& t) noexcept(noexcept(
+                    impl::apply_impl(std::forward<F>(f), std::forward<T>(t),
+                        std::make_index_sequence<N>())))
+        { impl::apply_impl(std::forward<F>(f), std::forward<T>(t),
+                        std::make_index_sequence<N>()); }
+
+        namespace impl {
+            /// helper for the implementation of map
+            template <typename F>
+            struct map_f {
+                F m_f;
+                template <typename... ARGS, typename RETVAL = decltype(
+                        std::make_tuple(std::forward<F>(std::declval<F>())(
+                                std::forward<ARGS>(std::declval<ARGS>()))...))>
+                typename std::enable_if<!ANY(std::is_same<void,
+                        decltype(std::forward<F>(std::declval<F>())(
+                        std::forward<ARGS>(
+                            std::declval<ARGS>())))>::value...), RETVAL>::type
+                operator()(ARGS&&... args) const noexcept(noexcept(
+                            std::make_tuple(m_f(std::forward<ARGS>(args))...)))
+                { return std::make_tuple(m_f(std::forward<ARGS>(args))...); }
+
+                template <typename... ARGS>
+                typename std::enable_if<ALL(std::is_same<void,
+                        decltype(std::forward<F>(std::declval<F>())(
+                                std::forward<ARGS>(
+                                    std::declval<ARGS>())))>::value...),
+                         void>::type
+                operator()(ARGS&&... args) const noexcept(noexcept(
+                            ignore((m_f(std::forward<ARGS>(args)), 0)...)))
+                { ignore((m_f(std::forward<ARGS>(args)), 0)...); }
+            };
+
+            /// helper for the implementation of map
+            template <typename F>
+            map_f<decltype(std::forward<F>(std::declval<F>()))> make_map_f(
+                    F&& f) noexcept(noexcept(map_f<decltype(std::forward<F>(
+                                    std::declval<F>()))>{std::forward<F>(f)}))
+            { return {std::forward<F>(f)}; }
         }
+
+        /// apply functor f to all elements of tuple, return tuple of results
+        template <typename F, typename T, typename RETVAL = decltype(apply(
+                    impl::make_map_f(std::forward<F>(std::declval<F>())),
+                    std::forward<T>(std::declval<T>())))>
+        typename std::enable_if<!std::is_same<RETVAL, void>::value, RETVAL>::type
+        map(F&& f, T&& t) noexcept(noexcept(apply(impl::make_map_f(
+                            std::forward<F>(f)), std::forward<T>(t))))
+        { return apply(impl::make_map_f(std::forward<F>(f)), std::forward<T>(t)); }
+
+        /// apply functor f (returning void) to all elements of tuple
+        template <typename F, typename T, typename RETVAL = decltype(apply(
+                    impl::make_map_f(std::forward<F>(std::declval<F>())),
+                    std::forward<T>(std::declval<T>())))>
+        typename std::enable_if<std::is_same<RETVAL, void>::value, RETVAL>::type
+        map(F&& f, T&& t) noexcept(noexcept(apply(impl::make_map_f(
+                            std::forward<F>(f)), std::forward<T>(t))))
+        { apply(impl::make_map_f(std::forward<F>(f)), std::forward<T>(t)); }
 
         /// implementation details of foldl
         namespace foldl_impl {
@@ -169,7 +241,7 @@ namespace SOA {
         namespace zip_impl {
             /// little helper for zip
             template <std::size_t IDXINNER, std::size_t... IDXOUTER, typename... OBJS>
-            auto zip(std::index_sequence<IDXOUTER...>, OBJS&&... objs) noexcept(noexcept(
+            constexpr auto zip(std::index_sequence<IDXOUTER...>, OBJS&&... objs) noexcept(noexcept(
                         std::forward_as_tuple(std::get<IDXINNER>(std::get<IDXOUTER>(
                                     std::forward_as_tuple(std::forward<OBJS>(objs)...)))...))) -> decltype(
                     std::forward_as_tuple(std::get<IDXINNER>(std::get<IDXOUTER>(
@@ -181,7 +253,7 @@ namespace SOA {
 
             /// little helper for zip
             template <typename... OBJS, std::size_t... IDXOUTER, std::size_t... IDXINNER>
-            auto zip(std::index_sequence<IDXOUTER...> outer,
+            constexpr auto zip(std::index_sequence<IDXOUTER...> outer,
                     std::index_sequence<IDXINNER...>, OBJS&&... objs) noexcept(noexcept(
                             std::make_tuple(zip<IDXINNER>(
                                     outer, std::forward<OBJS>(objs)...)...))) -> decltype(
@@ -208,7 +280,7 @@ namespace SOA {
          * @date 2017-01-11
          */
         template <typename... OBJS>
-        auto zip(OBJS&&... objs) noexcept(noexcept(
+        constexpr auto zip(OBJS&&... objs) noexcept(noexcept(
                     zip_impl::zip(std::make_index_sequence<sizeof...(OBJS)>(),
                         std::make_index_sequence<std::tuple_size<
                         typename std::tuple_element<0, std::tuple<
@@ -227,76 +299,19 @@ namespace SOA {
                     std::forward<OBJS>(objs)...);
         }
 
-        /// little tool to call a callable using the arguments given in a tuple
-        template <typename F, typename T, size_t sz = std::tuple_size<T>::value>
-        struct caller {
-            const F& m_fn; ///< callable
-            /// constructor
-            caller(const F& fn) : m_fn(fn) { }
-
-            /// call operator (unpacks tuple one by one, perfect forwarding)
-            template <typename... ARGS>
-            auto operator()(T&& tuple, ARGS&&... args) -> decltype(
-                caller<F, T, sz - 1>(m_fn)(std::forward<T>(tuple),
-                    std::move(std::get<sz - 1>(tuple)), std::forward<ARGS>(args)...))
-            {
-                return caller<F, T, sz - 1>(m_fn)(std::forward<T>(tuple),
-                    std::move(std::get<sz - 1>(tuple)), std::forward<ARGS>(args)...);
-            }
-
-            /// call operator (unpacks tuple one by one)
-            template <typename... ARGS>
-            auto operator()(const T& tuple, const ARGS&... args) -> decltype(
-                caller<F, T, sz - 1>(m_fn)(tuple,
-                    std::get<sz - 1>(tuple), args...))
-            {
-                return caller<F, T, sz - 1>(m_fn)(tuple,
-                    std::get<sz - 1>(tuple), args...);
-            }
+        template <typename F>
+        struct apply_zip_impl {
+            F f;
+            template <typename... Ts>
+            void operator()(Ts&&... ts) const noexcept(noexcept(
+                        ignore((apply(f, std::forward<Ts>(ts)), 0)...)))
+            { ignore((apply(f, std::forward<Ts>(ts)), 0)...); }
         };
+        template <typename F, typename... Ts>
+        void apply_zip(F&& f, Ts&&... ts) noexcept(noexcept(
+                    apply(apply_zip_impl<decltype(std::forward<F>(f))>{std::forward<F>(f)}, zip(std::forward<Ts>(ts)...))))
+        { apply(apply_zip_impl<decltype(std::forward<F>(f))>{std::forward<F>(f)}, zip(std::forward<Ts>(ts)...)); }
 
-        /// little tool to call using unpacked tuple arguments (specialisation)
-        template <typename F, typename T>
-        struct caller<F, T, size_t(0)> {
-            const F& m_fn; ///< callable
-            /// constructor
-            caller(const F& fn) : m_fn(fn) { }
-
-            /// call operator (unpacks tuple one by one, perfect forwarding)
-            template <typename... ARGS>
-            auto operator()(T&& /* tuple */, ARGS&&... args) -> decltype(
-                m_fn(std::forward<ARGS>(args)...))
-            { return m_fn(std::forward<ARGS>(args)...); }
-
-            /// call operator (unpacks tuple one by one)
-            template <typename... ARGS>
-            auto operator()(const T& /* tuple */,
-                const ARGS&... args) -> decltype(m_fn(args...))
-            { return m_fn(args...); }
-        };
-
-        /// little helper to call callable f with contents of t as arguments (perfect forwarding)
-        template<typename F, typename T>
-        auto call(const F& f, T&& t) -> decltype(
-            caller<F, typename std::decay<T>::type>(f)(std::forward<T>(t)))
-        { return caller<F, typename std::decay<T>::type>(f)(std::forward<T>(t)); }
-
-        /// little helper to call callable f with contents of t as arguments
-        template<typename F, typename T>
-        auto call(const F& f, const T& t) -> decltype(
-            caller<F, typename std::decay<T>::type>(f)(t))
-        { return caller<F, typename std::decay<T>::type>(f)(t); }
-
-        /// logic "and" of variadic arguments
-        constexpr bool ALL() noexcept { return true; }
-        template <class HEAD, class... TAIL>
-        constexpr bool ALL(HEAD head, TAIL... tail) noexcept
-        { return head && ALL(tail...); }
-        /// logic "or" of variadic arguments
-        constexpr bool ANY() noexcept { return false; }
-        template <class HEAD, class... TAIL>
-        constexpr bool ANY(HEAD head, TAIL... tail) noexcept
-        { return head || ANY(tail...); }
     } // namespace Utils
 } // namespace SOA
 

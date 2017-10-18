@@ -10,6 +10,57 @@
 #include "SOAView.h"
 
 namespace SOA {
+    // implementation details
+    namespace impl {
+        /// little helper for indexing to implement clear()
+        struct clearHelper {
+            template <typename... ARGS>
+            void operator()(ARGS&... args) const noexcept(
+                    noexcept(SOA::Utils::ignore((args.clear(), 0)...)))
+            { SOA::Utils::ignore((args.clear(), 0)...); }
+        };
+        /// little helper for indexing to implement pop_back()
+        struct pop_backHelper {
+            template <typename... ARGS>
+            void operator()(ARGS&... args) const noexcept(
+                    noexcept(SOA::Utils::ignore((args.pop_back(), 0)...)))
+            { SOA::Utils::ignore((args.pop_back(), 0)...); }
+        };
+        /// little helper for indexing to implement shrink_to_fit()
+        struct shrink_to_fitHelper {
+            template <typename... ARGS>
+            void operator()(ARGS&... args) const noexcept(
+                    noexcept(SOA::Utils::ignore((args.shrink_to_fit(), 0)...)))
+            { SOA::Utils::ignore((args.shrink_to_fit(), 0)...); }
+        };
+        /// little helper for push_back
+        struct push_backHelper {
+            template <typename T, typename V>
+            void operator()(T&& t, V&& v) const noexcept(
+                    noexcept(t.push_back(std::forward<V>(v))))
+            { t.push_back(std::forward<V>(v)); }
+        };
+        /// little helper for insert(it, val)
+        template <typename size_type>
+        struct insertHelper {
+            size_type m_idx;
+            template <typename T, typename V>
+            void operator()(T&& t, V&& v) const noexcept(
+                    noexcept(t.insert(t.begin() + m_idx, std::forward<V>(v))))
+            { t.insert(t.begin() + m_idx, std::forward<V>(v)); }
+        };
+        /// little helper for insert(it, count, val)
+        template <typename size_type>
+        struct insertHelper2 {
+            size_type m_idx;
+            size_type m_cnt;
+            template <typename T, typename V>
+            void operator()(T&& t, V&& v) const noexcept(
+                    noexcept(t.insert(t.begin() + m_idx, m_cnt, std::forward<V>(v))))
+            { t.insert(t.begin() + m_idx, m_cnt, std::forward<V>(v)); }
+        };
+    } // namespace impl
+
     /// the implementation behind Container
     template <template <typename...> class CONTAINER,
         template <typename> class SKIN, typename... FIELDS>
@@ -150,28 +201,7 @@ namespace SOA {
         private:
             /// hide implementation details in struct to make doxygen tidier
             struct impl_detail {
-                /// little helper for indexing to implement clear()
-                struct clearHelper {
-                    template <typename T>
-                    void operator()(T& obj) const noexcept(noexcept(obj.clear()))
-                    { obj.clear(); }
-                };
     
-                /// little helper for indexing to implement pop_back()
-                struct pop_backHelper {
-                    template <typename T>
-                    void operator()(T& obj) const noexcept(
-                            noexcept(obj.pop_back()))
-                    { obj.pop_back(); }
-                };
-    
-                /// little helper for indexing to implement shrink_to_fit()
-                struct shrink_to_fitHelper {
-                    template <typename T>
-                    void operator()(T& obj) const noexcept(
-                            noexcept(obj.shrink_to_fit()))
-                    { obj.shrink_to_fit(); }
-                };
     
                 /// little helper for indexing to implement reserve()
                 struct reserveHelper {
@@ -210,31 +240,6 @@ namespace SOA {
                     void operator()(std::tuple<T&, const V&> t) const noexcept(
                             noexcept(std::get<0>(t).resize(m_sz, std::get<1>(t))))
                     { std::get<0>(t).resize(m_sz, std::get<1>(t)); }
-                };
-    
-                /// little helper for push_back
-                struct push_backHelper {
-                    template <typename T, typename V>
-                    void operator()(std::tuple<T&, const V&> t) const noexcept(noexcept(
-                                std::get<0>(t).push_back(std::get<1>(t))))
-                    { std::get<0>(t).push_back(std::get<1>(t)); }
-                    template <typename T, typename V>
-                    void operator()(std::tuple<T&, V&&> t) const noexcept(noexcept(
-                            std::get<0>(t).push_back(std::move(std::get<1>(t)))))
-                    { std::get<0>(t).push_back(std::move(std::get<1>(t))); }
-                };
-    
-                /// little helper for insert(it, val)
-                struct insertHelper {
-                    size_type m_idx;
-                    template <typename T, typename V>
-                    void operator()(std::tuple<T&, const V&> t) const noexcept(
-                            noexcept(std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, std::get<1>(t))))
-                    { std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, std::get<1>(t)); }
-                    template <typename T, typename V>
-                    void operator()(std::tuple<T&, V&&> t) const noexcept(
-                            noexcept(std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, std::move(std::get<1>(t)))))
-                    { std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, std::move(std::get<1>(t))); }
                 };
     
                 /// little helper for insert(it, count, val)
@@ -365,30 +370,23 @@ namespace SOA {
         public:
             /// clear the container
             void clear() noexcept(noexcept(
-                SOA::Utils::map(typename impl_detail::clearHelper(),
-                    std::declval<self_type*>()->m_storage)))
-            {
-                SOA::Utils::map(typename impl_detail::clearHelper(), this->m_storage);
-            }
+                        SOA::Utils::apply(impl::clearHelper(),
+                            std::declval<SOAStorage&>())))
+            { SOA::Utils::apply(impl::clearHelper(), this->m_storage); }
     
             /// pop the last element off the container
             void pop_back() noexcept(noexcept(
-                SOA::Utils::map(
-                        typename impl_detail::pop_backHelper(),
-                        std::declval<self_type*>()->m_storage)))
-            {
-                SOA::Utils::map(
-                        typename impl_detail::pop_backHelper(), this->m_storage);
-            }
+                        SOA::Utils::apply(impl::pop_backHelper(),
+                            std::declval<SOAStorage&>())))
+            { SOA::Utils::apply(impl::pop_backHelper(), this->m_storage); }
     
             /// shrink the underlying storage of the container to fit its size
             void shrink_to_fit() noexcept(noexcept(
-                SOA::Utils::map(
-                        typename impl_detail::shrink_to_fitHelper(),
-                        std::declval<self_type*>()->m_storage)))
+                        SOA::Utils::apply(impl::shrink_to_fitHelper(),
+                            std::declval<SOAStorage&>())))
             {
-                SOA::Utils::map(
-                        typename impl_detail::shrink_to_fitHelper(), this->m_storage);
+                SOA::Utils::apply(impl::shrink_to_fitHelper(),
+                        this->m_storage);
             }
     
             /// reserve space for at least sz elements
@@ -436,84 +434,68 @@ namespace SOA {
             /// resize the container (append val if the container grows)
             void resize(size_type sz, const value_type& val) noexcept(noexcept(
                 SOA::Utils::map(typename impl_detail::resizeHelper{sz},
-                        SOA::Utils::zip(std::declval<self_type*>()->m_storage, val),
-                        std::make_index_sequence<sizeof...(FIELDS)>())))
+                        SOA::Utils::zip(std::declval<self_type*>()->m_storage, val))))
             {
                 SOA::Utils::map(typename impl_detail::resizeHelper{sz},
-                        SOA::Utils::zip(this->m_storage, val),
-                        std::make_index_sequence<sizeof...(FIELDS)>());
+                        SOA::Utils::zip(this->m_storage, val));
             }
     
             /// push an element at the back of the array
             void push_back(const value_type& val) noexcept(noexcept(
-                SOA::Utils::map(typename impl_detail::push_backHelper(),
-                        SOA::Utils::zip(std::declval<self_type*>()->m_storage, val),
-                        std::make_index_sequence<sizeof...(FIELDS)>())))
+                        SOA::Utils::apply_zip(impl::push_backHelper(),
+                            std::declval<SOAStorage&>(), val)))
             {
-                SOA::Utils::map(typename impl_detail::push_backHelper(),
-                        SOA::Utils::zip(this->m_storage, val),
-                        std::make_index_sequence<sizeof...(FIELDS)>());
+                SOA::Utils::apply_zip(
+                        impl::push_backHelper(), this->m_storage, val);
             }
-    
-            /// push an element at the back of the array (move variant)
+            /// push an element at the back of the array (move semantics)
             void push_back(value_type&& val) noexcept(noexcept(
-                SOA::Utils::map(typename impl_detail::push_backHelper(),
-                        SOA::Utils::zip(std::declval<self_type*>()->m_storage, std::move(val)),
-                        std::make_index_sequence<sizeof...(FIELDS)>())))
+                        SOA::Utils::apply_zip(impl::push_backHelper(),
+                            std::declval<SOAStorage&>(), std::move(val))))
             {
-                SOA::Utils::map(typename impl_detail::push_backHelper(),
-                        SOA::Utils::zip(this->m_storage, std::move(val)),
-                        std::make_index_sequence<sizeof...(FIELDS)>());
+                SOA::Utils::apply_zip(
+                        impl::push_backHelper(), this->m_storage, std::move(val));
             }
     
             /// insert a value at the given position
             iterator insert(const_iterator pos, const value_type& val) noexcept(
-                    noexcept(SOA::Utils::map(
-                        typename impl_detail::insertHelper{
-                                static_cast<size_type>(pos - pos)},
-                            SOA::Utils::zip(std::declval<self_type*>()->m_storage, val),
-                            std::make_index_sequence<sizeof...(FIELDS)>())))
+                    noexcept(SOA::Utils::apply_zip(
+                            impl::insertHelper<size_type>{0},
+                            std::declval<SOAStorage&>(), val)))
             {
                 assert((*pos).m_storage == &this->m_storage);
-                SOA::Utils::map(
-                        typename impl_detail::insertHelper{pos.m_proxy.m_index},
-                        SOA::Utils::zip(this->m_storage, val),
-                        std::make_index_sequence<sizeof...(FIELDS)>());
+                SOA::Utils::apply_zip(
+                        impl::insertHelper<size_type>{pos.m_proxy.m_index},
+                        this->m_storage, val);
                 return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
                     its_safe_tag() };
             }
     
             /// insert a value at the given position (move variant)
             iterator insert(const_iterator pos, value_type&& val) noexcept(
-                    noexcept(SOA::Utils::map(
-                        typename impl_detail::insertHelper{pos.m_proxy.m_index},
-                            SOA::Utils::zip(std::declval<self_type*>()->m_storage,
-                                std::move(val)),
-                            std::make_index_sequence<sizeof...(FIELDS)>())))
+                    noexcept(SOA::Utils::apply_zip(
+                            impl::insertHelper<size_type>{0},
+                            std::declval<SOAStorage&>(), std::move(val))))
             {
                 assert((*pos).m_storage == &this->m_storage);
-                SOA::Utils::map(
-                        typename impl_detail::insertHelper{pos.m_proxy.m_index},
-                        SOA::Utils::zip(this->m_storage, std::move(val)),
-                        std::make_index_sequence<sizeof...(FIELDS)>());
+                SOA::Utils::apply_zip(
+                        impl::insertHelper<size_type>{pos.m_proxy.m_index},
+                        this->m_storage, std::move(val));
                 return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
                     its_safe_tag() };
             }
     
             /// insert count copies of value at the given position
             iterator insert(const_iterator pos, size_type count,
-                const value_type& val) noexcept(noexcept(SOA::Utils::map(
-                        typename impl_detail::insertHelper2{
-                                static_cast<size_type>(pos - pos), count},
-                        SOA::Utils::zip(std::declval<self_type*>()->m_storage, val),
-                        std::make_index_sequence<sizeof...(FIELDS)>())))
+                const value_type& val) noexcept(
+                    noexcept(SOA::Utils::apply_zip(
+                            impl::insertHelper2<size_type>{0, 0},
+                            std::declval<SOAStorage&>(), val)))
             {
                 assert((*pos).m_storage == &this->m_storage);
-                SOA::Utils::map(
-                        typename impl_detail::insertHelper2{
-                                pos.m_proxy.m_index, count},
-                        SOA::Utils::zip(this->m_storage, val),
-                        std::make_index_sequence<sizeof...(FIELDS)>());
+                SOA::Utils::apply_zip(
+                        impl::insertHelper2<size_type>{pos.m_proxy.m_index, count},
+                        this->m_storage, val);
                 return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
                     its_safe_tag() };
             }
@@ -572,12 +554,10 @@ namespace SOA {
             /// assign the vector to contain count copies of val
             void assign(size_type count, const value_type& val) noexcept(noexcept(
                         SOA::Utils::map(typename impl_detail::assignHelper{count},
-                            SOA::Utils::zip(std::declval<self_type*>()->m_storage, val),
-                            std::make_index_sequence<sizeof...(FIELDS)>())))
+                            SOA::Utils::zip(std::declval<self_type*>()->m_storage, val))))
             {
                 SOA::Utils::map(typename impl_detail::assignHelper{count},
-                        SOA::Utils::zip(this->m_storage, val),
-                        std::make_index_sequence<sizeof...(FIELDS)>());
+                        SOA::Utils::zip(this->m_storage, val));
             }
     
             /// assign the vector from a range of elements in another container
@@ -614,21 +594,21 @@ namespace SOA {
     
             /// construct a new element at the end of container from naked_value_tuple_type
             void emplace_back(naked_value_tuple_type&& val) noexcept(noexcept(
-                SOA::Utils::call(typename impl_detail::emplaceBackHelper2(nullptr),
+                SOA::Utils::apply(typename impl_detail::emplaceBackHelper2(nullptr),
                     std::forward<naked_value_tuple_type>(val))))
             {
-                return SOA::Utils::call(
+                return SOA::Utils::apply(
                     typename impl_detail::emplaceBackHelper2(this),
                     std::forward<naked_value_tuple_type>(val));
             }
     
             /// construct a new element at the end of container from value_type
             void emplace_back(value_type&& val) noexcept(noexcept(
-                SOA::Utils::call(typename impl_detail::emplaceBackHelper2(nullptr),
+                SOA::Utils::apply(typename impl_detail::emplaceBackHelper2(nullptr),
                     std::forward<naked_value_tuple_type>(
                         static_cast<naked_value_tuple_type>(val)))))
             {
-                return SOA::Utils::call(
+                return SOA::Utils::apply(
                     typename impl_detail::emplaceBackHelper2(this),
                     std::forward<naked_value_tuple_type>(
                         static_cast<naked_value_tuple_type>(val)));
@@ -665,10 +645,10 @@ namespace SOA {
             /// construct a new element at position pos from naked_value_tuple_type
             iterator emplace(const_iterator pos,
                 naked_value_tuple_type&& val) noexcept(noexcept(
-                    SOA::Utils::call(typename impl_detail::emplaceHelper2(
+                    SOA::Utils::apply(typename impl_detail::emplaceHelper2(
                     nullptr, pos), std::forward<naked_value_tuple_type>(val))))
             {
-                return SOA::Utils::call(
+                return SOA::Utils::apply(
                     typename impl_detail::emplaceHelper2(this, pos),
                     std::forward<naked_value_tuple_type>(val));
             }
@@ -676,11 +656,11 @@ namespace SOA {
             /// construct a new element at position pos from value_type
             iterator emplace(const_iterator pos,
                 value_type&& val) noexcept(noexcept(
-                    SOA::Utils::call(typename impl_detail::emplaceHelper2(
+                    SOA::Utils::apply(typename impl_detail::emplaceHelper2(
                     nullptr, pos), std::forward<naked_value_tuple_type>(
                         static_cast<naked_value_tuple_type>(val)))))
             {
-                return SOA::Utils::call(
+                return SOA::Utils::apply(
                     typename impl_detail::emplaceHelper2(this, pos),
                     std::forward<naked_value_tuple_type>(
                         static_cast<naked_value_tuple_type>(val)));

@@ -720,8 +720,7 @@ namespace SOA {
             {
                 // verify size of ranges
                 SOA::Utils::map(typename impl_detail::rangeSizeCheckHelper{
-                            std::get<0>(m_storage).size()},
-                        m_storage, std::make_index_sequence<sizeof...(RANGES)>());
+                            std::get<0>(m_storage).size()}, m_storage);
             }
             /// copy constructor
             _View(const self_type& other) = default;
