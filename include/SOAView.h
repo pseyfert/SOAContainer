@@ -1012,8 +1012,8 @@ namespace SOA {
             template <size_type MEMBERNO>
             auto range(iterator first, iterator last) noexcept -> decltype(
                         boost::make_iterator_range(
-                            std::get<MEMBERNO>(m_storage).begin() + (first - begin()),
-                            std::get<MEMBERNO>(m_storage).begin() + (last - begin())))
+                            std::get<MEMBERNO>(m_storage).begin() + (first - std::declval<iterator>()),
+                            std::get<MEMBERNO>(m_storage).begin() + (last - std::declval<iterator>())))
             {
                 return boost::make_iterator_range(
                         std::get<MEMBERNO>(m_storage).begin() + (first - begin()),
@@ -1023,8 +1023,8 @@ namespace SOA {
             template <size_type MEMBERNO>
             auto range(const_iterator first, const_iterator last) const noexcept -> decltype(
                         boost::make_iterator_range(
-                            std::get<MEMBERNO>(m_storage).begin() + (first - begin()),
-                            std::get<MEMBERNO>(m_storage).begin() + (last - begin())))
+                            std::get<MEMBERNO>(m_storage).begin() + (first - std::declval<const_iterator>()),
+                            std::get<MEMBERNO>(m_storage).begin() + (last - std::declval<const_iterator>())))
             {
                 return boost::make_iterator_range(
                         std::get<MEMBERNO>(m_storage).begin() + (first - begin()),
@@ -1034,8 +1034,8 @@ namespace SOA {
             template <typename MEMBER>
             auto range(iterator first, iterator last) noexcept -> decltype(
                         boost::make_iterator_range(
-                            std::get<memberno<MEMBER>()>(m_storage).begin() + (first - begin()),
-                            std::get<memberno<MEMBER>()>(m_storage).begin() + (last - begin())))
+                            std::get<memberno<MEMBER>()>(m_storage).begin() + (first - std::declval<iterator>()),
+                            std::get<memberno<MEMBER>()>(m_storage).begin() + (last - std::declval<iterator>())))
             {
                 return boost::make_iterator_range(
                         std::get<memberno<MEMBER>()>(m_storage).begin() + (first - begin()),
@@ -1045,8 +1045,8 @@ namespace SOA {
             template <typename MEMBER>
             auto range(const_iterator first, const_iterator last) const noexcept -> decltype(
                         boost::make_iterator_range(
-                            std::get<memberno<MEMBER>()>(m_storage).begin() + (first - begin()),
-                            std::get<memberno<MEMBER>()>(m_storage).begin() + (last - begin())))
+                            std::get<memberno<MEMBER>()>(m_storage).begin() + (first - std::declval<const_iterator>()),
+                            std::get<memberno<MEMBER>()>(m_storage).begin() + (last - std::declval<const_iterator>())))
             {
                 return boost::make_iterator_range(
                         std::get<memberno<MEMBER>()>(m_storage).begin() + (first - begin()),
