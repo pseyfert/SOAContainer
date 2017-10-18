@@ -1,54 +1,124 @@
-SOAContainer
-------------
+#SOAContainer#
 
 SOAContainer is a class that mimics the interface of std::vector as much
 as possible. In fact, from a user's point of view, there is not too much
-difference between a SOAContainer and an array of structure (AOS)
-std::vector<Hit> where Hit is an old-style class/structure that we all
+difference between a `SOA::Container` and an array of structure (AOS)
+`std::vector<Hit>` where Hit is an old-style class/structure that we all
 know. You can sort, push_back, emplace, insert, erase, reserve, size,
-index and get iterators from a SOAContainer just like you would for the
-AOS case. Moreover, there's the SOAView class which does the same forward
-fixed-size ranges.
+index and get iterators from a `SOA::Container` just like you would for the
+AOS case. Moreover, there's the `SOA::View` class which does the same
+forward fixed-size ranges.
 
-To illustrate, I'll bring a very short example here (something more
-realistic is in the test code in git). Consider a minimal point with an x
-and a y coordinate. In the AOS case, you'd code:
+##A very short tutorial##
+###The simple AOS case##
+To illustrate how to turn an AOS object into SOA form, I will start with a
+very simple example here (something more realistic is in the test code in
+git). Consider a minimal point with x and y coordinates:
 
 ```cpp
-class AOSPoint {
-    private:
-        float m_x;
-        float m_y;
-    public:
-        Point(float x, float y) : m_x(x), m_y(y) { }
-        float x() const noexcept { return m_x; }
-        float y() const noexcept { return m_y; }
-	float& x() noexcept { return m_x; }
-	float& y() noexcept { return m_y; }
-        // plus some routines that do more than just setting/getting members
-        float r2() const noexcept { return m_x * m_x + m_y * m_y; }
-};
+namespace AOSPoint {
+    class Point {
+        private:
+            float m_x;
+            float m_y;
+        public:
+            Point(float x, float y) : m_x(x), m_y(y) { }
+            float x() const noexcept { return m_x; }
+            float y() const noexcept { return m_y; }
+    	      float& x() noexcept { return m_x; }
+  	        float& y() noexcept { return m_y; }
+           // plus some routines that do more than just setting/getting members
+            float r2() const noexcept { return m_x * m_x + m_y * m_y; }
+    };
+}
 
-using AOSPoints = std::vector<AOSPoint>;
-using AOSPoint = Point&;
+// define types for the AOS container and its contents
+using AOSPoints = std::vector<AOSPoint::Point>;
+using AOSPoint = typename AOSPoints::reference;
 ```
 
-Then we can all use Points and Point as we know it. Unfortunately, the
-memory layout is AOS, i.e. not what SIMD units like. Converting this to a
-SOA layout is fairly easy, though:
+Then we all know how to use `AOSPoints` and `AOSPoint`. For example:
+
+```cpp
+AOSPoints points = /* get from somewhere */;
+
+// normalise to unit length
+for (AOSPoint p: points) {
+    auto ir = 1 / std::sqrt(p.r2());
+    p.x() *= ir, p.y() *= ir;
+}
+```
+
+So far, so good.
+
+###The trivial SOA case###
+Unfortunately, the memory layout is AOS, i.e. not what SIMD units in modern
+CPUs like. Converting this to a SOA layout is fairly easy, though. Let's
+start with the fields (data members):
 
 ```cpp
 #include "SOAContainer.h"
 
-// first declare member "tags" which describe the members of the notional
-// struct (which will never exist in memory - SOA layout!)
+// first declare fields which describe the members of the notional struct
+// (which will never exist in memory - SOA layout!)
  namespace PointFields {
     SOAFIELDS_TRIVIAL(x, x, float); // field struct x, getter/setter x(), type float
     SOAFIELDS_TRIVIAL(y, y, float);
 };
+```
 
+This code above defines two structures in the namespace `PointFields` using
+the `SOAFIELDS_TRIVIAL` macro. Their names are `x` and `y` (first argument),
+which are used to identify the fields. These structures provide getters and
+setters, called `x()` or `y()` (second argument), returning (const)
+references to the underlying `float` (data type is third argument).
+It's called a trivial field because it just provides standard getters and
+setters.
+
+The next step is to form skin, which is a kind of "decorator class" which
+embellishes a tuple of data members with the interface we want it to have:
+
+```cpp
 // define the "skin", i.e. the outer guise that the naked members "wear"
 // to make interaction with the class nice
+SOASKIN_TRIVIAL(SOAPointSkinSimple, PointFields::x, PointFields::y);
+```
+
+The macro `SOASKIN_TRIVIAL` takes a name of the skin as first argument, and
+a list of fields, and produces a skin that has all the user interface
+provided by the fields. We're now ready to use our SOA container:
+
+```cpp
+// define the SOA container type
+using SOASimplePoints = SOA::Container<
+        std::vector,	        // underlying type for each field
+        SOAPointSkinSimple>;  // skin to "dress" the tuple of fields with
+// define the SOASimplePoint itself
+using SOASimplePoint = typename SOASimplePoints::reference;
+
+// make a container of simple points
+SOASimplePoints points = /* get from somewhere... */;
+
+// normalise to unit length
+for (SOAPoint p: points) {
+    auto ir = 1 / std::sqrt(p.x() * p.x() + p.y() * p.y());
+    p.x() *= ir, p.y() *= ir;
+}
+```
+
+At this point, you have a container that behaves basically like the
+std::vector in the AOS case, and you should feel right at home when writing
+code.
+
+###A more complex example of SOA data layout###
+The problem with trivial fields and skins in the code example above is that
+they are limited to the trivial getters and setters provided by the fields.
+It would be nice if we could somehow "connect" the data of different fields
+in a skin to provide a method that provides e.g. the squared distance of a
+point from the origin. Fortunately, this is not much more difficult:
+
+```cpp
+// a more complicated skin offering methods beyond what fields provide
 SOASKIN(SOAPointSkin, PointFields::x, PointFields::y) {
     // fall back on defaults...
     SOASKIN_INHERIT_DEFAULT_METHODS;
@@ -59,41 +129,40 @@ SOASKIN(SOAPointSkin, PointFields::x, PointFields::y) {
     // again, something beyond plain setters/getters
     float r2() const noexcept { return x() * x() + y() * y(); }
 };
-
-// define the SOA container type
-using SOAPoints = SOA::Container<
-        std::vector,	// underlying type for each field
-        SOAPointSkin>;  // skin to "dress" the tuple of fields with
-// define the SOAPoint itself
-using SOAPoint = typename SOAPoints::proxy;
 ```
 
 From that point on, you can more or less do what you're used to with your
 points, the SOA nature should largely be invisible. For example, the code
+normalising the lengths of points would require virtually no changes when
+going from the AOS point to the SOA point class:
 
 ```cpp
-// normalise to unit length
-for (AOSPoint p: points) {
-    auto ir = 1 / std::sqrt(p.r2());
-    p.setX(p.x() * ir), p.setY(p.y() * ir);
-}
-```
+// define the SOA container type
+using SOAPoints = SOA::Container<
+        std::vector,	        // underlying type for each field
+        SOAPointSkin>;  // skin to "dress" the tuple of fields with
+// define the SOASimplePoint itself
+using SOAPoint = typename SOAPoints::reference;
 
-would require virtually no changes when going from the AOS point to the SOA
-point class:
+// make a container of simple points
+SOAPoints points = /* get from somewhere... */;
 
-```cpp
 // normalise to unit length
 for (SOAPoint p: points) {
     auto ir = 1 / std::sqrt(p.r2());
-    p.setX(p.x() * ir), p.setY(p.y() * ir);
+    p.x() *= ir, p.y() *= ir;
 }
 ```
 
 The fields (members) in a SOAContainer-contained object can essentially be of
 any POD type or pointer type, and there can be as many as the compiler will
 support - if you need something more specialised, it'll likely work, but may
-need some tweaking...
+need some tweaking... Be careful with `bool` fields, though, because
+`std::vector<bool>` is specialised, and will most likely spoil your SOA
+performance (see below for a workaround...).
+
+# TO BE REVIEWED #
+
 
 A few notes at this point seem to be in order:
 
