@@ -1,4 +1,4 @@
-#SOAContainer#
+# SOAContainer
 
 SOAContainer is a class that mimics the interface of std::vector as much
 as possible. In fact, from a user's point of view, there is not too much
@@ -9,8 +9,8 @@ index and get iterators from a `SOA::Container` just like you would for the
 AOS case. Moreover, there's the `SOA::View` class which does the same
 forward fixed-size ranges.
 
-##A very short tutorial##
-###The simple AOS case##
+## A very short tutorial
+### The simple AOS case
 To illustrate how to turn an AOS object into SOA form, I will start with a
 very simple example here (something more realistic is in the test code in
 git). Consider a minimal point with x and y coordinates:
@@ -51,7 +51,7 @@ for (AOSPoint p: points) {
 
 So far, so good.
 
-###The trivial SOA case###
+### The trivial SOA case
 Unfortunately, the memory layout is AOS, i.e. not what SIMD units in modern
 CPUs like. Converting this to a SOA layout is fairly easy, though. Let's
 start with the fields (data members):
@@ -110,7 +110,7 @@ At this point, you have a container that behaves basically like the
 std::vector in the AOS case, and you should feel right at home when writing
 code.
 
-###A more complex example of SOA data layout###
+### A more complex example of SOA data layout
 The problem with trivial fields and skins in the code example above is that
 they are limited to the trivial getters and setters provided by the fields.
 It would be nice if we could somehow "connect" the data of different fields
@@ -161,7 +161,7 @@ need some tweaking... Be careful with `bool` fields, though, because
 `std::vector<bool>` is specialised, and will most likely spoil your SOA
 performance (see below for a workaround...).
 
-# TO BE REVIEWED #
+# TO BE REVIEWED
 
 
 A few notes at this point seem to be in order:
