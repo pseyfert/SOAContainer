@@ -34,47 +34,85 @@ namespace SOA {
         void ignore(ARGS&&...) noexcept {}
 
         /// little helper to call callable f with contents of t as arguments
-        template <typename F, typename... ARGS, typename RETVAL = decltype(std::forward<F>(std::declval<F>())(std::forward<ARGS>(std::declval<ARGS>())...))>
-        constexpr typename std::enable_if<!std::is_same<void, RETVAL>::value, RETVAL>::type
+        template <typename F, typename... ARGS, typename RETVAL = decltype(
+                std::forward<F>(std::declval<F>())(std::forward<ARGS>(
+                        std::declval<ARGS>())...))>
+        constexpr typename std::enable_if<!std::is_same<void, RETVAL>::value,
+                  RETVAL>::type
         invoke(F&& f, ARGS&&... args) noexcept(
                 noexcept(std::forward<F>(f)(std::forward<ARGS>(args)...)))
         { return std::forward<F>(f)(std::forward<ARGS>(args)...); }
         /// little helper to call callable f with contents of t as arguments
-        template <typename F, typename... ARGS, typename RETVAL = decltype(std::forward<F>(std::declval<F>())(std::forward<ARGS>(std::declval<ARGS>())...))>
-        typename std::enable_if<std::is_same<void, RETVAL>::value, RETVAL>::type
+        template <typename F, typename... ARGS, typename RETVAL = decltype(
+                std::forward<F>(std::declval<F>())(std::forward<ARGS>(
+                        std::declval<ARGS>())...))>
+        typename std::enable_if<std::is_same<void, RETVAL>::value,
+                 RETVAL>::type
         invoke(F&& f, ARGS&&... args) noexcept(
                 noexcept(std::forward<F>(f)(std::forward<ARGS>(args)...)))
         { std::forward<F>(f)(std::forward<ARGS>(args)...); }
 
         // implementation details
         namespace impl {
-            template <typename F, typename T, std::size_t... IDXS, typename RETVAL = decltype(invoke(std::forward<F>(std::declval<F>()), std::get<IDXS>(std::forward<T>(std::declval<T>()))...))>
-            constexpr typename std::enable_if<!std::is_same<void, RETVAL>::value, RETVAL>::type
+            template <typename F, typename T, std::size_t... IDXS,
+                     typename RETVAL = decltype(invoke(std::forward<F>(
+                                     std::declval<F>()),
+                                 std::get<IDXS>(std::forward<T>(
+                                         std::declval<T>()))...))>
+            constexpr typename std::enable_if<
+                    !std::is_same<void, RETVAL>::value, RETVAL>::type
+            apply_impl(F&& f, T&& t, std::index_sequence<IDXS...>) noexcept(
+                    noexcept(invoke(std::forward<F>(f), std::get<IDXS>(
+                                std::forward<T>(t))...)))
+            {
+                return invoke(std::forward<F>(f),
+                        std::get<IDXS>(std::forward<T>(t))...);
+            }
+            template <typename F, typename T, std::size_t... IDXS,
+                     typename RETVAL = decltype(invoke(std::forward<F>(
+                                     std::declval<F>()),
+                                 std::get<IDXS>(std::forward<T>(
+                                         std::declval<T>()))...))>
+            typename std::enable_if<std::is_same<void, RETVAL>::value,
+            RETVAL>::type
             apply_impl(F&& f, T&& t, std::index_sequence<IDXS...>) noexcept(noexcept(
                         invoke(std::forward<F>(f), std::get<IDXS>(std::forward<T>(t))...)))
-            { return invoke(std::forward<F>(f), std::get<IDXS>(std::forward<T>(t))...); }
-            template <typename F, typename T, std::size_t... IDXS, typename RETVAL = decltype(invoke(std::forward<F>(std::declval<F>()), std::get<IDXS>(std::forward<T>(std::declval<T>()))...))>
-            typename std::enable_if<std::is_same<void, RETVAL>::value, RETVAL>::type
-            apply_impl(F&& f, T&& t, std::index_sequence<IDXS...>) noexcept(noexcept(
-                        invoke(std::forward<F>(f), std::get<IDXS>(std::forward<T>(t))...)))
-            { invoke(std::forward<F>(f), std::get<IDXS>(std::forward<T>(t))...); }
+            {
+                invoke(std::forward<F>(f),
+                        std::get<IDXS>(std::forward<T>(t))...);
+            }
         } // namespace impl
 
         /// little helper to call callable f with contents of t as arguments
-        template<typename F, typename T, typename RETVAL = decltype(impl::apply_impl(std::forward<F>(std::declval<F>()), std::forward<T>(std::declval<T>()), std::make_index_sequence<std::tuple_size<typename std::decay<T>::type>::value>())), std::size_t N = std::tuple_size<typename std::decay<T>::type>::value>
+        template<typename F, typename T, typename RETVAL = decltype(
+                impl::apply_impl(std::forward<F>(std::declval<F>()),
+                    std::forward<T>(std::declval<T>()),
+                    std::make_index_sequence<std::tuple_size<typename
+                    std::decay<T>::type>::value>())), std::size_t N =
+            std::tuple_size<typename std::decay<T>::type>::value>
         constexpr typename std::enable_if<!std::is_same<void, RETVAL>::value, RETVAL>::type
         apply(F&& f, T&& t) noexcept(noexcept(
                     impl::apply_impl(std::forward<F>(f), std::forward<T>(t),
                         std::make_index_sequence<N>())))
-        { return impl::apply_impl(std::forward<F>(f), std::forward<T>(t),
-                        std::make_index_sequence<N>()); }
-        template<typename F, typename T, typename RETVAL = decltype(impl::apply_impl(std::forward<F>(std::declval<F>()), std::forward<T>(std::declval<T>()), std::make_index_sequence<std::tuple_size<typename std::decay<T>::type>::value>())), std::size_t N = std::tuple_size<typename std::decay<T>::type>::value>
+        {
+            return impl::apply_impl(std::forward<F>(f), std::forward<T>(t),
+                        std::make_index_sequence<N>());
+        }
+        /// little helper to call callable f with contents of t as arguments
+        template<typename F, typename T, typename RETVAL = decltype(
+                impl::apply_impl(std::forward<F>(std::declval<F>()),
+                    std::forward<T>(std::declval<T>()),
+                    std::make_index_sequence<std::tuple_size<typename
+                    std::decay<T>::type>::value>())), std::size_t N =
+            std::tuple_size<typename std::decay<T>::type>::value>
         typename std::enable_if<std::is_same<void, RETVAL>::value, void>::type
         apply(F&& f, T&& t) noexcept(noexcept(
                     impl::apply_impl(std::forward<F>(f), std::forward<T>(t),
                         std::make_index_sequence<N>())))
-        { impl::apply_impl(std::forward<F>(f), std::forward<T>(t),
-                        std::make_index_sequence<N>()); }
+        {
+            impl::apply_impl(std::forward<F>(f), std::forward<T>(t),
+                        std::make_index_sequence<N>());
+        }
 
         namespace impl {
             /// helper for the implementation of map
@@ -299,18 +337,27 @@ namespace SOA {
                     std::forward<OBJS>(objs)...);
         }
 
-        template <typename F>
-        struct apply_zip_impl {
-            F f;
-            template <typename... Ts>
-            void operator()(Ts&&... ts) const noexcept(noexcept(
-                        ignore((apply(f, std::forward<Ts>(ts)), 0)...)))
-            { ignore((apply(f, std::forward<Ts>(ts)), 0)...); }
-        };
+        namespace impl {
+            /// implementation detail for apply_zip below
+            template <typename F>
+            struct apply_zip_impl {
+                F f;
+                template <typename... Ts>
+                void operator()(Ts&&... ts) const noexcept(noexcept(
+                            ignore((apply(f, std::forward<Ts>(ts)), 0)...)))
+                { ignore((apply(f, std::forward<Ts>(ts)), 0)...); }
+            };
+        }
+
+        /// little helper for push_back etc.
         template <typename F, typename... Ts>
         void apply_zip(F&& f, Ts&&... ts) noexcept(noexcept(
-                    apply(apply_zip_impl<decltype(std::forward<F>(f))>{std::forward<F>(f)}, zip(std::forward<Ts>(ts)...))))
-        { apply(apply_zip_impl<decltype(std::forward<F>(f))>{std::forward<F>(f)}, zip(std::forward<Ts>(ts)...)); }
+                    apply(impl::apply_zip_impl<decltype(std::forward<F>(f))>{
+                        std::forward<F>(f)}, zip(std::forward<Ts>(ts)...))))
+        {
+            apply(impl::apply_zip_impl<decltype(std::forward<F>(f))>{
+                    std::forward<F>(f)}, zip(std::forward<Ts>(ts)...));
+        }
 
     } // namespace Utils
 } // namespace SOA

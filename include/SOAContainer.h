@@ -33,6 +33,31 @@ namespace SOA {
                     noexcept(SOA::Utils::ignore((args.shrink_to_fit(), 0)...)))
             { SOA::Utils::ignore((args.shrink_to_fit(), 0)...); }
         };
+        /// little helper for indexing to implement reserve()
+        template <typename size_type>
+        struct reserveHelper {
+            size_type m_sz;
+            template <typename T>
+                void operator()(T& obj) const noexcept(
+                        noexcept(obj.reserve(m_sz)))
+                { obj.reserve(m_sz); }
+        };
+        /// little helper for indexing to implement capacity()
+        template <typename size_type>
+        struct capacityHelper {
+            template <typename T>
+                size_type operator()(const T& obj) const noexcept(
+                        noexcept(obj.capacity()))
+                { return obj.capacity(); }
+        };
+        /// little helper for indexing to implement max_size()
+        template <typename size_type>
+        struct max_sizeHelper {
+            template <typename T>
+                size_type operator()(const T& obj) const noexcept(
+                        noexcept(obj.max_size()))
+                { return obj.max_size(); }
+        };
         /// little helper for push_back
         struct push_backHelper {
             template <typename T, typename V>
@@ -59,6 +84,65 @@ namespace SOA {
                     noexcept(t.insert(t.begin() + m_idx, m_cnt, std::forward<V>(v))))
             { t.insert(t.begin() + m_idx, m_cnt, std::forward<V>(v)); }
         };
+        /// little helper for resize(sz) and resize(sz, val)
+        template <typename size_type>
+        struct resizeHelper {
+            size_type m_sz;
+            template <typename T>
+            void operator()(T& obj) const noexcept(
+                    noexcept(obj.resize(m_sz)))
+            { obj.resize(m_sz); }
+            template <typename T, typename V>
+            void operator()(T&& t, V&& val) const noexcept(
+                    noexcept(std::forward<T>(t).resize(m_sz, std::forward<V>(val))))
+            { std::forward<T>(t).resize(m_sz, std::forward<V>(val)); }
+        };
+        /// little helper for emplace_back(args...)
+        struct emplace_backHelper {
+            template <typename T, typename V>
+            void operator()(T&& t, V&& v) const noexcept(
+                    noexcept(std::forward<T>(t).emplace_back(std::forward<V>(v))))
+            { std::forward<T>(t).emplace_back(std::forward<V>(v)); }
+        };
+        /// little helper for emplace(pos, args...)
+        template <typename size_type>
+        struct emplaceHelper {
+            size_type m_idx;
+            template <typename T, typename V>
+            void operator()(T&& t, V&& v) const noexcept(
+                    noexcept(t.emplace(t.begin() + m_idx, std::forward<V>(v))))
+            { t.emplace(t.begin() + m_idx, std::forward<V>(v)); }
+        };
+        /// little helper for erase(it)
+        template <typename size_type>
+        struct eraseHelper {
+            size_type m_idx;
+            template <typename T>
+            void operator()(T& obj) const noexcept(noexcept(
+                    obj.erase(obj.begin() + m_idx)))
+            { obj.erase(obj.begin() + m_idx); }
+        };
+        /// little helper for erase(first, last)
+        template <typename size_type>
+        struct eraseHelper_N {
+            size_type m_idx;
+            size_type m_len;
+            template <typename T>
+            void operator()(T& obj) const noexcept(noexcept(
+                    obj.erase(obj.begin() + m_idx,
+                        obj.begin() + m_idx + m_len)))
+            { obj.erase(obj.begin() + m_idx, obj.begin() + m_idx + m_len); }
+        };
+        /// little helper for assign(count, val)
+        template <typename size_type>
+        struct assignHelper {
+            size_type m_cnt;
+            template <typename T, typename V>
+            void operator()(T& t, const V& v) const noexcept(noexcept(
+                        t.assign(m_cnt, v)))
+            { t.assign(m_cnt, v); }
+        };
+
     } // namespace impl
 
     /// the implementation behind Container
@@ -104,7 +188,7 @@ namespace SOA {
                     "Fields should be either plain old data (POD) or "
                     "wrapped types.");
             };
-    
+
             /// give a short and convenient name to base class
             using BASE = SOA::View<
                 typename SOA::Typelist::to_tuple<SOA::Typelist::typelist<FIELDS...>
@@ -143,12 +227,12 @@ namespace SOA {
             using self_type = _Container<CONTAINER, SKIN, FIELDS...>;
             /// typelist with the given fields
             using fields_typelist = typename BASE::fields_typelist;
-    
+
             /// convenience function to return member number given member tag type
             template <typename MEMBER>
             static constexpr size_type memberno() noexcept
             { return fields_typelist::template find<MEMBER>(); }
-    
+
         protected:
             /// (naked) tuple type used as values
             using naked_value_tuple_type =
@@ -161,7 +245,7 @@ namespace SOA {
                 typename BASE::naked_const_reference_tuple_type;
             /// use the parent's its_safe_tag (make sure this stays protected)
             using its_safe_tag = typename BASE::its_safe_tag;
-    
+
         public:
             /// default constructor
             _Container() : BASE() { }
@@ -173,7 +257,7 @@ namespace SOA {
             self_type& operator=(const self_type& other) = default;
             /// move-assignment from other _Container
             self_type& operator=(self_type&& other) = default;
-    
+
             /// fill container with count copies of val
             _Container(size_type count, const value_type& val) : BASE()
             {
@@ -189,7 +273,7 @@ namespace SOA {
                 reserve(std::distance(first, last));
                 assign(first, last);
             }
-    
+
             /// std::initializer_list constructor
             _Container(std::initializer_list<naked_value_tuple_type> listing) :
                 BASE()
@@ -197,189 +281,20 @@ namespace SOA {
                 reserve(listing.size());
                 assign(listing.begin(), listing.end());
             }
-    
-        private:
-            /// hide implementation details in struct to make doxygen tidier
-            struct impl_detail {
-    
-    
-                /// little helper for indexing to implement reserve()
-                struct reserveHelper {
-                    size_type m_sz;
-                    template <typename T>
-                    void operator()(T& obj) const noexcept(
-                        noexcept(obj.reserve(m_sz)))
-                    { obj.reserve(m_sz); }
-                };
-    
-                /// little helper for indexing to implement capacity()
-                struct capacityHelper {
-                    template <typename T>
-                    size_type operator()(const T& obj) const noexcept(
-                        noexcept(obj.capacity()))
-                    { return obj.capacity(); }
-                };
-    
-                /// little helper for indexing to implement max_size()
-                struct max_sizeHelper {
-                    template <typename T>
-                    size_type operator()(const T& obj) const noexcept(
-                        noexcept(obj.max_size()))
-                    { return obj.max_size(); }
-                };
-    
-                /// little helper for resize(sz) and resize(sz, val)
-                struct resizeHelper {
-                    size_type m_sz;
-                    template <typename T>
-                    void operator()(T& obj) const noexcept(
-                            noexcept(obj.resize(m_sz)))
-                    { obj.resize(m_sz); }
-    
-                    template <typename T, typename V>
-                    void operator()(std::tuple<T&, const V&> t) const noexcept(
-                            noexcept(std::get<0>(t).resize(m_sz, std::get<1>(t))))
-                    { std::get<0>(t).resize(m_sz, std::get<1>(t)); }
-                };
-    
-                /// little helper for insert(it, count, val)
-                struct insertHelper2 {
-                    size_type m_idx;
-                    size_type m_count;
-                    template <typename T, typename V>
-                    void operator()(std::tuple<T&, const V&> t) const noexcept(
-                            noexcept(std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, m_count, std::get<1>(t))))
-                    { std::get<0>(t).insert(std::get<0>(t).begin() + m_idx, m_count, std::get<1>(t)); }
-                };
-    
-                /// little helper for erase(it)
-                struct eraseHelper {
-                    size_type m_idx;
-                    template <typename T>
-                    void operator()(T& obj) const noexcept(noexcept(
-                            obj.erase(obj.begin() + m_idx)))
-                    { obj.erase(obj.begin() + m_idx); }
-                };
-    
-                /// little helper for erase(first, last)
-                struct eraseHelper_N {
-                    size_type m_idx;
-                    size_type m_len;
-                    template <typename T>
-                    void operator()(T& obj) const noexcept(noexcept(
-                            obj.erase(obj.begin() + m_idx,
-                                obj.begin() + m_idx + m_len)))
-                    { obj.erase(obj.begin() + m_idx, obj.begin() + m_idx + m_len); }
-                };
-    
-                /// little helper for assign(count, val)
-                struct assignHelper {
-                    size_type m_cnt;
-                    template <typename T, typename V>
-                    void operator()(std::tuple<T&, const V&> t) const noexcept(noexcept(
-                            std::get<0>(t).assign(m_cnt, std::get<1>(t))))
-                    { std::get<0>(t).assign(m_cnt, std::get<1>(t)); }
-                };
-    
-                /// helper for emplace_back
-                template <size_type IDX>
-                struct emplace_backHelper {
-                    SOAStorage& m_storage;
-                    emplace_backHelper(SOAStorage& storage) noexcept :
-                    m_storage(storage) { }
-                    template <typename HEAD, typename... TAIL>
-                    void doIt(HEAD&& head, TAIL&&... tail) const noexcept(noexcept(
-                            std::get<IDX>(m_storage).emplace_back(
-                                std::forward<HEAD>(head))) && noexcept(
-                            emplace_backHelper<IDX + 1>(m_storage).doIt(
-                                std::forward<TAIL>(tail)...)))
-                    {
-                        std::get<IDX>(m_storage).emplace_back(
-                                std::forward<HEAD>(head));
-                        emplace_backHelper<IDX + 1>(m_storage).doIt(
-                                std::forward<TAIL>(tail)...);
-                    }
-                    template <typename HEAD>
-                    void doIt(HEAD&& head) const noexcept(noexcept(
-                            std::get<IDX>(m_storage).emplace_back(
-                                std::forward<HEAD>(head))))
-                    {
-                        std::get<IDX>(m_storage).emplace_back(
-                                std::forward<HEAD>(head));
-                    }
-                };
-    
-                /// helper for emplace
-                template <size_type IDX>
-                struct emplaceHelper {
-                    SOAStorage& m_storage;
-                    size_type m_idx;
-                    emplaceHelper(SOAStorage& storage, size_type idx) noexcept :
-                    m_storage(storage), m_idx(idx) { }
-                    template <typename HEAD, typename... TAIL>
-                    void doIt(HEAD&& head, TAIL&&... tail) const noexcept(noexcept(
-                            std::get<IDX>(m_storage).emplace(
-                                std::get<IDX>(m_storage).begin() + m_idx,
-                                std::forward<HEAD>(head))) && noexcept(
-                            emplaceHelper<IDX + 1>(m_storage, m_idx).doIt(
-                                std::forward<TAIL>(tail)...)))
-                    {
-                        std::get<IDX>(m_storage).emplace(
-                                std::get<IDX>(m_storage).begin() + m_idx,
-                                std::forward<HEAD>(head));
-                        emplaceHelper<IDX + 1>(m_storage, m_idx).doIt(
-                                std::forward<TAIL>(tail)...);
-                    }
-                    template <typename HEAD>
-                    void doIt(HEAD&& head) const noexcept(noexcept(
-                            std::get<IDX>(m_storage).emplace(
-                                std::get<IDX>(m_storage).begin() + m_idx,
-                                std::forward<HEAD>(head))))
-                    {
-                        std::get<IDX>(m_storage).emplace(
-                                std::get<IDX>(m_storage).begin() + m_idx,
-                                std::forward<HEAD>(head));
-                    }
-                };
-    
-                /// helper for emplace_back
-                struct emplaceBackHelper2 {
-                    self_type* m_obj;
-                    emplaceBackHelper2(self_type* obj) : m_obj(obj) {}
-    
-                    template <typename... ARGS>
-                    void operator()(ARGS&&... args) const noexcept(noexcept(
-                        std::declval<self_type*>()->emplace_back(std::forward<ARGS>(args)...)))
-                    { m_obj->emplace_back(std::forward<ARGS>(args)...); }
-                };
-    
-                // helper for emplace
-                struct emplaceHelper2 {
-                    self_type* m_obj;
-                    const_iterator m_it;
-                    emplaceHelper2(self_type* obj, const_iterator it) :
-                        m_obj(obj), m_it(it) {}
-    
-                    template <typename... ARGS>
-                    iterator operator()(ARGS&&... args) const noexcept(noexcept(
-                        std::declval<self_type*>()->emplace(m_it, std::forward<ARGS>(args)...)))
-                    { return m_obj->emplace(m_it, std::forward<ARGS>(args)...); }
-                };
-            }; // end of struct impl_detail
-    
+
         public:
             /// clear the container
             void clear() noexcept(noexcept(
                         SOA::Utils::apply(impl::clearHelper(),
                             std::declval<SOAStorage&>())))
             { SOA::Utils::apply(impl::clearHelper(), this->m_storage); }
-    
+
             /// pop the last element off the container
             void pop_back() noexcept(noexcept(
                         SOA::Utils::apply(impl::pop_backHelper(),
                             std::declval<SOAStorage&>())))
             { SOA::Utils::apply(impl::pop_backHelper(), this->m_storage); }
-    
+
             /// shrink the underlying storage of the container to fit its size
             void shrink_to_fit() noexcept(noexcept(
                         SOA::Utils::apply(impl::shrink_to_fitHelper(),
@@ -388,17 +303,17 @@ namespace SOA {
                 SOA::Utils::apply(impl::shrink_to_fitHelper(),
                         this->m_storage);
             }
-    
+
             /// reserve space for at least sz elements
             void reserve(size_type sz) noexcept(noexcept(
                 SOA::Utils::map(
-                        typename impl_detail::reserveHelper{sz},
+                        typename SOA::impl::reserveHelper<size_type>{sz},
                         std::declval<self_type*>()->m_storage)))
             {
                 SOA::Utils::map(
-                        typename impl_detail::reserveHelper{sz}, this->m_storage);
+                        typename SOA::impl::reserveHelper<size_type>{sz}, this->m_storage);
             }
-    
+
             /// return capacity of container
             size_type capacity() const
             {
@@ -406,10 +321,10 @@ namespace SOA {
                         [] (size_type a, size_type b) noexcept
                         { return std::min(a, b); },
                         SOA::Utils::map(
-                            typename impl_detail::capacityHelper(), this->m_storage),
+                            typename SOA::impl::capacityHelper<size_type>(), this->m_storage),
                         std::numeric_limits<size_type>::max());
             }
-    
+
             /// return maximal size of container
             size_type max_size() const
             {
@@ -417,29 +332,29 @@ namespace SOA {
                         [] (size_type a, size_type b) noexcept
                         { return std::min(a, b); },
                         SOA::Utils::map(
-                            typename impl_detail::max_sizeHelper(), this->m_storage),
+                            typename SOA::impl::max_sizeHelper<size_type>(), this->m_storage),
                         std::numeric_limits<size_type>::max());
             }
-    
+
             /// resize container (use default-constructed values if container grows)
             void resize(size_type sz) noexcept(noexcept(
                         SOA::Utils::map(
-                            typename impl_detail::resizeHelper{sz},
-                            std::declval<self_type*>()->m_storage)))
+                            typename SOA::impl::resizeHelper<size_type>{sz},
+                            std::declval<SOAStorage&>())))
             {
                 SOA::Utils::map(
-                        typename impl_detail::resizeHelper{sz}, this->m_storage);
+                        typename SOA::impl::resizeHelper<size_type>{sz}, this->m_storage);
             }
-    
+
             /// resize the container (append val if the container grows)
             void resize(size_type sz, const value_type& val) noexcept(noexcept(
-                SOA::Utils::map(typename impl_detail::resizeHelper{sz},
-                        SOA::Utils::zip(std::declval<self_type*>()->m_storage, val))))
+                SOA::Utils::apply_zip(typename SOA::impl::resizeHelper<size_type>{sz},
+                        std::declval<SOAStorage&>(), val)))
             {
-                SOA::Utils::map(typename impl_detail::resizeHelper{sz},
-                        SOA::Utils::zip(this->m_storage, val));
+                SOA::Utils::apply_zip(typename SOA::impl::resizeHelper<size_type>{sz},
+                        this->m_storage, val);
             }
-    
+
             /// push an element at the back of the array
             void push_back(const value_type& val) noexcept(noexcept(
                         SOA::Utils::apply_zip(impl::push_backHelper(),
@@ -456,7 +371,7 @@ namespace SOA {
                 SOA::Utils::apply_zip(
                         impl::push_backHelper(), this->m_storage, std::move(val));
             }
-    
+
             /// insert a value at the given position
             iterator insert(const_iterator pos, const value_type& val) noexcept(
                     noexcept(SOA::Utils::apply_zip(
@@ -470,7 +385,7 @@ namespace SOA {
                 return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
                     its_safe_tag() };
             }
-    
+
             /// insert a value at the given position (move variant)
             iterator insert(const_iterator pos, value_type&& val) noexcept(
                     noexcept(SOA::Utils::apply_zip(
@@ -484,7 +399,7 @@ namespace SOA {
                 return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
                     its_safe_tag() };
             }
-    
+
             /// insert count copies of value at the given position
             iterator insert(const_iterator pos, size_type count,
                 const value_type& val) noexcept(
@@ -499,7 +414,7 @@ namespace SOA {
                 return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
                     its_safe_tag() };
             }
-    
+
             /// insert elements between first and last at position pos
             template <typename IT>
             iterator insert(const_iterator pos, IT first, IT last)
@@ -515,27 +430,27 @@ namespace SOA {
                 while (first != last) { insert(pos, *first); ++first; ++pos; }
                 return retVal;
             }
-    
+
             /// erase an element at the given position
             iterator erase(const_iterator pos) noexcept(noexcept(
                         SOA::Utils::map(
-                            typename impl_detail::eraseHelper{
+                            typename SOA::impl::eraseHelper<size_type>{
                                     static_cast<size_type>(pos - pos)},
                             std::declval<self_type*>()->m_storage)))
             {
                 assert((*pos).m_storage == &this->m_storage);
                 SOA::Utils::map(
-                        typename impl_detail::eraseHelper{ pos.m_proxy.m_index },
+                        typename SOA::impl::eraseHelper<size_type>{ pos.m_proxy.m_index },
                         this->m_storage);
                 return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
                     its_safe_tag() };
             }
-    
+
             /// erase elements from first to last
             iterator erase(const_iterator first, const_iterator last) noexcept(
                     noexcept(
                         SOA::Utils::map(
-                            typename impl_detail::eraseHelper_N{
+                            typename SOA::impl::eraseHelper_N<size_type>{
                                 static_cast<size_type>(first - first),
                                 static_cast<size_type>(last - first)},
                                 std::declval<self_type*>()->m_storage)))
@@ -543,23 +458,25 @@ namespace SOA {
                 assert((*first).m_storage == &this->m_storage);
                 assert((*last).m_storage == &this->m_storage);
                 SOA::Utils::map(
-                        typename impl_detail::eraseHelper_N{
+                        typename SOA::impl::eraseHelper_N<size_type>{
                                 first.m_proxy.m_index,
                                 static_cast<size_type>(last - first)},
                             this->m_storage);
                 return iterator{ first.m_proxy.m_storage, first.m_proxy.m_index,
                     its_safe_tag() };
             }
-    
+
             /// assign the vector to contain count copies of val
             void assign(size_type count, const value_type& val) noexcept(noexcept(
-                        SOA::Utils::map(typename impl_detail::assignHelper{count},
-                            SOA::Utils::zip(std::declval<self_type*>()->m_storage, val))))
+                        SOA::Utils::apply_zip(
+                            SOA::impl::assignHelper<size_type>{count},
+                            std::declval<SOAStorage&>(), val)))
             {
-                SOA::Utils::map(typename impl_detail::assignHelper{count},
-                        SOA::Utils::zip(this->m_storage, val));
+                SOA::Utils::apply_zip(
+                        SOA::impl::assignHelper<size_type>{count},
+                        this->m_storage, val);
             }
-    
+
             /// assign the vector from a range of elements in another container
             template <typename IT>
             void assign(IT first, IT last) noexcept(
@@ -575,98 +492,102 @@ namespace SOA {
                 // if the required size is known
                 insert(BASE::begin(), first, last);
             }
-    
+
             /// construct new element at end of container (in-place) from args
             template <typename... ARGS, typename std::enable_if<
                 SOA::Utils::ALL(std::is_convertible<ARGS,
                         SOA::Typelist::unwrap_t<FIELDS> >::value...)>::type* = nullptr>
             void emplace_back(ARGS&&... args) noexcept(noexcept(
-                        typename impl_detail::template emplace_backHelper<0>(
-                            std::declval<self_type*>()->m_storage).doIt(
-                            std::forward<ARGS>(args)...)))
+                SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, std::declval<SOAStorage&>(),
+                        std::forward_as_tuple(std::forward<ARGS>(args)...))))
             {
                 static_assert(std::is_constructible<naked_value_tuple_type,
                         ARGS...>::value || std::is_constructible<value_type,
                         ARGS...>::value, "Wrong arguments to emplace_back.");
-                typename impl_detail::template emplace_backHelper<0>(
-                        this->m_storage).doIt(std::forward<ARGS>(args)...);
+                SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, this->m_storage,
+                        std::forward_as_tuple(std::forward<ARGS>(args)...));
             }
-    
+
             /// construct a new element at the end of container from naked_value_tuple_type
             void emplace_back(naked_value_tuple_type&& val) noexcept(noexcept(
-                SOA::Utils::apply(typename impl_detail::emplaceBackHelper2(nullptr),
-                    std::forward<naked_value_tuple_type>(val))))
+                SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, std::declval<SOAStorage&>(),
+                        std::forward<naked_value_tuple_type>(val))))
             {
-                return SOA::Utils::apply(
-                    typename impl_detail::emplaceBackHelper2(this),
-                    std::forward<naked_value_tuple_type>(val));
+                SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, this->m_storage,
+                        std::forward<naked_value_tuple_type>(val));
             }
-    
+
             /// construct a new element at the end of container from value_type
             void emplace_back(value_type&& val) noexcept(noexcept(
-                SOA::Utils::apply(typename impl_detail::emplaceBackHelper2(nullptr),
-                    std::forward<naked_value_tuple_type>(
-                        static_cast<naked_value_tuple_type>(val)))))
+                SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, std::declval<SOAStorage&>(),
+                        std::forward<value_type>(val))))
             {
-                return SOA::Utils::apply(
-                    typename impl_detail::emplaceBackHelper2(this),
-                    std::forward<naked_value_tuple_type>(
-                        static_cast<naked_value_tuple_type>(val)));
+                SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, this->m_storage,
+                        std::forward<value_type>(val));
             }
 
             /// construct a new element by calling the user-defined constructor of the proxy object
             template <typename... ARGS, typename std::enable_if<
                 !SOA::Utils::ALL(std::is_convertible<ARGS,
                         SOA::Typelist::unwrap_t<FIELDS> >::value...)>::type* = nullptr>
-            void emplace_back(ARGS&&... args) noexcept( noexcept(
+            void emplace_back(ARGS&&... args) noexcept(noexcept(
                         std::declval<self_type>().push_back(value_type(
-                                std::forward<ARGS>( args )...))))
+                                std::forward<ARGS>(args)...))))
             { this->push_back(value_type(std::forward<ARGS>(args)...)); }
-    
+
             /// construct new element at position pos (in-place) from args
             template <typename... ARGS>
             iterator emplace(const_iterator pos, ARGS&&... args) noexcept(
-                    noexcept(typename impl_detail::template emplaceHelper<0>(
-                            std::declval<self_type*>()->m_storage,
-                            static_cast<size_type>(pos - pos)).doIt(
-                                std::forward<ARGS>(args)...)))
+                    noexcept(SOA::Utils::apply_zip(
+                            SOA::impl::emplaceHelper<size_type>{ pos.m_proxy.m_index },
+                            std::declval<SOAStorage&>(),
+                            std::forward_as_tuple(std::forward<ARGS>(args)...))))
             {
                 static_assert(std::is_constructible<naked_value_tuple_type,
                         ARGS...>::value || std::is_constructible<value_type,
                         ARGS...>::value, "Wrong arguments to emplace.");
                 assert(&this->m_storage == (*pos).m_storage);
-                typename impl_detail::template emplaceHelper<0>(
-                        this->m_storage, pos.m_proxy.m_index).doIt(
-                            std::forward<ARGS>(args)...);
+                SOA::Utils::apply_zip(
+                        SOA::impl::emplaceHelper<size_type>{ pos.m_proxy.m_index },
+                        this->m_storage,
+                        std::forward_as_tuple(std::forward<ARGS>(args)...));
                 return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
                     its_safe_tag() };
             }
-    
+
             /// construct a new element at position pos from naked_value_tuple_type
             iterator emplace(const_iterator pos,
                 naked_value_tuple_type&& val) noexcept(noexcept(
-                    SOA::Utils::apply(typename impl_detail::emplaceHelper2(
-                    nullptr, pos), std::forward<naked_value_tuple_type>(val))))
+                        SOA::Utils::apply_zip(
+                            SOA::impl::emplaceHelper<size_type>{ pos.m_proxy.m_index },
+                            std::declval<SOAStorage&>(),
+                            std::forward<naked_value_tuple_type>(val))))
             {
-                return SOA::Utils::apply(
-                    typename impl_detail::emplaceHelper2(this, pos),
-                    std::forward<naked_value_tuple_type>(val));
+                SOA::Utils::apply_zip(
+                        SOA::impl::emplaceHelper<size_type>{ pos.m_proxy.m_index },
+                        this->m_storage,
+                        std::forward<naked_value_tuple_type>(val));
+                return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
+                    its_safe_tag() };
             }
-    
+
             /// construct a new element at position pos from value_type
             iterator emplace(const_iterator pos,
                 value_type&& val) noexcept(noexcept(
-                    SOA::Utils::apply(typename impl_detail::emplaceHelper2(
-                    nullptr, pos), std::forward<naked_value_tuple_type>(
-                        static_cast<naked_value_tuple_type>(val)))))
+                        SOA::Utils::apply_zip(
+                            SOA::impl::emplaceHelper<size_type>{ pos.m_proxy.m_index },
+                            std::declval<SOAStorage&>(),
+                            std::forward<value_type>(val))))
             {
-                return SOA::Utils::apply(
-                    typename impl_detail::emplaceHelper2(this, pos),
-                    std::forward<naked_value_tuple_type>(
-                        static_cast<naked_value_tuple_type>(val)));
+                SOA::Utils::apply_zip(
+                        SOA::impl::emplaceHelper<size_type>{ pos.m_proxy.m_index },
+                        this->m_storage,
+                        std::forward<value_type>(val));
+                return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
+                    its_safe_tag() };
             }
     };
-    
+
     /// more _Container implementation details
     namespace _ContainerImpl {
         struct dummy {};
@@ -702,7 +623,7 @@ namespace SOA {
             _ContainerImpl::ContainerFieldsFromTypelistOrTemplateParameterPackHelper<
             CONTAINER, SKIN, FIELDS...>::type;
     }
-    
+
     /** @brief container class for objects (SOA storage)
      *
      * @author Manuel Schiller <Manuel.Schiller@cern.ch>
