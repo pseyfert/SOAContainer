@@ -535,6 +535,14 @@ namespace SOA {
                                 std::forward<ARGS>(args)...))))
             { this->push_back(value_type(std::forward<ARGS>(args)...)); }
 
+            /// construct element by calling user-defined constructor of proxy
+            template <typename... ARGS, typename std::enable_if<
+                sizeof...(ARGS) != sizeof...(FIELDS)>::type* = nullptr>
+            void emplace_back(ARGS&&... args) noexcept(noexcept(
+                        std::declval<self_type>().push_back(value_type(
+                                std::forward<ARGS>(args)...))))
+            { this->push_back(value_type(std::forward<ARGS>(args)...)); }
+
             /// construct new element at position pos (in-place) from args
             template <typename... ARGS>
             iterator emplace(const_iterator pos, ARGS&&... args) noexcept(
