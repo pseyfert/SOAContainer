@@ -1,3 +1,11 @@
+/** @file ContainerTest.cc
+ *
+ * @author Paul Seyfert <Paul.Seyfert@cern.ch>
+ * @date 2017-10-17
+ *
+ * unit test for constructors
+ */
+
 #include <iostream>
 #include <array>
 #include <vector>
@@ -5,6 +13,7 @@
 
 #include "SOAContainer.h"
 #include "PrintableNullSkin.h"
+#include "gtest/gtest.h"
 
 namespace AOS {
     class Point {
@@ -13,6 +22,9 @@ namespace AOS {
 	    float m_y;
 	public:
 	    Point(float x, float y) : m_x(x), m_y(y) { }
+      // some constructors which don't just list all members
+      Point() : m_x(0.f), m_y(0.f) { }
+      Point(float y) : m_x(1.f), m_y(y) { }
 	    float x() const noexcept { return m_x; }
 	    float y() const noexcept { return m_y; }
 	    void setX(float x) noexcept { m_x = x; }
@@ -47,6 +59,19 @@ namespace SOA {
 	    using fields_typelist =
 		SOA::Typelist::typelist<PointFields::x, PointFields::y>;
 
+      // some constructors which don't just list all members
+      SOAPointProxy() : SOA::PrintableNullSkin<NAKEDPROXY>(
+          0.f, // x
+          0.f  // y
+          ) {
+        std::cout << "constructor with zero argument" << std::endl;
+      }
+      SOAPointProxy(float y) : SOA::PrintableNullSkin<NAKEDPROXY>(
+          1.f, // x
+          y
+          ) {
+        std::cout << "constructor with one argument" << std::endl;
+      }
 	    float x() const noexcept
 	    { return this-> template get<PointFields::x>(); }
 	    float y() const noexcept
@@ -69,45 +94,22 @@ namespace SOA {
     typedef typename Points::proxy Point;
 }
 
-int main() {
-    using namespace std;
-    {
-        using namespace AOS;
-        cout << "This is a normal array of structures" << endl;
-        Points list_of_points = {Points::value_type(1,2), Point(2,3), Point(3,4)};
-        list_of_points.emplace_back(4,5);
+TEST (BasicTest, EmplaceBack) {
+  AOS::Points aospoints;
+  aospoints.emplace_back();     // should add 0,0
+  aospoints.emplace_back(2.f);  // should add 1,2
+  aospoints.emplace_back(4,5);  // should add 4,5
 
-        for(const auto& item : list_of_points)
-            cout << item << endl;
 
-        cout << "we can access using list_of_points.at(1).x(): " << list_of_points.at(1).x() << endl;
-    }
+  SOA::Points soapoints;
+  soapoints.emplace_back();     // should add 0,0
+  soapoints.emplace_back(2.f);  // should add 1,2
+  soapoints.emplace_back(4,5);  // should add 4,5
 
-    {
-        using namespace SOA;
+  EXPECT_EQ(soapoints.size(), aospoints.size());
 
-        cout << endl << "This is a SOA wrapper:" << endl;
-
-        //Points list_of_points;
-        Points list_of_points = {Points::value_type(1,2), std::tuple<float,float>(2,3), std::tuple<float,float>(3,4)};
-        list_of_points.emplace_back(4,5);
-
-        list_of_points.push_back(std::make_tuple(1.,2.));
-
-        //list_of_points.push_back(std::make_tuple(2.,3.));
-        //list_of_points.push_back({3.0f,4.0f});
-
-	// SOA containers return proxy classes, so don't use the reference in
-	// the range-based for!
-	for(auto item : list_of_points)
-            cout << item << endl;
-
-        cout << "we can access using list_of_points.at(1).x(): " << list_of_points.at(1).x() << endl;
-
-    }
-
-    SOA::Container<std::vector, SOA::NullSkin, double, int, int> c;
-    c.push_back(make_tuple(1.2,2,3));
-
-    return 0;
+  for ( size_t i = 0; i < soapoints.size(); ++i ) {
+    EXPECT_EQ( soapoints[i].x(), aospoints[i].x() );
+    EXPECT_EQ( soapoints[i].y(), aospoints[i].y() );
+  }
 }

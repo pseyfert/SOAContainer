@@ -20,7 +20,7 @@ build_jessie-gcc48:
     image: debian:jessie
     before_script:
         - apt-get update
-        - apt-get install -y git cmake g\+\+-4.8
+        - apt-get install -y git cmake g\+\+-4.8 libboost-all-dev
     stage: build_and_test
     script:
         - git submodule update --init
@@ -33,7 +33,7 @@ build_jessie-gcc49:
     image: debian:jessie
     before_script:
         - apt-get update
-        - apt-get install -y git cmake g\+\+-4.9
+        - apt-get install -y git cmake g\+\+-4.9 libboost-all-dev
     stage: build_and_test
     script:
         - git submodule update --init
@@ -46,7 +46,7 @@ build_stretch-gcc63:
     image: debian:stretch
     before_script:
         - apt-get update
-        - apt-get install -y git cmake g\+\+-6
+        - apt-get install -y git cmake g\+\+-6 libboost-all-dev
     stage: build_and_test
     script:
         - git submodule update --init
@@ -59,7 +59,7 @@ build_stretch-clang38:
     image: debian:stretch
     before_script:
         - apt-get update
-        - apt-get install -y git cmake clang-3.8
+        - apt-get install -y git cmake clang-3.8 libboost-all-dev
     stage: build_and_test
     script:
         - git submodule update --init
@@ -72,7 +72,7 @@ build_stretch-clang39:
     image: debian:stretch
     before_script:
         - apt-get update
-        - apt-get install -y git cmake clang-3.9
+        - apt-get install -y git cmake clang-3.9 libboost-all-dev
     stage: build_and_test
     script:
         - git submodule update --init

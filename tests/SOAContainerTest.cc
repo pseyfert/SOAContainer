@@ -1,9 +1,9 @@
-/** @file SOAContainerTest.cc
+/** @file ContainerTest.cc
  *
  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
  * @date 2015-04-11
  *
- * unit test for SOAContainer class
+ * unit test for Container class
  */
 
 #include <numeric>
@@ -16,10 +16,10 @@
 #include "PrintableNullSkin.h"
 #include "gtest/gtest.h"
 
-/// unit test SOAContainer class
-TEST (BasicTest, SimpleTests) {
-    SOAContainer<std::vector, PrintableNullSkin, double, int, int> c;
-    const SOAContainer<std::vector, PrintableNullSkin, double, int, int>& cc = c;
+/// unit test Container class
+TEST(BasicTest, SimpleTests) {
+    SOA::Container<std::vector, SOA::PrintableNullSkin, double, int, int> c;
+    const SOA::Container<std::vector, SOA::PrintableNullSkin, double, int, int>& cc = c;
     // check basic properties
     EXPECT_TRUE(c.empty());
     EXPECT_EQ(0u, c.size());
@@ -56,8 +56,8 @@ TEST (BasicTest, SimpleTests) {
 }
 
 TEST (BasicTest, More)  {
-    SOAContainer<std::vector, PrintableNullSkin, double, int, int> c;
-    const SOAContainer<std::vector, PrintableNullSkin, double, int, int>& cc = c;
+    SOA::Container<std::vector, SOA::PrintableNullSkin, double, int, int> c;
+    const SOA::Container<std::vector, SOA::PrintableNullSkin, double, int, int>& cc = c;
     std::tuple<double, int, int> val(3.14, 17, 42);
     // standard push_back by const reference
     c.push_back(val);
@@ -159,8 +159,8 @@ TEST (BasicTest, More)  {
 }
 
 TEST (BasicTest, EvenMore) {
-   SOAContainer<std::vector, PrintableNullSkin, double, int, int> c;
-   const SOAContainer<std::vector, PrintableNullSkin, double, int, int>& cc = c;
+    SOA::Container<std::vector, SOA::PrintableNullSkin, double, int, int> c;
+    const SOA::Container<std::vector, SOA::PrintableNullSkin, double, int, int>& cc = c;
     // test insert(pos, first, last), erase(pos) and erase(first, last)
     // by comparing to an array-of-structures in a std::vector
     typedef std::size_t size_type;
@@ -318,24 +318,24 @@ TEST (BasicTest, EvenMore) {
 
 namespace HitNamespace {
     namespace Fields {
-        typedef struct : public SOATypelist::wrap_type<float> {} xAtYEq0;
-        typedef struct : public SOATypelist::wrap_type<float> {} zAtYEq0;
-        typedef struct : public SOATypelist::wrap_type<float> {} dxdy;
-        typedef struct : public SOATypelist::wrap_type<float> {} dzdy;
-        typedef struct : public SOATypelist::wrap_type<float> {} x;
-        typedef struct : public SOATypelist::wrap_type<float> {} z;
-        typedef struct : public SOATypelist::wrap_type<float> {} y;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} xAtYEq0;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} zAtYEq0;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} dxdy;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} dzdy;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} x;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} z;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} y;
     }
 
     template <typename NAKEDPROXY>
-    class HitSkin : public PrintableNullSkin<NAKEDPROXY> {
+    class HitSkin : public SOA::PrintableNullSkin<NAKEDPROXY> {
         public:
-	    using fields_typelist = SOATypelist::typelist<
-		Fields::xAtYEq0, Fields::xAtYEq0,
-		Fields::dxdy, Fields::dzdy,
-		Fields::x, Fields::y, Fields::z>;
-	    using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
-	    using PrintableNullSkin<NAKEDPROXY>::operator=;
+            using fields_typelist = SOA::Typelist::typelist<
+                Fields::xAtYEq0, Fields::xAtYEq0,
+                Fields::dxdy, Fields::dzdy,
+                Fields::x, Fields::y, Fields::z>;
+            using SOA::PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
+            using SOA::PrintableNullSkin<NAKEDPROXY>::operator=;
 
             auto xAtYEq0() const noexcept -> decltype(this->template get<Fields::xAtYEq0>())
             { return this->template get<Fields::xAtYEq0>(); }
@@ -376,7 +376,7 @@ namespace HitNamespace {
     };
 
     using namespace Fields;
-    typedef SOAContainer<std::vector, HitSkin, xAtYEq0, zAtYEq0, dxdy, dzdy, x, z, y> Hits;
+    typedef SOA::Container<std::vector, HitSkin, xAtYEq0, zAtYEq0, dxdy, dzdy, x, z, y> Hits;
     typedef typename Hits::reference Hit;
 }
 
@@ -480,24 +480,24 @@ TEST(RealisticTest, Aos)
 
 namespace stdarraytest_fields {
     typedef std::array<unsigned, 16> Array;
-    typedef SOATypelist::wrap_type<Array> f_array;
+    typedef SOA::Typelist::wrap_type<Array> f_array;
 
     template <typename NAKEDPROXY>
-    struct ContainerSkin : PrintableNullSkin<NAKEDPROXY> {
-	// define fields, forward to base class constructors where possible
-	using fields_typelist = SOATypelist::typelist<f_array>;
-	using PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
-	using PrintableNullSkin<NAKEDPROXY>::operator=;
+    struct ContainerSkin : SOA::PrintableNullSkin<NAKEDPROXY> {
+        // define fields, forward to base class constructors where possible
+        using fields_typelist = SOA::Typelist::typelist<f_array>;
+        using SOA::PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
+        using SOA::PrintableNullSkin<NAKEDPROXY>::operator=;
 
-	/// Array type to use
-	using Array = stdarraytest_fields::Array;
+        /// Array type to use
+        using Array = stdarraytest_fields::Array;
 
-	/// stupid constructor from an (ignored) bool
-	ContainerSkin(bool) : ContainerSkin(Array())
-	{ }
+        /// stupid constructor from an (ignored) bool
+        ContainerSkin(bool) : ContainerSkin(Array())
+        { }
     };
 
-    using SOAArray = SOAContainer<std::vector, ContainerSkin, f_array>;
+    using SOAArray = SOA::Container<std::vector, ContainerSkin, f_array>;
 }
 TEST(RealisticTest, Proxy) {
     using namespace stdarraytest_fields;
@@ -509,14 +509,14 @@ TEST(RealisticTest, Proxy) {
     //a.emplace_back(true);
 }
 
-typedef struct : SOATypelist::wrap_type<float> {} field_x;
-typedef struct : SOATypelist::wrap_type<float> {} field_y;
+typedef struct : SOA::Typelist::wrap_type<float> {} field_x;
+typedef struct : SOA::Typelist::wrap_type<float> {} field_y;
 template <typename NAKEDPROXY>
 class SOAPoint : public NAKEDPROXY {
     public:
-	using fields_typelist = SOATypelist::typelist<field_x, field_y>;
-	using NAKEDPROXY::NAKEDPROXY;
-	using NAKEDPROXY::operator=;
+        using fields_typelist = SOA::Typelist::typelist<field_x, field_y>;
+        using NAKEDPROXY::NAKEDPROXY;
+        using NAKEDPROXY::operator=;
 
         float x() const noexcept
         { return this-> template get<field_x>(); }
@@ -539,8 +539,14 @@ TEST (SOAView, SimpleTests) {
         vy.push_back(rnd());
     }
     vxx = vx, vyy = vy;
-    // construct a SOAView from vx, vy
-    auto view = make_soaview<SOAPoint>(vx, vy);
+    // construct a View from vx, vy
+    auto view = SOA::make_soaview<SOAPoint>(vx, vy);
+    // data must look the same
+    EXPECT_EQ(vx.front(), view.front().x());
+    EXPECT_EQ(vy.front(), view.front().y());
+    // and be at the same address
+    EXPECT_EQ(&vx.front(), &*view.begin<field_x>());
+    EXPECT_EQ(&vy.front(), &*view.begin<field_y>());
     const float angle = 42.f / 180.f * M_PI;
     const auto s = std::sin(angle), c = std::cos(angle);
     for (auto p: view) {
@@ -570,5 +576,169 @@ TEST (SOAView, SimpleTests) {
         ++i;
     }
     // check that we can access the underlying ranges
-    EXPECT_EQ(&vx, &view.range<field_x>());
+    auto rx = view.range<field_x>();
+    EXPECT_EQ(rx.size(), view.size());
+    EXPECT_EQ(&vx.front(), &rx.front());
+    // check subranges
+    auto rxsub = view.range<field_x>(view.begin() + 1, view.end());
+    EXPECT_EQ(rxsub.size() + 1, view.size());
+    EXPECT_EQ(&*(vx.begin() + 1), &rxsub.front());
 }
+
+namespace ConvenientContainersTest_Fields {
+    SOAFIELD_TRIVIAL(f_x, x, float);
+    SOAFIELD_TRIVIAL(f_y, y, float);
+    SOAFIELD(f_flags, int,
+        SOAFIELD_ACCESSORS(flags)
+        enum Flag { Used = 0x1, Dead = 0x2 };
+        bool isUsed() const { return flags() & Used; }
+        bool isDead() const { return flags() & Dead; }
+        bool setUsed(bool newState = true)
+        {
+            int retVal = flags();
+            flags() = (retVal & ~Used) | (-newState & Used);
+            return retVal & Used;
+        }
+        bool setDead(bool newState = true)
+        {
+            int retVal = flags();
+            flags() = (retVal & ~Dead) | (-newState & Dead);
+            return retVal & Dead;
+        }
+        void printflags() { std::printf("flags: %08x\n", flags()); }
+    );
+
+    SOASKIN_TRIVIAL(SkinSimple, f_x, f_y, f_flags);
+    SOASKIN(Skin, f_x, f_y, f_flags) {
+        SOASKIN_INHERIT_DEFAULT_METHODS(Skin);
+        // special constructors go here...
+        // special accessors go here...
+        void setDeadIfTooFarOut()
+        {
+            // inside the skin, this->accessor() is required to make C++ find the
+            // routine, users of the skin can just call accessor()
+            auto x = this->x(), y = this->y();
+            if ((x * x + y + y) > 1.f) this->setDead();
+        }
+    };
+}
+TEST(Container, ConvenientContainers) {
+    using namespace ConvenientContainersTest_Fields;
+
+    // start by testing that skins of convenient containers are well-behaved,
+    // i.e. the storage size is minimal, and there's no difference to stupid
+    // SOA containers
+    SOA::Container<std::vector, SOA::NullSkin, float, float, int> s;
+    SOA::Container<std::vector, SkinSimple> csimple;
+    static_assert(sizeof(s.front()) == sizeof(csimple.front()),
+            "Fancy field and old-style field proxies need to have same size.");
+    SOA::Container<std::vector, Skin> c;
+    static_assert(sizeof(s.front()) == sizeof(c.front()),
+            "Fancy field and old-style field proxies need to have same size.");
+    struct Foo { int i; };
+    SOA::impl::SkinBase<Foo, f_x, f_y, f_flags> sb;
+    static_assert(sizeof(int) == sizeof(sb), "skin size behaviour is all wrong.");
+    // okay, we're satisfied on that front. Check basic functionality
+    EXPECT_TRUE(c.empty());
+    EXPECT_TRUE(csimple.empty());
+    c.push_back(std::make_tuple(3.14f, 2.79f, 42));
+    csimple.push_back(std::make_tuple(3.14f, 2.79f, 42));
+    EXPECT_EQ(c.size(), 1u);
+    EXPECT_EQ(csimple.size(), 1u);
+    EXPECT_EQ(c[0].x(), 3.14f);
+    EXPECT_EQ(c[0].y(), 2.79f);
+    EXPECT_EQ(c[0].flags(), 42);
+    EXPECT_EQ(csimple[0].x(), 3.14f);
+    EXPECT_EQ(csimple[0].y(), 2.79f);
+    EXPECT_EQ(csimple[0].flags(), 42);
+    c.front().setDead(false);
+    csimple.front().setDead(false);
+    EXPECT_EQ(c[0].x(), 3.14f);
+    EXPECT_EQ(c[0].y(), 2.79f);
+    EXPECT_EQ(c[0].flags(), 40);
+    EXPECT_EQ(csimple[0].x(), 3.14f);
+    EXPECT_EQ(csimple[0].y(), 2.79f);
+    EXPECT_EQ(csimple[0].flags(), 40);
+    // this won't work - constness
+    // const_cast<const decltype(c)&>(c).front().setUsed();
+}
+
+namespace FieldExtractionTest {
+    SOAFIELD_TRIVIAL(f_x, x, float);
+    SOAFIELD_TRIVIAL(f_y, y, float);
+    SOAFIELD_TRIVIAL(f_z, z, float);
+    SOASKIN_TRIVIAL(Point, f_x, f_y, f_z);
+}
+TEST(SOAView, FieldExtraction) {
+    using namespace FieldExtractionTest;
+    const auto rnd = [] () { return double(random()) / double(RAND_MAX); };
+    SOA::Container<std::vector, Point> c;
+    // fill the container
+    c.reserve(16);
+    for (unsigned i = 0; i < 16; ++i) c.emplace_back(rnd(), rnd(), rnd());
+    EXPECT_EQ(c.size(), 16u);
+    // test extraction of some fields into a new view
+    auto v1 = c.view<f_x>();
+    EXPECT_EQ(c.size(), v1.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].x(), v1[i].x());
+    }
+    auto v2 = c.view<f_y>();
+    EXPECT_EQ(c.size(), v2.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].y(), v2[i].y());
+    }
+    auto v3 = c.view<f_z>();
+    EXPECT_EQ(c.size(), v3.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].z(), v3[i].z());
+    }
+    auto v4 = c.view<f_x, f_y>();
+    EXPECT_EQ(c.size(), v4.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].x(), v4[i].x());
+        EXPECT_EQ(c[i].y(), v4[i].y());
+    }
+    auto v5 = c.view<f_y, f_z>();
+    EXPECT_EQ(c.size(), v5.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].y(), v5[i].y());
+        EXPECT_EQ(c[i].z(), v5[i].z());
+    }
+    auto v6 = c.view<f_x, f_z>();
+    EXPECT_EQ(c.size(), v6.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].x(), v6[i].x());
+        EXPECT_EQ(c[i].z(), v6[i].z());
+    }
+    auto v7 = c.view<f_x, f_y, f_z>();
+    EXPECT_EQ(c.size(), v7.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].x(), v7[i].x());
+        EXPECT_EQ(c[i].y(), v7[i].y());
+        EXPECT_EQ(c[i].z(), v7[i].z());
+    }
+}
+
+TEST(SOAView, JoinViews) {
+    using namespace FieldExtractionTest;
+    const auto rnd = [] () { return double(random()) / double(RAND_MAX); };
+    SOA::Container<std::vector, Point> c;
+    // fill the container
+    c.reserve(16);
+    for (unsigned i = 0; i < 16; ++i) c.emplace_back(rnd(), rnd(), rnd());
+    EXPECT_EQ(c.size(), 16u);
+    // test extraction of some fields into a new view
+    auto v1 = c.view<f_x>();
+    auto v2 = c.view<f_y>();
+    auto v3 = c.view<f_z>();
+    auto v4 = zip(v1, v2, v3);
+    EXPECT_EQ(c.size(), v4.size());
+    for (unsigned i = 0; i < c.size(); ++i) {
+        EXPECT_EQ(c[i].x(), v4[i].x());
+        EXPECT_EQ(c[i].y(), v4[i].y());
+        EXPECT_EQ(c[i].z(), v4[i].z());
+    }
+}
+
+// vim: sw=4:tw=78:ft=cpp:et
