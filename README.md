@@ -9,7 +9,7 @@ index and get iterators from a `SOA::Container` just like you would for the
 AOS case. Moreover, there's the `SOA::View` class which does the same
 forward fixed-size ranges.
 
-You can read the details in the [tutorial][./tutorial/tutorial.md].
+You can read the details in the [tutorial](./tutorial/tutorial.md).
 
 # TO BE REVIEWED
 
