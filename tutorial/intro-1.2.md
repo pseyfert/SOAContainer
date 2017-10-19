@@ -1,3 +1,5 @@
+### Navigation: [<< (previous)](intro-1.1.md), [(up)](tutorial.md), [(next) >>](intro-1.3.md)
+
 # The trivial SOA case
 Unfortunately, the memory layout is AOS, i.e. not what SIMD units in modern
 CPUs like. Converting this to a SOA layout is fairly easy, though. Let's
@@ -57,3 +59,4 @@ At this point, you have a container that behaves basically like the
 std::vector in the AOS case, and you should feel right at home when writing
 code.
 
+### Navigation: [<< (previous)](intro-1.1.md), [(up)](tutorial.md), [(next) >>](intro-1.3.md)

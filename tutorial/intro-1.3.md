@@ -1,3 +1,5 @@
+### Navigation: [<< (previous)](intro-1.2.md), [(up)](tutorial.md), [(next) >>](intro-1.4.md)
+
 # Non-trivial SOA skins
 The problem with trivial fields and skins in the code example above is that
 they are limited to the trivial getters and setters provided by the fields.
@@ -8,15 +10,15 @@ point from the origin. Fortunately, this is not much more difficult:
 ```cpp
 // a more complicated skin offering methods beyond what fields provide
 SOASKIN(SOAPointSkin, PointFields::x, PointFields::y) {
-    // fall back on defaults...
-    SOASKIN_INHERIT_DEFAULT_METHODS;
-    // your own constructors etc. go here (if you have any)...
+	// fall back on defaults...
+	SOASKIN_INHERIT_DEFAULT_METHODS;
+	// your own constructors etc. go here (if you have any)...
 
-    // we inherit getters/setters from fields
+	// we inherit getters/setters from fields
 
-    // again, something beyond plain setters/getters
-    float r2() const noexcept
-    { return this->x() * this->x() + this->y() * this->y(); }
+	// again, something beyond plain setters/getters
+	float r2() const noexcept
+	{ return this->x() * this->x() + this->y() * this->y(); }
 };
 ```
 
@@ -34,8 +36,8 @@ going from the AOS point to the SOA point class:
 ```cpp
 // define the SOA container type
 using SOAPoints = SOA::Container<
-        std::vector,	        // underlying type for each field
-        SOAPointSkin>;  // skin to "dress" the tuple of fields with
+		std::vector,	        // underlying type for each field
+		SOAPointSkin>;  // skin to "dress" the tuple of fields with
 // define the SOASimplePoint itself
 using SOAPoint = typename SOAPoints::reference;
 
@@ -44,8 +46,8 @@ SOAPoints points = /* get from somewhere... */;
 
 // normalise to unit length
 for (SOAPoint p: points) {
-    auto ir = 1 / std::sqrt(p.r2());
-    p.x() *= ir, p.y() *= ir;
+	auto ir = 1 / std::sqrt(p.r2());
+	p.x() *= ir, p.y() *= ir;
 }
 ```
 
@@ -56,3 +58,4 @@ need some tweaking... Be careful with `bool` fields, though, because
 `std::vector<bool>` is specialised, and will most likely spoil your SOA
 performance (see below for a workaround...).
 
+### Navigation: [<< (previous)](intro-1.2.md), [(up)](tutorial.md), [(next) >>](intro-1.4.md)

@@ -1,3 +1,5 @@
+### Navigation: [<< (previous)](tutorial.md), [(up)](tutorial.md), [(next) >>](intro-1.2.md)
+
 # The simple AOS case
 To illustrate how to turn an AOS object into SOA form, I will start with a
 very simple example here (something more realistic is in the test code in
@@ -39,3 +41,4 @@ for (AOSPoint p: points) {
 
 So far, so good.
 
+### Navigation: [<< (previous)](tutorial.md), [(up)](tutorial.md), [(next) >>](intro-1.2.md)
