@@ -21,9 +21,10 @@ give you a flavour of what's possible:
 ```c++
 // SOAContainer: define fields (data), skin (interface to modify data)
 namespace XYZPoint {
+    // field called x, with getters/setters x(), of type float
     SOAFIELD_TRIVIAL(x, x, float);
-    SOAFIELD_TRIVIAL(y, y, float);
-    SOAFIELD_TRIVIAL(z, z, float);
+    SOAFIELD_TRIVIAL(y, y, float); // ditto, for y
+    SOAFIELD_TRIVIAL(z, z, float); // ditto, for z
     SOASKIN_TRIVIAL(Skin, x, y, z); // uses fields x, y, z
 };
 // define a SOA container - mostly has std::vector's interface, so is
@@ -38,7 +39,7 @@ auto xyview = c.view<XYZPoint::x, XYZPoint::y>();
 
 // let's see how we can convert them to cylindrical coordinates in a nice
 // manner
-namespace RPhiPoint {
+namespace RPhiPoint { // point in polar coordinates in xy plane
     SOAFIELD_TRIVIAL(r, r, float);
     SOAFIELD_TRIVIAL(phi, phi, float);
     SOASKIN_TRIVIAL(Skin, r, phi);
@@ -53,7 +54,7 @@ for (auto xy: xyview) { // calculate r and phi
 }
 
 // now we want a view in cylindrical coordinates...
-auto zview = c.view<XYZPoint::z>();
+auto zview = c.view<XYZPoint::z>(); // view of z alone
 // zip together two views to form a new one: (r, phi, z)
 auto view_cyl = zip(crphi, zview);
 // you get back a normal view, and can do things with it:
