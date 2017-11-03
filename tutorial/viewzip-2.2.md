@@ -67,14 +67,14 @@ makes the creation of views a cheap operation.
 By default, the call to ```zip``` will give the resulting view a trivial
 skin (i.e. just the "sum of all the fields"). If you would like to get
 something more complex, you will need to specify the skin, as in
-```zip<NewSkin>(views...)```.
+```zip<NewSkin>(views...)``` .
 
 This technique can be used to initialise a SOA object "in stages": One
-starts with a ```SOA::Container```, or a ```SOA::View```. Then, the next
-couple of fields are calculated from the data in the initial view (and
-possibly other inputs), and is saved into a new container, while maintaining
-a one-to-one correspondence between elements. Finally, the ```zip```
-operation allows to zip together these separate bits to form a new joint
-view.
+starts with a ```SOA::Container```, or a ```SOA::View``` . Then, the
+next couple of fields are calculated from the data in the initial view
+(and possibly other inputs), and is saved into a new container, while
+maintaining a one-to-one correspondence between elements. Finally, the
+```zip``` operation allows to zip together these separate bits to form
+a new joint view.
 
 ### Navigation: [<< (previous)](viewzip-2.1.md), [(up)](tutorial.md), [(next) >>](future-3.md)
