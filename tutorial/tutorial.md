@@ -26,12 +26,12 @@
 
 # 5. Advanced Topics, Internals
 
-## 5.1 Tuples and Typelists
+## [5.1 Tuples and Typelists](internals-5.1.md)
 
-## 5.2 Old-style fields and skins
+## 5.2 [Old-style fields and skins](internals-5.2.md)
 
 ## 5.3 SOA::Field internals
 
 ## 5.4 SOA::Skin internals
 
-### Navigation: [<< (previous)](faq-4.md), [(up)](tutorial.md), [(next) >>](tutorial.md)
+### Navigation: [<< (previous)](internals-5.2.md), [(up)](tutorial.md), [(next) >>](tutorial.md)

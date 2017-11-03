@@ -1,4 +1,4 @@
-### Navigation: [<< (previous)](future-3.md), [(up)](tutorial.md), [(next) >>](tutorial.md)
+### Navigation: [<< (previous)](future-3.md), [(up)](tutorial.md), [(next) >>](internals-5.1.md)
 
 # Frequently Asked Questions (FAQ)
 
@@ -65,4 +65,4 @@
    less typing, and, best of all, it will just work, and do what you want
    and expect.
 
-### Navigation: [<< (previous)](future-3.md), [(up)](tutorial.md), [(next) >>](tutorial.md)
+### Navigation: [<< (previous)](future-3.md), [(up)](tutorial.md), [(next) >>](internals-5.1.md)
