@@ -1,4 +1,4 @@
-### Navigation: [<< (previous)](internals-5.1.md), [(up)](tutorial.md), [(next) >>](tutorial.md)
+### Navigation: [<< (previous)](internals-5.1.md), [(up)](tutorial.md), [(next) >>](internals-5.3.md)
 
 # Old-style fields and skins
 
@@ -78,4 +78,4 @@ a prospective user needs to type. For that reason, a somewhat more flexible
 approach to fields and skins was introduced. See the next sections for
 details.
 
-### Navigation: [<< (previous)](internals-5.1.md), [(up)](tutorial.md), [(next) >>](tutorial.md)
+### Navigation: [<< (previous)](internals-5.1.md), [(up)](tutorial.md), [(next) >>](internals-5.3.md)
