@@ -1,4 +1,4 @@
-### Navigation: [<< (previous)](intro-1.3.md), [(up)](tutorial.md), [(next) >>](tutorial.md)
+### Navigation: [<< (previous)](intro-1.3.md), [(up)](tutorial.md), [(next) >>](viewzip-2.1.md)
 
 # Non-trivial fields, fields of type `bool`
 The main thing missing from this basic tour is a demonstration of
@@ -59,4 +59,4 @@ SOASKIN(SOAPointSkin, PointFields::x, PointFields::y, PointFields::flags) {
 };
 ```
 
-### Navigation: [<< (previous)](intro-1.3.md), [(up)](tutorial.md), [(next) >>](tutorial.md)
+### Navigation: [<< (previous)](intro-1.3.md), [(up)](tutorial.md), [(next) >>](viewzip-2.1.md)
