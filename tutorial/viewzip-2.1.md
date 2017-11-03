@@ -50,7 +50,11 @@ for (auto xy: xyview) {
 }
 ```
 
-As you can see, a ```SOA::View``` can be used much like any other range.
+As you can see, a ```SOA::View``` can be used much like any other range. It
+is important at this point to realise that creating a new view does not copy
+the data for the fields in question. Instead, it copies a bunch of iterators
+for each field in the view which indicate the first and last elements in the
+original container. That makes creating a view a cheap operation.
 
 A word is in order concerning the *skin* of the view: If nothing else is
 specified, the ```view<fields...>()``` and ```view<fields...>``` methods

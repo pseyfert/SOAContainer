@@ -20,9 +20,9 @@
 
 ### [2.2 Zips of Views](viewzip-2.2.md)
 
-## 3. Missing bits, Plans for the Future
+## [3. Missing bits, Plans for the Future](future-3.md)
 
-## 4. FAQ
+## [4. FAQ](faq-4.md)
 
 # 5. Advanced Topics, Internals
 
@@ -34,4 +34,4 @@
 
 ## 5.4 SOA::Skin internals
 
-### Navigation: [<< (previous)](viewzip-2.2.md), [(up)](tutorial.md), [(next) >>](tutorial.md)
+### Navigation: [<< (previous)](faq-4.md), [(up)](tutorial.md), [(next) >>](tutorial.md)
