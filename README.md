@@ -18,7 +18,7 @@ following little bit of example code (which defines a container of 3D points
 in cartesian coordinates, and converts it into cylindrical coordinates) may
 give you a flavour of what's possible:
 
-```C++
+```c++
 // SOAContainer: define fields (data), skin (interface to modify data)
 namespace XYZPoint {
     SOAFIELD_TRIVIAL(x, x, float);
