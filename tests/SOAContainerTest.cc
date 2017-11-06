@@ -668,6 +668,13 @@ namespace FieldExtractionTest {
     SOAFIELD_TRIVIAL(f_y, y, float);
     SOAFIELD_TRIVIAL(f_z, z, float);
     SOASKIN_TRIVIAL(Point, f_x, f_y, f_z);
+    SOASKIN(RPhiSkin, f_x, f_y) {
+        SOASKIN_INHERIT_DEFAULT_METHODS(RPhiSkin);
+        float r() const noexcept
+        { return std::sqrt(this->x() * this->x() + this->y() * this->y()); }
+        float phi() const noexcept
+        { return std::atan2(this->y(), this->x()); }
+    };
 }
 TEST(SOAView, FieldExtraction) {
     using namespace FieldExtractionTest;
@@ -718,6 +725,16 @@ TEST(SOAView, FieldExtraction) {
         EXPECT_EQ(c[i].y(), v7[i].y());
         EXPECT_EQ(c[i].z(), v7[i].z());
     }
+
+    auto rphi = c.view<RPhiSkin>();
+    EXPECT_EQ(c.size(), rphi.size());
+    for (unsigned i = 0; i < c.size(); ++i)
+    {
+        EXPECT_EQ(std::sqrt(c[i].x() * c[i].x() + c[i].y() * c[i].y()),
+                    rphi[i].r());
+        EXPECT_EQ(std::atan2(c[i].y(), c[i].x()), rphi[i].phi());
+    }
+
 }
 
 TEST(SOAView, JoinViews) {

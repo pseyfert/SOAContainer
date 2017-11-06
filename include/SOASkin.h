@@ -17,6 +17,8 @@
 namespace SOA {
     /// implementation details for convenient SOA skins
     namespace impl {
+        struct dummy {};
+
         /// little helper checking for duplicate fields
         template <typename... FIELDS>
         struct has_duplicate_fields {
@@ -107,16 +109,18 @@ namespace SOA {
                 using __BASE__::operator=;
             };
         };
-        /// is a type a skin or not (see also below)
+        // helper for is_skin for templates: false in general
+        template <template <class...> class T, typename = void>
+        struct _is_skin : std::false_type {};
+        // helper for is_skin for templates: true if it has a skin_tag
+        template <template <class> class T>
+        struct _is_skin<T, std::void_t<typename T<dummy>::skin_tag> > :
+                std::true_type {};
+        /// is a type a skin or not (for templated types)
         template <template <class...> class T>
-        constexpr bool is_skin(typename T<void>::skin_tag* = nullptr) noexcept
-        { return true; }
-        /// is a type a skin or not (see also below)
-        template <template <class...> class T>
-        constexpr bool is_skin() noexcept
-        { return false; }
-        /// is a type a skin or not
-        template <typename T>
+        constexpr bool is_skin() noexcept { return _is_skin<T>::value; }
+        /// is a type a skin or not (non-templated types are never skins)
+        template <typename... T>
         constexpr bool is_skin() noexcept { return false; }
 
         // helper for SOASkinCreator
@@ -128,7 +132,7 @@ namespace SOA {
         };
         // helper for SOASkinCreator
         template <template <class> class SKIN>
-        struct _SOASkinCreator<true, SKIN<void> > {
+        struct _SOASkinCreator<true, SKIN<dummy> > {
             template <class BASE>
             using type = SKIN<BASE>;
         };

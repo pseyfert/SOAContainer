@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
+#include <type_traits>
 
 #include "boost/range/iterator_range.hpp"
 
@@ -75,7 +76,6 @@ namespace SOA {
         template <typename T, typename R>
         R&& move_if_not_lvalue_reference(T&&, R&& r) { return std::move(r); }
 
-        struct dummy {};
         /// helper to allow flexibility in how fields are supplied
         template <class STORAGE, template <typename> class SKIN,
                  class... TYPELISTORFIELDS>
@@ -349,7 +349,7 @@ namespace SOA {
 
     /** @brief create a new View from given view, including given fields
      *
-     * @tparam FIELDSORSKIN...  fields to extract
+     * @tparam FIELDS...        fields to extract
      * @tparam VIEW             View from which to extract
      * @tparam ARGS...          nothing, or types of two iterators (first,last(
      *
@@ -374,16 +374,68 @@ namespace SOA {
      * auto subview = view<f_x, f_y>(c, c.begin(), c.begin() + 16);
      * @endcode
      */
-    template <typename... FIELDSORSKIN, typename VIEW, typename... ARGS,
+    template <typename... FIELDS, typename VIEW, typename... ARGS,
         template <class> class SKIN =
-        SOA::impl::SOASkinCreator<FIELDSORSKIN...>::template type>
+        SOA::impl::SOASkinCreatorSimple<FIELDS...>::template type>
     auto view(VIEW&& view, ARGS&&... args) -> decltype(
         make_soaview<SKIN>(impl::move_if_not_lvalue_reference(view,
-                view.template range<FIELDSORSKIN>(std::forward<ARGS>(args)...))...))
+                view.template range<FIELDS>(std::forward<ARGS>(args)...))...))
     {
         return make_soaview<SKIN>(impl::move_if_not_lvalue_reference(view,
-                    view.template range<FIELDSORSKIN>(
+                    view.template range<FIELDS>(
                         std::forward<ARGS>(args)...))...);
+    }
+    namespace impl {
+        /// helper for the view variant that takes a skin
+        template <template <class> class SKIN, typename VIEW,
+                 typename... FIELDS, typename... ARGS>
+        auto view_skin(VIEW&& view, SOA::Typelist::typelist<FIELDS...>,
+                ARGS&&... args) -> decltype(make_soaview<SKIN>(
+                        impl::move_if_not_lvalue_reference(view, view.template
+                            range<FIELDS>(std::forward<ARGS>(args)...))...))
+        {
+            return make_soaview<SKIN>(impl::move_if_not_lvalue_reference(view,
+                        view.template range<FIELDS>(
+                            std::forward<ARGS>(args)...))...);
+        }
+    }
+    /** @brief create a new View from given view, including given fields
+     *
+     * @tparam SKIN             custom skin (and list of fields to extract)
+     * @tparam VIEW             View from which to extract
+     * @tparam ARGS...          nothing, or types of two iterators (first,last(
+     * @tparam FIELDS...        fields to extract
+     *
+     * @param view              View from which to extract given fields
+     * @param args...           either empty, or two iterators (first, last(
+     *
+     * @returns View of the given fields (and given range)
+     *
+     * @note This will only work with the new-style convienent SOAFields and
+     * SOASkins defined via SOAFIELD* and SOASKIN* macros.
+     *
+     * Example:
+     * @code
+     * SOAFIELD(x, float);
+     * SOAFIELD(y, float);
+     * SOAFIELD(z, float);
+     * SOASKIN(SOAPoint, f_x, f_y, f_z);
+     * Container<std::vector, SOAPoint> c = get_from_elsewhere();
+     * // create a view of only the x and y fields in c
+     * auto view = view<f_x, f_y>(c);
+     * // as before, but only for the first 16 elements
+     * auto subview = view<f_x, f_y>(c, c.begin(), c.begin() + 16);
+     * @endcode
+     */
+    template <template <class> class SKIN, typename VIEW, typename... ARGS>
+    auto view(VIEW&& view, ARGS&&... args) -> decltype(
+            impl::view_skin<SKIN>(std::forward<VIEW>(view),
+                typename SKIN<impl::dummy>::fields_typelist(),
+                std::forward<ARGS>(args)...))
+    {
+        return impl::view_skin<SKIN>(std::forward<VIEW>(view),
+                typename SKIN<impl::dummy>::fields_typelist(),
+                std::forward<ARGS>(args)...);
     }
     /// the class that really implements View
     template <class STORAGE,
@@ -1049,10 +1101,14 @@ namespace SOA {
              * auto customview = c.view<RPhiSkin>();
              * @endcode
              */
-            template <typename... FIELDSORSKIN, typename... ARGS>
-            auto view(ARGS&&... args) -> decltype(
-                    SOA::view<FIELDSORSKIN...>(*this, std::forward<ARGS>(args)...))
-            { return SOA::view<FIELDSORSKIN...>(*this, std::forward<ARGS>(args)...); }
+            template <typename... FIELDS2, typename... ARGS>
+            auto view(ARGS&&... args) -> typename std::enable_if<!impl::is_skin<FIELDS2...>(), decltype(
+                    SOA::view<FIELDS2...>(*this, std::forward<ARGS>(args)...))>::type
+            { return SOA::view<FIELDS2...>(*this, std::forward<ARGS>(args)...); }
+            template <template <class> class SKIN2, typename... ARGS>
+            auto view(ARGS&&... args) -> typename std::enable_if<impl::is_skin<SKIN2>(), decltype(
+                    SOA::view<SKIN2>(*this, std::forward<ARGS>(args)...))>::type
+            { return SOA::view<SKIN2>(*this, std::forward<ARGS>(args)...); }
             /** @brief create a new view
              *
              * @tparam FIELDSORSKIN...  list of fields, or new skin
@@ -1090,10 +1146,14 @@ namespace SOA {
              * auto customview = c.view<RPhiSkin>();
              * @endcode
              */
-            template <typename... FIELDSORSKIN, typename... ARGS>
-            auto view(ARGS&&... args) const -> decltype(
-                    SOA::view<FIELDSORSKIN...>(*this, std::forward<ARGS>(args)...))
-            { return SOA::view<FIELDSORSKIN...>(*this, std::forward<ARGS>(args)...); }
+            template <typename... FIELDS2, typename... ARGS>
+            auto view(ARGS&&... args) const -> typename std::enable_if<!impl::is_skin<FIELDS2...>(), decltype(
+                    SOA::view<FIELDS2...>(*this, std::forward<ARGS>(args)...))>::type
+            { return SOA::view<FIELDS2...>(*this, std::forward<ARGS>(args)...); }
+            template <template <class> class SKIN2, typename... ARGS>
+            auto view(ARGS&&... args) const -> typename std::enable_if<impl::is_skin<SKIN2>(), decltype(
+                    SOA::view<SKIN2>(*this, std::forward<ARGS>(args)...))>::type
+            { return SOA::view<SKIN2>(*this, std::forward<ARGS>(args)...); }
     };
 
     namespace impl {
