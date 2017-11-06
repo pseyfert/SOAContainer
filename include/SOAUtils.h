@@ -275,6 +275,21 @@ namespace SOA {
                     std::make_index_sequence<std::tuple_size<TUP>::value>());
         }
 
+        /// is T a SOA::View?
+        template <typename T, typename = void>
+        struct is_view : std::false_type {};
+        /// is T a SOA::View?
+        template <typename T>
+        struct is_view<T, std::void_t<typename T::view_tag> > : std::true_type {};
+
+        namespace test {
+            struct no_view {};
+            struct a_view { using view_tag = struct {}; };
+            static_assert(!is_view<no_view>::value &&
+                    is_view<a_view>::value,
+                    "Implementation bug in is_view");
+        }
+
         /// implementation details for zip
         namespace zip_impl {
             /// little helper for zip
@@ -323,12 +338,15 @@ namespace SOA {
                         std::make_index_sequence<std::tuple_size<
                         typename std::tuple_element<0, std::tuple<
                         typename std::decay<OBJS>::type...> >::type>::value>(),
-                        std::forward<OBJS>(objs)...))) -> decltype(
+                        std::forward<OBJS>(objs)...))) ->
+            typename std::enable_if<ALL(!is_view<typename std::remove_cv<
+                    typename std::remove_reference<OBJS>::type
+                    >::type>::value...), decltype(
                 zip_impl::zip(std::make_index_sequence<sizeof...(OBJS)>(),
                     std::make_index_sequence<std::tuple_size<
                     typename std::tuple_element<0, std::tuple<
                     typename std::decay<OBJS>::type...> >::type>::value>(),
-                    std::forward<OBJS>(objs)...))
+                    std::forward<OBJS>(objs)...))>::type
         {
             return zip_impl::zip(std::make_index_sequence<sizeof...(OBJS)>(),
                     std::make_index_sequence<std::tuple_size<

@@ -725,7 +725,6 @@ TEST(SOAView, FieldExtraction) {
         EXPECT_EQ(c[i].y(), v7[i].y());
         EXPECT_EQ(c[i].z(), v7[i].z());
     }
-
     auto rphi = c.view<RPhiSkin>();
     EXPECT_EQ(c.size(), rphi.size());
     for (unsigned i = 0; i < c.size(); ++i)
@@ -734,7 +733,6 @@ TEST(SOAView, FieldExtraction) {
                     rphi[i].r());
         EXPECT_EQ(std::atan2(c[i].y(), c[i].x()), rphi[i].phi());
     }
-
 }
 
 TEST(SOAView, JoinViews) {

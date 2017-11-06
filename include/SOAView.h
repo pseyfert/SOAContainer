@@ -113,6 +113,7 @@ namespace SOA {
                     noexcept(a.swap(b)))
         { a.swap(b); }
     }
+
     /** @brief SOA view for objects with given fields (SOA storage)
      *
      * @author Manuel Schiller <Manuel.Schiller@cern.ch>
@@ -527,6 +528,8 @@ namespace SOA {
             };
 
         public:
+            /// type to tag this as a SOA::View
+            using view_tag = struct {};
             /// type to represent sizes and indices
             using size_type = std::size_t;
             /// type to represent differences of indices
@@ -1289,63 +1292,40 @@ namespace SOA {
         template <std::size_t N> struct _zipper;
         /// specialisation for the hard case: zip two views
         template <> struct _zipper<std::size_t(2)> {
-            template <class STORAGE1, template <typename> class SKIN1,
-                     typename... FIELDS1, class STORAGE2,
-                     template <typename> class SKIN2, typename... FIELDS2,
+            template <class V1, class V2, typename... FIELDS1, typename... FIELDS2,
                 template <class> class SKIN =
-                SOA::impl::SOASkinCreator<FIELDS1..., FIELDS2...>::template type>
-            static auto doIt(const _View<STORAGE1, SKIN1, FIELDS1...>& v1,
-                    const _View<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
-                        make_soaview<SKIN>(v1.template range<FIELDS1>()...,
-                            v2.template range<FIELDS2>()...))
+                SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+            static auto _doIt(V1&& v1, V2&& v2,
+                    SOA::Typelist::typelist<FIELDS1...>,
+                    SOA::Typelist::typelist<FIELDS2...>) -> decltype(
+                        make_soaview<SKIN>(
+                        impl::move_if_not_lvalue_reference(
+                            std::forward<V1>(v1), v1.template range<FIELDS1>())...,
+                        impl::move_if_not_lvalue_reference(
+                            std::forward<V2>(v2), v2.template range<FIELDS2>())...))
             {
-                return make_soaview<SKIN>(v1.template range<FIELDS1>()...,
-                        v2.template range<FIELDS2>()...);
+                return make_soaview<SKIN>(
+                        impl::move_if_not_lvalue_reference(
+                            std::forward<V1>(v1), v1.template range<FIELDS1>())...,
+                        impl::move_if_not_lvalue_reference(
+                            std::forward<V2>(v2), v2.template range<FIELDS2>())...);
             }
-            template <class STORAGE1, template <typename> class SKIN1,
-                     typename... FIELDS1, class STORAGE2,
-                     template <typename> class SKIN2, typename... FIELDS2,
-                template <class> class SKIN =
-                SOA::impl::SOASkinCreator<FIELDS1..., FIELDS2...>::template type>
-            static auto doIt(_View<STORAGE1, SKIN1, FIELDS1...>& v1,
-                    const _View<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
-                        make_soaview<SKIN>(v1.template range<FIELDS1>()...,
-                            v2.template range<FIELDS2>()...))
+            template <typename V1, typename V2,
+                     typename VV1 = typename std::remove_cv<
+                         typename std::remove_reference<V1>::type>::type,
+                     typename VV2 = typename std::remove_cv<
+                         typename std::remove_reference<V2>::type>::type>
+            static auto doIt(V1&& v1, V2&& v2) -> decltype(
+                    _doIt(std::forward<V1>(v1), std::forward<V2>(v2),
+                        typename VV1::fields_typelist(),
+                        typename VV2::fields_typelist()))
             {
-                return make_soaview<SKIN>(v1.template range<FIELDS1>()...,
-                        v2.template range<FIELDS2>()...);
+                return _doIt(std::forward<V1>(v1), std::forward<V2>(v2),
+                        typename VV1::fields_typelist(),
+                        typename VV2::fields_typelist());
             }
-            template <class STORAGE1, template <typename> class SKIN1,
-                     typename... FIELDS1, class STORAGE2,
-                     template <typename> class SKIN2, typename... FIELDS2,
-                template <class> class SKIN =
-                SOA::impl::SOASkinCreator<FIELDS1..., FIELDS2...>::template type>
-            static auto doIt(const _View<STORAGE1, SKIN1, FIELDS1...>& v1,
-                    _View<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
-                        make_soaview<SKIN>(v1.template range<FIELDS1>()...,
-                            v2.template range<FIELDS2>()...))
-            {
-                return make_soaview<SKIN>(v1.template range<FIELDS1>()...,
-                        v2.template range<FIELDS2>()...);
-            }
-            template <class STORAGE1, template <typename> class SKIN1,
-                     typename... FIELDS1, class STORAGE2,
-                     template <typename> class SKIN2, typename... FIELDS2,
-                template <class> class SKIN =
-                SOA::impl::SOASkinCreator<FIELDS1..., FIELDS2...>::template type>
-            static auto doIt(_View<STORAGE1, SKIN1, FIELDS1...>& v1,
-                    _View<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
-                        make_soaview<SKIN>(v1.template range<FIELDS1>()...,
-                            v2.template range<FIELDS2>()...))
-            {
-                return make_soaview<SKIN>(v1.template range<FIELDS1>()...,
-                        v2.template range<FIELDS2>()...);
-            }
-            // [FIXME]: special cases missing:
-            // if vX is an rvalue reference, this means that vX is about to go out
-            // of scope, so the ranges that vX holds by value should be moved
         };
-        /// specialisation: "ziping" a single view is a no-op
+        /// specialisation: "zipping" a single view is a no-op
         template <> struct _zipper<std::size_t(1)> {
             template <typename VIEW1>
             static VIEW1 doIt(const VIEW1& v)
@@ -1359,6 +1339,7 @@ namespace SOA {
         };
         /// general case: zip views one-by-one
         template <std::size_t N> struct _zipper {
+            static_assert(N > 2, "Specialisations broken.");
             template <typename VIEW1, typename... VIEWS>
             static auto doIt(VIEW1&& v1, VIEWS&&... views) -> decltype(
                     _zipper<2>::doIt(std::forward<VIEW1>(v1),
@@ -1395,9 +1376,11 @@ namespace SOA {
      * @endcode
      */
     template <typename... VIEWS>
-    auto zip(VIEWS&&... views) -> decltype(
-        impl::_zipper<sizeof...(VIEWS)>::doIt(
-            std::forward<VIEWS>(views)...))
+    auto zip(VIEWS&&... views) -> typename std::enable_if<SOA::Utils::ALL(
+            sizeof...(VIEWS) > 0, SOA::Utils::is_view<typename std::remove_cv<
+            typename std::remove_reference<VIEWS>::type>::type>::value...),
+         decltype(impl::_zipper<sizeof...(VIEWS)>::doIt(
+                     std::forward<VIEWS>(views)...))>::type
     {
         return impl::_zipper<sizeof...(VIEWS)>::doIt(
                 std::forward<VIEWS>(views)...);
