@@ -66,17 +66,14 @@ namespace SOA {
         struct remove_rvalue_reference<T&&> { using type = T; };
 
         /// move everything but lvalue references
-        template <typename T>
-        const T& move_if_not_lvalue_reference(const T& t) { return t; }
+        template <typename T, typename R>
+        const R& move_if_not_lvalue_reference(const T&, const R& r) { return r; }
         /// move everything but lvalue references
-        template <typename T>
-        T& move_if_not_lvalue_reference(T& t) { return t; }
+        template <typename T, typename R>
+        R& move_if_not_lvalue_reference(T&, R& r) { return r; }
         /// move everything but lvalue references
-        template <typename T>
-        T&& move_if_not_lvalue_reference(T&& t) { return std::move(t); }
-        /// move everything but lvalue references
-        template <typename T>
-        T&& move_if_not_lvalue_reference(T t) { return std::move(t); }
+        template <typename T, typename R>
+        R&& move_if_not_lvalue_reference(T&&, R&& r) { return std::move(r); }
 
         struct dummy {};
         /// helper to allow flexibility in how fields are supplied
@@ -352,50 +349,12 @@ namespace SOA {
 
     /** @brief create a new View from given view, including given fields
      *
-     * @tparam FIELDS...    fields to extract
-     * @tparam VIEW         View from which to extract
-     * @tparam ARGS...      either nothing, or types of two iterators (first,last(
+     * @tparam FIELDSORSKIN...  fields to extract
+     * @tparam VIEW             View from which to extract
+     * @tparam ARGS...          nothing, or types of two iterators (first,last(
      *
-     * @param view          View from which to extract given fields
-     * @param args...       either empty, or two iterators (first, last(
-     *
-     * @returns View of the given fields (and given range)
-     *
-     * @note This will only work with the new-style convienent SOAFields and
-     * SOASkins defined via SOAFIELD* and SOASKIN* macros.
-     *
-     * Example:
-     * @code
-     * SOAFIELD(x, float);
-     * SOAFIELD(y, float);
-     * SOAFIELD(z, float);
-     * SOASKIN(SOAPoint, f_x, f_y, f_z);
-     * Container<std::vector, SOAPoint> c = get_from_elsewhere();
-     * // create a view of only the x and y fields in c
-     * auto view = view<f_x, f_y>(c);
-     * // as before, but only for the first 16 elements
-     * auto subview = view<f_x, f_y>(c, c.begin(), c.begin() + 16);
-     * @endcode
-     */
-    template <typename... FIELDS, typename VIEW, typename... ARGS,
-        template <class> class SKIN =
-        SOA::impl::SOASkinCreatorSimple<FIELDS...>::template type>
-    auto view(const VIEW& view, ARGS&&... args) -> decltype(
-        make_soaview<SKIN>(view.template range<FIELDS>(
-                    std::forward<ARGS>(args)...)...))
-    {
-        return make_soaview<SKIN>(view.template range<FIELDS>(
-                    std::forward<ARGS>(args)...)...);
-    }
-
-    /** @brief create a new View from given view, including given fields
-     *
-     * @tparam FIELDS...    fields to extract
-     * @tparam VIEW         View from which to extract
-     * @tparam ARGS...      either nothing, or types of two iterators (first,last(
-     *
-     * @param view          View from which to extract given fields
-     * @param args...       either empty, or two iterators (first, last(
+     * @param view              View from which to extract given fields
+     * @param args...           either empty, or two iterators (first, last(
      *
      * @returns View of the given fields (and given range)
      *
@@ -415,53 +374,15 @@ namespace SOA {
      * auto subview = view<f_x, f_y>(c, c.begin(), c.begin() + 16);
      * @endcode
      */
-    template <typename... FIELDS, typename VIEW, typename... ARGS,
+    template <typename... FIELDSORSKIN, typename VIEW, typename... ARGS,
         template <class> class SKIN =
-        SOA::impl::SOASkinCreatorSimple<FIELDS...>::template type>
-    auto view(VIEW& view, ARGS&&... args) -> decltype(
-        make_soaview<SKIN>(view.template range<FIELDS>(
-                    std::forward<ARGS>(args)...)...))
-    {
-        return make_soaview<SKIN>(view.template range<FIELDS>(
-                    std::forward<ARGS>(args)...)...);
-    }
-
-    /** @brief create a new View from given view, including given fields
-     *
-     * @tparam FIELDS...    fields to extract
-     * @tparam VIEW         View from which to extract
-     * @tparam ARGS...      either nothing, or types of two iterators (first,last(
-     *
-     * @param view          View from which to extract given fields
-     * @param args...       either empty, or two iterators (first, last(
-     *
-     * @returns View of the given fields (and given range)
-     *
-     * @note This will only work with the new-style convienent SOAFields and
-     * SOASkins defined via SOAFIELD* and SOASKIN* macros.
-     *
-     * Example:
-     * @code
-     * SOAFIELD(x, float);
-     * SOAFIELD(y, float);
-     * SOAFIELD(z, float);
-     * SOASKIN(SOAPoint, f_x, f_y, f_z);
-     * Container<std::vector, SOAPoint> c = get_from_elsewhere();
-     * // create a view of only the x and y fields in c
-     * auto view = view<f_x, f_y>(c);
-     * // as before, but only for the first 16 elements
-     * auto subview = view<f_x, f_y>(c, c.begin(), c.begin() + 16);
-     * @endcode
-     */
-    template <typename... FIELDS, typename VIEW, typename... ARGS,
-        template <class> class SKIN =
-        SOA::impl::SOASkinCreatorSimple<FIELDS...>::template type>
+        SOA::impl::SOASkinCreator<FIELDSORSKIN...>::template type>
     auto view(VIEW&& view, ARGS&&... args) -> decltype(
-        make_soaview<SKIN>(impl::move_if_not_lvalue_reference(
-                view.template range<FIELDS>(std::forward<ARGS>(args)...))...))
+        make_soaview<SKIN>(impl::move_if_not_lvalue_reference(view,
+                view.template range<FIELDSORSKIN>(std::forward<ARGS>(args)...))...))
     {
-        return make_soaview<SKIN>(impl::move_if_not_lvalue_reference(
-                    view.template range<FIELDS>(
+        return make_soaview<SKIN>(impl::move_if_not_lvalue_reference(view,
+                    view.template range<FIELDSORSKIN>(
                         std::forward<ARGS>(args)...))...);
     }
     /// the class that really implements View
@@ -1091,14 +1012,88 @@ namespace SOA {
                     noexcept(std::swap(m_storage, other.m_storage)))
             { std::swap(m_storage, other.m_storage); }
 
-            template <typename... FIELDS2, typename... ARGS>
+            /** @brief create a new view
+             *
+             * @tparam FIELDSORSKIN...  list of fields, or new skin
+             * @tparam ARGS...          empty, or a type of pair of iterators
+             *
+             * @param args              none, or two iterators
+             *
+             * Examples:
+             * @code
+             * namespace XYZPoint {
+             *     SOAFIELD_TRIVIAL(x, x, float);
+             *     SOAFIELD_TRIVIAL(y, y, float);
+             *     SOAFIELD_TRIVIAL(z, z, float);
+             *     SOASKIN_TRIVIAL(Skin, x, y, z);
+             * }
+             * // fill container somehow
+             * SOAContainer<std::vector, XYZPoint::Skin> c = getPoints();
+             * // create a view with x and y fields
+             * auto viewxy = c.view<XYZPoint::x, XYZPoint::y>();
+             * // create a view with x and y fields, but only first half of
+             * // elements
+             * auto viewxyhalf = c.view<XYZPoint::x, XYZPoint::y>(
+             *                          c.begin(), c.begin() + c.size() / 2);
+             * // create a view with a custom skin
+             * SOASKIN(RPhiSkin, XYZPoint::x, XYZPoint::y) {
+             *     SOASKIN_INHERIT_DEFAULT_METHODS(RPhiSkin);
+             *     float r() const
+             *     {
+             *         return std::sqrt(this->x() * this->x() +
+             *             this->y() * this->y());
+             *     }
+             *     float phi() const
+             *     { return std::atan2(this->y(), this->x()); }
+             * };
+             * auto customview = c.view<RPhiSkin>();
+             * @endcode
+             */
+            template <typename... FIELDSORSKIN, typename... ARGS>
             auto view(ARGS&&... args) -> decltype(
-                    SOA::view<FIELDS2...>(*this, std::forward<ARGS>(args)...))
-            { return SOA::view<FIELDS2...>(*this, std::forward<ARGS>(args)...); }
-            template <typename... FIELDS2, typename... ARGS>
+                    SOA::view<FIELDSORSKIN...>(*this, std::forward<ARGS>(args)...))
+            { return SOA::view<FIELDSORSKIN...>(*this, std::forward<ARGS>(args)...); }
+            /** @brief create a new view
+             *
+             * @tparam FIELDSORSKIN...  list of fields, or new skin
+             * @tparam ARGS...          empty, or a type of pair of iterators
+             *
+             * @param args              none, or two iterators
+             *
+             * Examples:
+             * @code
+             * namespace XYZPoint {
+             *     SOAFIELD_TRIVIAL(x, x, float);
+             *     SOAFIELD_TRIVIAL(y, y, float);
+             *     SOAFIELD_TRIVIAL(z, z, float);
+             *     SOASKIN_TRIVIAL(Skin, x, y, z);
+             * }
+             * // fill container somehow
+             * SOAContainer<std::vector, XYZPoint::Skin> c = getPoints();
+             * // create a view with x and y fields
+             * auto viewxy = c.view<XYZPoint::x, XYZPoint::y>();
+             * // create a view with x and y fields, but only first half of
+             * // elements
+             * auto viewxyhalf = c.view<XYZPoint::x, XYZPoint::y>(
+             *                          c.begin(), c.begin() + c.size() / 2);
+             * // create a view with a custom skin
+             * SOASKIN(RPhiSkin, XYZPoint::x, XYZPoint::y) {
+             *     SOASKIN_INHERIT_DEFAULT_METHODS(RPhiSkin);
+             *     float r() const
+             *     {
+             *         return std::sqrt(this->x() * this->x() +
+             *             this->y() * this->y());
+             *     }
+             *     float phi() const
+             *     { return std::atan2(this->y(), this->x()); }
+             * };
+             * auto customview = c.view<RPhiSkin>();
+             * @endcode
+             */
+            template <typename... FIELDSORSKIN, typename... ARGS>
             auto view(ARGS&&... args) const -> decltype(
-                    SOA::view<FIELDS2...>(*this, std::forward<ARGS>(args)...))
-            { return SOA::view<FIELDS2...>(*this, std::forward<ARGS>(args)...); }
+                    SOA::view<FIELDSORSKIN...>(*this, std::forward<ARGS>(args)...))
+            { return SOA::view<FIELDSORSKIN...>(*this, std::forward<ARGS>(args)...); }
     };
 
     namespace impl {
@@ -1238,7 +1233,7 @@ namespace SOA {
                      typename... FIELDS1, class STORAGE2,
                      template <typename> class SKIN2, typename... FIELDS2,
                 template <class> class SKIN =
-                SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+                SOA::impl::SOASkinCreator<FIELDS1..., FIELDS2...>::template type>
             static auto doIt(const _View<STORAGE1, SKIN1, FIELDS1...>& v1,
                     const _View<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
                         make_soaview<SKIN>(v1.template range<FIELDS1>()...,
@@ -1251,7 +1246,7 @@ namespace SOA {
                      typename... FIELDS1, class STORAGE2,
                      template <typename> class SKIN2, typename... FIELDS2,
                 template <class> class SKIN =
-                SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+                SOA::impl::SOASkinCreator<FIELDS1..., FIELDS2...>::template type>
             static auto doIt(_View<STORAGE1, SKIN1, FIELDS1...>& v1,
                     const _View<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
                         make_soaview<SKIN>(v1.template range<FIELDS1>()...,
@@ -1264,7 +1259,7 @@ namespace SOA {
                      typename... FIELDS1, class STORAGE2,
                      template <typename> class SKIN2, typename... FIELDS2,
                 template <class> class SKIN =
-                SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+                SOA::impl::SOASkinCreator<FIELDS1..., FIELDS2...>::template type>
             static auto doIt(const _View<STORAGE1, SKIN1, FIELDS1...>& v1,
                     _View<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
                         make_soaview<SKIN>(v1.template range<FIELDS1>()...,
@@ -1277,7 +1272,7 @@ namespace SOA {
                      typename... FIELDS1, class STORAGE2,
                      template <typename> class SKIN2, typename... FIELDS2,
                 template <class> class SKIN =
-                SOA::impl::SOASkinCreatorSimple<FIELDS1..., FIELDS2...>::template type>
+                SOA::impl::SOASkinCreator<FIELDS1..., FIELDS2...>::template type>
             static auto doIt(_View<STORAGE1, SKIN1, FIELDS1...>& v1,
                     _View<STORAGE2, SKIN2, FIELDS2...>& v2) -> decltype(
                         make_soaview<SKIN>(v1.template range<FIELDS1>()...,
