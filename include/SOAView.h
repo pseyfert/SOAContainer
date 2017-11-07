@@ -1387,6 +1387,18 @@ namespace SOA {
     }
 } // namespace SOA
 
+// [FIXME]: document
+// NB. C++'s funny rules on argument dependent lookup mean that this one
+// has to live in the global namespace to be found reliably. To avoid
+// trouble, the function is constrained tightly with a suitable enable_if
+template <template <class> class SKIN, typename... VIEWS>
+auto zip(VIEWS&&... views) -> typename std::enable_if<SOA::Utils::ALL(
+        SOA::impl::is_skin<SKIN>(), SOA::Utils::is_view<
+        typename std::remove_cv<typename std::remove_reference<
+        VIEWS>::type>::type>::value...), decltype(
+        zip(std::forward<VIEWS>(views)...).template view<SKIN>())>::type
+{ return zip(std::forward<VIEWS>(views)...).template view<SKIN>(); }
+
 #endif // SOAVIEW_H
 
 // vim: sw=4:tw=78:ft=cpp:et

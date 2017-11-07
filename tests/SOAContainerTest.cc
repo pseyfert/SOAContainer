@@ -735,7 +735,7 @@ TEST(SOAView, FieldExtraction) {
     }
 }
 
-TEST(SOAView, JoinViews) {
+TEST(SOAView, ZipViews) {
     using namespace FieldExtractionTest;
     const auto rnd = [] () { return double(random()) / double(RAND_MAX); };
     SOA::Container<std::vector, Point> c;
@@ -753,6 +753,14 @@ TEST(SOAView, JoinViews) {
         EXPECT_EQ(c[i].x(), v4[i].x());
         EXPECT_EQ(c[i].y(), v4[i].y());
         EXPECT_EQ(c[i].z(), v4[i].z());
+    }
+    auto rphi = zip<RPhiSkin>(v1, v2);
+    EXPECT_EQ(c.size(), rphi.size());
+    for (unsigned i = 0; i < c.size(); ++i)
+    {
+        EXPECT_EQ(std::sqrt(c[i].x() * c[i].x() + c[i].y() * c[i].y()),
+                    rphi[i].r());
+        EXPECT_EQ(std::atan2(c[i].y(), c[i].x()), rphi[i].phi());
     }
 }
 
