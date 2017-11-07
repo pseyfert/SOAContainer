@@ -729,9 +729,9 @@ TEST(SOAView, FieldExtraction) {
     EXPECT_EQ(c.size(), rphi.size());
     for (unsigned i = 0; i < c.size(); ++i)
     {
-        EXPECT_EQ(std::sqrt(c[i].x() * c[i].x() + c[i].y() * c[i].y()),
+        EXPECT_FLOAT_EQ(std::sqrt(c[i].x() * c[i].x() + c[i].y() * c[i].y()),
                     rphi[i].r());
-        EXPECT_EQ(std::atan2(c[i].y(), c[i].x()), rphi[i].phi());
+        EXPECT_FLOAT_EQ(std::atan2(c[i].y(), c[i].x()), rphi[i].phi());
     }
 }
 
@@ -758,9 +758,9 @@ TEST(SOAView, ZipViews) {
     EXPECT_EQ(c.size(), rphi.size());
     for (unsigned i = 0; i < c.size(); ++i)
     {
-        EXPECT_EQ(std::sqrt(c[i].x() * c[i].x() + c[i].y() * c[i].y()),
+        EXPECT_FLOAT_EQ(std::sqrt(c[i].x() * c[i].x() + c[i].y() * c[i].y()),
                     rphi[i].r());
-        EXPECT_EQ(std::atan2(c[i].y(), c[i].x()), rphi[i].phi());
+        EXPECT_FLOAT_EQ(std::atan2(c[i].y(), c[i].x()), rphi[i].phi());
     }
 }
 
