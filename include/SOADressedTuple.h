@@ -27,8 +27,20 @@ namespace SOA {
 
         /// for everything else, use TUPLE's constructor
         using TUPLE::TUPLE;
+        // for anything deriving from TUPLE, the same holds
+        template <typename T, typename DUMMY = typename std::enable_if<
+            std::is_base_of<TUPLE, T>::value>::type>
+        DressedTuple(T&& t, DUMMY* = nullptr) noexcept(noexcept(TUPLE(
+                            std::forward<T>(t)))) : TUPLE(std::forward<T>(t))
+        {}
         /// for everything else, use TUPLE's assignment operators
         using TUPLE::operator=;
+        // for anything deriving from TUPLE, the same holds
+        template <typename T>
+        typename std::enable_if<std::is_base_of<TUPLE, T>::value, self_type>::type&
+        operator=(T&& t) noexcept(noexcept(TUPLE::operator=(
+                            std::forward<T>(t))))
+        { TUPLE::operator=(std::forward<T>(t)); return *this; }
 
         /// provide the member function template get interface of proxies
         template<typename CONTAINER::size_type MEMBERNO>

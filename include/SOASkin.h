@@ -17,7 +17,8 @@
 namespace SOA {
     /// implementation details for convenient SOA skins
     namespace impl {
-        struct dummy {};
+        /// a dummy struct to stand in for the base class of a skin
+        struct dummy { template <std::size_t> void get() const noexcept {} };
 
         /// little helper checking for duplicate fields
         template <typename... FIELDS>
@@ -29,20 +30,20 @@ namespace SOA {
                 (TL::template count<T>() > 1)> {};
         };
         /// little helper checking for duplicate fields
-        template <bool HASDUPLICATES, typename BASE, typename... FIELDS>
+        template <bool HASDUPLICATES, typename BASE, typename BASEBASE, typename... FIELDS>
         struct _NoDuplicateFieldsVerifier {
             static_assert(!HASDUPLICATES, "Duplicate fields are not allowed.");
         };
         /// specialisation: no duplicate fields
-        template <typename BASE, typename... FIELDS>
-        struct _NoDuplicateFieldsVerifier<false, BASE, FIELDS...> :
-            FIELDS::template accessors<BASE>... {};
+        template <typename BASE, typename BASEBASE, typename... FIELDS>
+        struct _NoDuplicateFieldsVerifier<false, BASE, BASEBASE, FIELDS...> :
+            FIELDS::template accessors<BASE, SOA::Typelist::typelist<FIELDS...>, BASEBASE>... {};
         /// little helper checking for duplicate fields
-        template <typename BASE, typename... FIELDS>
+        template <typename BASE, typename BASEBASE, typename... FIELDS>
         using NoDuplicateFieldsVerifier = _NoDuplicateFieldsVerifier<
             SOA::Utils::ANY(
             has_duplicate_fields<FIELDS...>::template type<
-            FIELDS>::value...), BASE, FIELDS...>;
+            FIELDS>::value...), BASE, BASEBASE, FIELDS...>;
         /** @brief base class of all convenient SOA skins
          *
          * @author Manuel Schiller <Manuel.Schiller@cern.ch>
@@ -54,13 +55,13 @@ namespace SOA {
         template <typename BASE, class... FIELDS>
         struct SkinBase :
             // order important for empty base class optimisation
-            NoDuplicateFieldsVerifier<SkinBase<BASE, FIELDS...>, FIELDS...>, BASE
+            NoDuplicateFieldsVerifier<SkinBase<BASE, FIELDS...>, BASE, FIELDS...>, BASE
         {
             // make sure that no user puts data in a field...
             static_assert(SOA::Utils::ALL(std::is_empty<FIELDS>::value...),
                     "Fields may not contain data or virtual methods!");
             static_assert(SOA::Utils::ALL(std::is_empty<
-                    typename FIELDS::template accessors<BASE> >::value...),
+                    typename FIELDS::template accessors<SkinBase, SOA::Typelist::typelist<FIELDS...>, BASE> >::value...),
                     "Field accessors may not contain data or virtual methods!");
             /// inform the framework that we're a skin
             using skin_tag = struct {};

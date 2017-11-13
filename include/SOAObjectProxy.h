@@ -131,17 +131,6 @@ namespace SOA {
                 { return std::tie(std::get<IDX>(obj)[m_idx]...); }
             };
 
-            /// little helper to implement concatenation of tuples
-            struct tuplecatHelper {
-                template <typename... S, typename T>
-                auto operator()(
-                        std::tuple<S...>&& t1, std::tuple<T>&& t2) const
-                noexcept( noexcept(std::tuple_cat(std::move(t1),
-                                std::move(t2)))) ->
-                    decltype(std::tuple_cat(std::move(t1), std::move(t2)))
-                { return std::tuple_cat(std::move(t1), std::move(t2)); }
-            };
-
             struct swapHelper {
                 size_type m_idx1;
                 size_type m_idx2;

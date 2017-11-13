@@ -621,6 +621,12 @@ namespace ConvenientContainersTest_Fields {
             if ((x * x + y + y) > 1.f) this->setDead();
         }
     };
+    // little dummy struct used to check the size behaviour of skins
+    struct Foo {
+        int i;
+        // make SOA::impl::SkinBase happy
+        template <std::size_t> void get() const noexcept {}
+    };
 }
 TEST(Container, ConvenientContainers) {
     using namespace ConvenientContainersTest_Fields;
@@ -635,7 +641,6 @@ TEST(Container, ConvenientContainers) {
     SOA::Container<std::vector, Skin> c;
     static_assert(sizeof(s.front()) == sizeof(c.front()),
             "Fancy field and old-style field proxies need to have same size.");
-    struct Foo { int i; };
     SOA::impl::SkinBase<Foo, f_x, f_y, f_flags> sb;
     static_assert(sizeof(int) == sizeof(sb), "skin size behaviour is all wrong.");
     // okay, we're satisfied on that front. Check basic functionality

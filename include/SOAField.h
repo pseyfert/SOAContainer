@@ -15,6 +15,9 @@
 namespace SOA {
     /// implementation details for convenient SOA fields
     namespace impl {
+        // forward decl.
+        struct dummy;
+
         /** @brief class from which a field tag derives
          *
          * @tparam T            type of the field
@@ -43,15 +46,17 @@ namespace SOA {
                  * @author Manuel Schiller <Manuel.Schiller@cern.ch>
                  * @date 2017-10-03
                  */
-                template <class SKIN>
+                template <class SKIN, std::size_t IDX, class BASE>
                 struct AccessorBase {
                     /// retrieve reference to the field
-                    type& _get() noexcept(noexcept(
-                        std::declval<SKIN&>().template get<FIELD>()))
-                    { return static_cast<SKIN&>(*this).template get<FIELD>(); }
+                    decltype(std::declval<BASE&>().template get<IDX>())
+                    _get() noexcept(noexcept(
+                            std::declval<BASE&>().template get<IDX>()))
+                    { return static_cast<SKIN&>(*this).template get<IDX>(); }
                     /// retrieve const reference to the field
-                    const type& _get() const noexcept(noexcept(
-                        std::declval<const SKIN&>().template get<FIELD>()))
+                    decltype(std::declval<const BASE&>().template get<IDX>())
+                    _get() const noexcept(noexcept(
+                            std::declval<const BASE&>().template get<IDX>()))
                     {
                         return static_cast<const SKIN&>(
                                 *this).template get<FIELD>();
@@ -74,11 +79,11 @@ namespace SOA {
  * See the SOAFIELD macro below for an example of this macro's usage.
  */
 #define SOAFIELD_ACCESSORS(accessorname) \
-    FieldBase::type& accessorname() noexcept(noexcept(\
-                std::declval<accessors&>()._get())) \
+    auto accessorname() noexcept(noexcept(\
+                std::declval<accessors&>()._get())) -> decltype(std::declval<accessors&>()._get())\
     { return this->_get(); } \
-    const FieldBase::type& accessorname() const noexcept(noexcept( \
-                std::declval<const accessors&>()._get())) \
+    auto accessorname() const noexcept(noexcept( \
+                std::declval<const accessors&>()._get())) -> decltype(std::declval<const accessors&>()._get())\
     { return this->_get(); }
 
 /** @brief define a field with name name and type type, with custom accessors
@@ -119,7 +124,7 @@ namespace SOA {
  */
 #define SOAFIELD(name, type, ... /* body */) \
     struct name : SOA::impl::FieldBase<type, name> { \
-        template <class SKIN> struct accessors : AccessorBase<SKIN> \
+        template <class SKIN, class TL, class BASE> struct accessors : AccessorBase<SKIN, TL::template find<name>(), BASE> \
         { __VA_ARGS__ }; }
 /** @brief define a field with name f_name, accessors named name, of type type
  *

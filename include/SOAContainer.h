@@ -598,7 +598,6 @@ namespace SOA {
 
     /// more _Container implementation details
     namespace _ContainerImpl {
-        struct dummy {};
         /// helper to allow flexibility in how fields are supplied
         template <template <typename...> class CONTAINER,
                  template <typename> class SKIN,
@@ -623,7 +622,7 @@ namespace SOA {
         {
             using type = typename
                 ContainerFieldsFromTypelistOrTemplateParameterPackHelper<
-                CONTAINER, SKIN, typename SKIN<dummy>::fields_typelist>::type;
+                CONTAINER, SKIN, typename SKIN<SOA::impl::dummy>::fields_typelist>::type;
         };
         template <template <typename...> class CONTAINER, template <typename> class SKIN,
                  typename... FIELDS>
