@@ -59,19 +59,19 @@ namespace SOA {
 	    using fields_typelist =
 		SOA::Typelist::typelist<PointFields::x, PointFields::y>;
 
-      // some constructors which don't just list all members
-      SOAPointProxy() : SOA::PrintableNullSkin<NAKEDPROXY>(
-          0.f, // x
-          0.f  // y
-          ) {
-        std::cout << "constructor with zero argument" << std::endl;
-      }
-      SOAPointProxy(float y) : SOA::PrintableNullSkin<NAKEDPROXY>(
-          1.f, // x
-          y
-          ) {
-        std::cout << "constructor with one argument" << std::endl;
-      }
+	    // some constructors which don't just list all members
+	    SOAPointProxy() : SOA::PrintableNullSkin<NAKEDPROXY>(
+		    0.f, // x
+		    0.f  // y
+		    ) {
+		std::cout << "constructor with zero argument" << std::endl;
+	    }
+	    SOAPointProxy(float y) : SOA::PrintableNullSkin<NAKEDPROXY>(
+		    1.f, // x
+		    y
+		    ) {
+		std::cout << "constructor with one argument" << std::endl;
+	    }
 	    float x() const noexcept
 	    { return this-> template get<PointFields::x>(); }
 	    float y() const noexcept
