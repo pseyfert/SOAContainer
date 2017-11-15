@@ -666,6 +666,22 @@ TEST(Container, ConvenientContainers) {
     EXPECT_EQ(csimple[0].flags(), 40);
     // this won't work - constness
     // const_cast<const decltype(c)&>(c).front().setUsed();
+    // check that sorting works
+    c.push_back(std::make_tuple(2.79f, 3.14f, 17));
+    csimple.push_back(std::make_tuple(2.79f, 3.14f, 17));
+    std::sort(c.begin(), c.end(),
+            [] (decltype(c)::value_const_reference a,
+                decltype(c)::value_const_reference b)
+            { return a.x() < b.x(); });
+    std::sort(csimple.begin(), csimple.end(),
+            [] (decltype(csimple)::value_const_reference a,
+                decltype(csimple)::value_const_reference b)
+            { return a.x() < b.x(); });
+    for (std::size_t i = 0; i < std::max(c.size(), csimple.size()); ++i) {
+        EXPECT_EQ(c[i].x(), csimple[i].x());
+        EXPECT_EQ(c[i].y(), csimple[i].y());
+        EXPECT_EQ(c[i].flags(), csimple[i].flags());
+    }
 }
 
 namespace FieldExtractionTest {
