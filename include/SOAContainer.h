@@ -356,46 +356,33 @@ namespace SOA {
             }
 
             /// push an element at the back of the array
-            void push_back(const value_type& val) noexcept(noexcept(
-                        SOA::Utils::apply_zip(impl::push_backHelper(),
-                            std::declval<SOAStorage&>(), val)))
+            template <typename T>
+            typename std::enable_if<std::is_constructible<value_type,
+                     T>::value>::type
+            push_back(T&& val) noexcept(noexcept(SOA::Utils::apply_zip(
+                            impl::push_backHelper(),
+                            std::declval<SOAStorage&>(),
+                            std::forward<T>(val))))
             {
                 SOA::Utils::apply_zip(
-                        impl::push_backHelper(), this->m_storage, val);
-            }
-            /// push an element at the back of the array (move semantics)
-            void push_back(value_type&& val) noexcept(noexcept(
-                        SOA::Utils::apply_zip(impl::push_backHelper(),
-                            std::declval<SOAStorage&>(), std::move(val))))
-            {
-                SOA::Utils::apply_zip(
-                        impl::push_backHelper(), this->m_storage, std::move(val));
+                        impl::push_backHelper(), this->m_storage,
+                        std::forward<T>(val));
             }
 
             /// insert a value at the given position
-            iterator insert(const_iterator pos, const value_type& val) noexcept(
+            template <typename T>
+            typename std::enable_if<std::is_constructible<value_type,
+                     T>::value, iterator>::type
+            insert(const_iterator pos, T&& val) noexcept(
                     noexcept(SOA::Utils::apply_zip(
                             impl::insertHelper<size_type>{0},
-                            std::declval<SOAStorage&>(), val)))
+                            std::declval<SOAStorage&>(),
+                            std::forward<T>(val))))
             {
                 assert((*pos).m_storage == &this->m_storage);
                 SOA::Utils::apply_zip(
                         impl::insertHelper<size_type>{pos.m_proxy.m_index},
-                        this->m_storage, val);
-                return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
-                    its_safe_tag() };
-            }
-
-            /// insert a value at the given position (move variant)
-            iterator insert(const_iterator pos, value_type&& val) noexcept(
-                    noexcept(SOA::Utils::apply_zip(
-                            impl::insertHelper<size_type>{0},
-                            std::declval<SOAStorage&>(), std::move(val))))
-            {
-                assert((*pos).m_storage == &this->m_storage);
-                SOA::Utils::apply_zip(
-                        impl::insertHelper<size_type>{pos.m_proxy.m_index},
-                        this->m_storage, std::move(val));
+                        this->m_storage, std::forward<T>(val));
                 return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
                     its_safe_tag() };
             }
