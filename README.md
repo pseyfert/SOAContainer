@@ -1,3 +1,4 @@
+![SOA Container logo](doc/SOAContainer.svg)
 # SOAContainer
 
 SOAContainer is a class that mimics the interface of std::vector as much
