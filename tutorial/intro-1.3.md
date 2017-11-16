@@ -1,5 +1,6 @@
 ### Navigation: [<< (previous)](intro-1.2.md), [(up)](tutorial.md), [(next) >>](intro-1.4.md)
 
+![SOA Container logo](../doc/SOAContainer.svg)
 # Non-trivial SOA skins
 The problem with trivial fields and skins in the code example above is that
 they are limited to the trivial getters and setters provided by the fields.

@@ -1,5 +1,6 @@
 ### Navigation: [<< (previous)](tutorial.md), [(up)](tutorial.md), [(next) >>](intro-1.1.md)
 
+![SOA Container logo](../doc/SOAContainer.svg)
 # Short SOAContainer tutorial
 
 (some of the sections here still need to be written...)

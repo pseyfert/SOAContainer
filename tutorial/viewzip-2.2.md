@@ -1,5 +1,6 @@
 ### Navigation: [<< (previous)](viewzip-2.1.md), [(up)](tutorial.md), [(next) >>](future-3.md)
 
+![SOA Container logo](../doc/SOAContainer.svg)
 # Zips
 
 You remember the example from last section which took a view of the x and y

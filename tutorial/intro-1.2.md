@@ -1,5 +1,6 @@
 ### Navigation: [<< (previous)](intro-1.1.md), [(up)](tutorial.md), [(next) >>](intro-1.3.md)
 
+![SOA Container logo](../doc/SOAContainer.svg)
 # The trivial SOA case
 Unfortunately, the memory layout is AOS, i.e. not what SIMD units in modern
 CPUs like. Converting this to a SOA layout is fairly easy, though. Let's
@@ -11,8 +12,8 @@ start with the fields (data members):
 // first declare fields which describe the members of the notional struct
 // (which will never exist in memory - SOA layout!)
  namespace PointFields {
-    SOAFIELDS_TRIVIAL(x, x, float); // field struct x, getter/setter x(), type float
-    SOAFIELDS_TRIVIAL(y, y, float);
+	SOAFIELDS_TRIVIAL(x, x, float); // field struct x, getter/setter x(), type float
+	SOAFIELDS_TRIVIAL(y, y, float);
 };
 ```
 
@@ -40,8 +41,8 @@ provided by the fields. We're now ready to use our SOA container:
 ```cpp
 // define the SOA container type
 using SOASimplePoints = SOA::Container<
-        std::vector,	        // underlying type for each field
-        SOAPointSkinSimple>;  // skin to "dress" the tuple of fields with
+		std::vector,	        // underlying type for each field
+		SOAPointSkinSimple>;  // skin to "dress" the tuple of fields with
 // define the SOASimplePoint itself
 using SOASimplePoint = typename SOASimplePoints::reference;
 
@@ -50,8 +51,8 @@ SOASimplePoints points = /* get from somewhere... */;
 
 // normalise to unit length
 for (SOAPoint p: points) {
-    auto ir = 1 / std::sqrt(p.x() * p.x() + p.y() * p.y());
-    p.x() *= ir, p.y() *= ir;
+	auto ir = 1 / std::sqrt(p.x() * p.x() + p.y() * p.y());
+	p.x() *= ir, p.y() *= ir;
 }
 ```
 

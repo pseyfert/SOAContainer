@@ -1,5 +1,6 @@
 ### Navigation: [<< (previous)](internals-5.2.md), [(up)](tutorial.md), [(next) >>](tutorial.md)
 
+![SOA Container logo](../doc/SOAContainer.svg)
 # ```SOA::Field``` internals
 
 ```SOA::Field``` is a newer implementation of fields which became necessary

@@ -1,5 +1,6 @@
 ### Navigation: [<< (previous)](intro-1.4.md), [(up)](tutorial.md), [(next) >>](viewzip-2.2.md)
 
+![SOA Container logo](../doc/SOAContainer.svg)
 # Views
 You have worked with ```SOA::Container<...>``` before in the introduction.
 They are convenient when you build an entire new SOA object from scratch.

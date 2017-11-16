@@ -1,5 +1,6 @@
 ### Navigation: [<< (previous)](faq-4.md), [(up)](tutorial.md), [(next) >>](internals-5.2.md)
 
+![SOA Container logo](../doc/SOAContainer.svg)
 # 5.1 Tuples and Typelists
 
 The original idea for SOA containers was that each container is basically

@@ -1,5 +1,6 @@
 ### Navigation: [<< (previous)](intro-1.3.md), [(up)](tutorial.md), [(next) >>](viewzip-2.1.md)
 
+![SOA Container logo](../doc/SOAContainer.svg)
 # Non-trivial fields, fields of type `bool`
 The main thing missing from this basic tour is a demonstration of
 non-trivial fields. As an example, let's work out a way to work around the

@@ -1,5 +1,6 @@
 ### Navigation: [<< (previous)](internals-5.1.md), [(up)](tutorial.md), [(next) >>](internals-5.3.md)
 
+![SOA Container logo](../doc/SOAContainer.svg)
 # Old-style fields and skins
 
 The simple typelist-based approach from the last section works, but it has

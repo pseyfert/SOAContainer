@@ -1,5 +1,6 @@
 ### Navigation: [<< (previous)](tutorial.md), [(up)](tutorial.md), [(next) >>](intro-1.2.md)
 
+![SOA Container logo](../doc/SOAContainer.svg)
 # The simple AOS case
 To illustrate how to turn an AOS object into SOA form, I will start with a
 very simple example here (something more realistic is in the test code in
