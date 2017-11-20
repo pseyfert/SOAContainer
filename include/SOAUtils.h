@@ -55,30 +55,30 @@ namespace SOA {
         // implementation details
         namespace impl {
             template <typename F, typename T, std::size_t... IDXS,
-                     typename RETVAL = decltype(invoke(std::forward<F>(
+                     typename RETVAL = decltype(SOA::Utils::invoke(std::forward<F>(
                                      std::declval<F>()),
                                  std::get<IDXS>(std::forward<T>(
                                          std::declval<T>()))...))>
             constexpr typename std::enable_if<
                     !std::is_same<void, RETVAL>::value, RETVAL>::type
             apply_impl(F&& f, T&& t, std::index_sequence<IDXS...>) noexcept(
-                    noexcept(invoke(std::forward<F>(f), std::get<IDXS>(
+                    noexcept(SOA::Utils::invoke(std::forward<F>(f), std::get<IDXS>(
                                 std::forward<T>(t))...)))
             {
-                return invoke(std::forward<F>(f),
+                return SOA::Utils::invoke(std::forward<F>(f),
                         std::get<IDXS>(std::forward<T>(t))...);
             }
             template <typename F, typename T, std::size_t... IDXS,
-                     typename RETVAL = decltype(invoke(std::forward<F>(
+                     typename RETVAL = decltype(SOA::Utils::invoke(std::forward<F>(
                                      std::declval<F>()),
                                  std::get<IDXS>(std::forward<T>(
                                          std::declval<T>()))...))>
             typename std::enable_if<std::is_same<void, RETVAL>::value,
             RETVAL>::type
             apply_impl(F&& f, T&& t, std::index_sequence<IDXS...>) noexcept(noexcept(
-                        invoke(std::forward<F>(f), std::get<IDXS>(std::forward<T>(t))...)))
+                        SOA::Utils::invoke(std::forward<F>(f), std::get<IDXS>(std::forward<T>(t))...)))
             {
-                invoke(std::forward<F>(f),
+                SOA::Utils::invoke(std::forward<F>(f),
                         std::get<IDXS>(std::forward<T>(t))...);
             }
         } // namespace impl
@@ -150,22 +150,30 @@ namespace SOA {
         }
 
         /// apply functor f to all elements of tuple, return tuple of results
-        template <typename F, typename T, typename RETVAL = decltype(apply(
+        template <typename F, typename T, typename RETVAL =
+            decltype(SOA::Utils::apply(
                     impl::make_map_f(std::forward<F>(std::declval<F>())),
                     std::forward<T>(std::declval<T>())))>
         typename std::enable_if<!std::is_same<RETVAL, void>::value, RETVAL>::type
-        map(F&& f, T&& t) noexcept(noexcept(apply(impl::make_map_f(
+        map(F&& f, T&& t) noexcept(noexcept(SOA::Utils::apply(impl::make_map_f(
                             std::forward<F>(f)), std::forward<T>(t))))
-        { return apply(impl::make_map_f(std::forward<F>(f)), std::forward<T>(t)); }
+        {
+            return SOA::Utils::apply(
+                impl::make_map_f(std::forward<F>(f)), std::forward<T>(t));
+        }
 
         /// apply functor f (returning void) to all elements of tuple
-        template <typename F, typename T, typename RETVAL = decltype(apply(
+        template <typename F, typename T, typename RETVAL =
+            decltype(SOA::Utils::apply(
                     impl::make_map_f(std::forward<F>(std::declval<F>())),
                     std::forward<T>(std::declval<T>())))>
         typename std::enable_if<std::is_same<RETVAL, void>::value, RETVAL>::type
-        map(F&& f, T&& t) noexcept(noexcept(apply(impl::make_map_f(
+        map(F&& f, T&& t) noexcept(noexcept(SOA::Utils::apply(impl::make_map_f(
                             std::forward<F>(f)), std::forward<T>(t))))
-        { apply(impl::make_map_f(std::forward<F>(f)), std::forward<T>(t)); }
+        {
+            SOA::Utils::apply(
+                    impl::make_map_f(std::forward<F>(f)), std::forward<T>(t));
+        }
 
         /// implementation details of foldl
         namespace foldl_impl {
@@ -362,18 +370,21 @@ namespace SOA {
                 F f;
                 template <typename... Ts>
                 void operator()(Ts&&... ts) const noexcept(noexcept(
-                            ignore((apply(f, std::forward<Ts>(ts)), 0)...)))
-                { ignore((apply(f, std::forward<Ts>(ts)), 0)...); }
+                            ignore((SOA::Utils::apply(
+                                        f, std::forward<Ts>(ts)), 0)...)))
+                { ignore((SOA::Utils::apply(f, std::forward<Ts>(ts)), 0)...); }
             };
         }
 
         /// little helper for push_back etc.
         template <typename F, typename... Ts>
         void apply_zip(F&& f, Ts&&... ts) noexcept(noexcept(
-                    apply(impl::apply_zip_impl<decltype(std::forward<F>(f))>{
+                    SOA::Utils::apply(impl::apply_zip_impl<
+                        decltype(std::forward<F>(f))>{
                         std::forward<F>(f)}, zip(std::forward<Ts>(ts)...))))
         {
-            apply(impl::apply_zip_impl<decltype(std::forward<F>(f))>{
+            SOA::Utils::apply(impl::apply_zip_impl<
+                    decltype(std::forward<F>(f))>{
                     std::forward<F>(f)}, zip(std::forward<Ts>(ts)...));
         }
 
