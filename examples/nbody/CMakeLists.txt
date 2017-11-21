@@ -1,0 +1,10 @@
+find_package(ROOT COMPONENTS Core Gui Graf3d Gpad)
+include_directories(${ROOT_INCLUDE_DIRS})
+add_compile_options(-O3)
+add_executable(benchmark benchmark.cc ${headers})
+if(ROOT_FOUND)
+add_executable(guitest guitest.cc)
+set_property(TARGET guitest PROPERTY CXX_STANDARD 14)
+target_link_libraries(guitest ${ROOT_LIBRARIES})
+endif(ROOT_FOUND)
+
