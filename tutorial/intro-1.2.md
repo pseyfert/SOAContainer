@@ -12,8 +12,8 @@ start with the fields (data members):
 // first declare fields which describe the members of the notional struct
 // (which will never exist in memory - SOA layout!)
  namespace PointFields {
-	SOAFIELDS_TRIVIAL(x, x, float); // field struct x, getter/setter x(), type float
-	SOAFIELDS_TRIVIAL(y, y, float);
+	SOAFIELD_TRIVIAL(x, x, float); // field struct x, getter/setter x(), type float
+	SOAFIELD_TRIVIAL(y, y, float);
 };
 ```
 
