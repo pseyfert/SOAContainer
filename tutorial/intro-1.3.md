@@ -12,7 +12,7 @@ point from the origin. Fortunately, this is not much more difficult:
 // a more complicated skin offering methods beyond what fields provide
 SOASKIN(SOAPointSkin, PointFields::x, PointFields::y) {
 	// fall back on defaults...
-	SOASKIN_INHERIT_DEFAULT_METHODS;
+	SOASKIN_INHERIT_DEFAULT_METHODS(SOAPointSkin);
 	// your own constructors etc. go here (if you have any)...
 
 	// we inherit getters/setters from fields
