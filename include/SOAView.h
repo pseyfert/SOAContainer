@@ -173,7 +173,7 @@ namespace SOA {
      *     // can tell them apart
      *     struct x : wrap_type<float> { };
      *     struct y : wrap_type<float> { };
-     * };
+     * }
      *
      * // define the "skin", i.e. the outer guise that the naked members "wear"
      * // to make interaction with the class nice
@@ -1083,7 +1083,7 @@ namespace SOA {
              *     SOASKIN_TRIVIAL(Skin, x, y, z);
              * }
              * // fill container somehow
-             * SOAContainer<std::vector, XYZPoint::Skin> c = getPoints();
+             * SOA::Container<std::vector, XYZPoint::Skin> c = getPoints();
              * // create a view with x and y fields
              * auto viewxy = c.view<XYZPoint::x, XYZPoint::y>();
              * // create a view with x and y fields, but only first half of
@@ -1128,7 +1128,7 @@ namespace SOA {
              *     SOASKIN_TRIVIAL(Skin, x, y, z);
              * }
              * // fill container somehow
-             * SOAContainer<std::vector, XYZPoint::Skin> c = getPoints();
+             * SOA::Container<std::vector, XYZPoint::Skin> c = getPoints();
              * // create a view with x and y fields
              * auto viewxy = c.view<XYZPoint::x, XYZPoint::y>();
              * // create a view with x and y fields, but only first half of
