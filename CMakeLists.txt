@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+project(SOAContainer CXX)
+
+find_package(Boost REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
 
 # C++11 without GNU extensions
 # Requires CMAKE 3.1+ for Mac
@@ -19,8 +23,6 @@ add_compile_options(-pedantic -Wall -Wextra)
 # CMAKE 2
 include_directories(include)
 add_compile_options(-g -O2 -ffast-math -ftree-vectorize -march=native)
-
-project(SOAContainer CXX)
 
 file(GLOB headers include/*)
 
