@@ -3,6 +3,17 @@ add_executable(PointsWithConstructor PointsWithConstructor.cc)
 add_executable(tutorial00 tutorial00.cc)
 add_subdirectory(nbody)
 
+find_package(BOOST QUIET)
+if(${Boost_FOUND})
+  if(${Boost_VERSION} VERSION_GREATER 106199)
+    add_executable(SmallVectorPoints SmallVectorPoints.cc)
+  else()
+    message(STATUS "skipping SmallVectorPoints example because BOOST version is ${Boost_VERSION}, which is older than 1.62.")
+  endif()
+else()
+  message(STATUS "skipping SmallVectorPoints example because BOOST is not available.")
+endif()
+
 # Copyright (C) CERN for the benefit of the LHCb collaboration
 #
 # This program is free software: you can redistribute it and/or modify
