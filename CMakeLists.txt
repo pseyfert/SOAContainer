@@ -24,6 +24,10 @@ add_compile_options(-pedantic -Wall -Wextra)
 include_directories(include)
 add_compile_options(-g -O2 -ffast-math -ftree-vectorize -march=native)
 
+if(${CMAKE_GENERATOR} STREQUAL "Ninja")
+  add_compile_options(-fdiagnostics-color)
+endif()
+
 file(GLOB headers include/*)
 
 enable_testing()
