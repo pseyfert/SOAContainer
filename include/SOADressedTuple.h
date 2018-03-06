@@ -110,6 +110,25 @@ namespace SOA {
             /// use TUPLE's assignment operators where possible
             using TUPLE::operator=;
 
+            /// copy from a naked proxy
+            DressedTuple(const typename CONTAINER::naked_proxy& other) noexcept(
+                    noexcept(TUPLE(typename SOA::Typelist::to_tuple<typename
+                        CONTAINER::fields_typelist>::value_tuple(other)))) :
+                TUPLE(typename SOA::Typelist::to_tuple<typename
+                        CONTAINER::fields_typelist>::value_tuple(other))
+            {}
+            /// (copy) assignment from a naked proxy
+            DressedTuple& operator=(
+                    const typename CONTAINER::naked_proxy& other) noexcept(
+                        noexcept(TUPLE::operator=(typename
+                                SOA::Typelist::to_tuple<typename
+                                CONTAINER::fields_typelist>::value_tuple(other))))
+            {
+                TUPLE::operator=(typename SOA::Typelist::to_tuple<typename
+                        CONTAINER::fields_typelist>::value_tuple(other));
+                return *this;
+            }
+
         private:
             /// helper for fallback constructors
             template <std::size_t... IDXS, typename T>
