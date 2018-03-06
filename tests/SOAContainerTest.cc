@@ -787,13 +787,14 @@ TEST(SOAView, ZipViews) {
 
 namespace PartitionTestDesc {
     SOAFIELD_TRIVIAL(n, n, unsigned);
-    SOASKIN_TRIVIAL(Skin, n);
+    SOAFIELD_TRIVIAL(m, m, unsigned);
+    SOASKIN_TRIVIAL(Skin, n, m);
 }
 
 TEST(SOAContainer, Partition) {
     SOA::Container<std::vector, PartitionTestDesc::Skin> c;
     c.reserve(32);
-    for (unsigned i = 0; i < 32; ++i) c.emplace_back(i);
+    for (unsigned i = 0; i < 32; ++i) c.emplace_back(i, i);
     EXPECT_EQ(c.size(), 32u);
     auto isEven = [] (decltype(c)::value_const_reference a) noexcept { return !(a.n() & 1); }; 
     const auto partitioned0 = std::is_partitioned(c.begin(), c.end(), isEven);
@@ -803,7 +804,7 @@ TEST(SOAContainer, Partition) {
     EXPECT_EQ(partitioned1, true);
     EXPECT_EQ(it1, c.begin() + 16);
     c.clear();
-    for (unsigned i = 0; i < 32; ++i) c.emplace_back(i);
+    for (unsigned i = 0; i < 32; ++i) c.emplace_back(i, i);
     EXPECT_EQ(c.size(), 32u);
     const auto partitioned2 = std::is_partitioned(c.begin(), c.end(), isEven);
     EXPECT_EQ(partitioned2, false);
