@@ -183,32 +183,32 @@ namespace SOA {
 
             /// assign from tuple of member contents
             self_type& operator=(const value_type& other) noexcept(noexcept(
-                        reference(self_type()) == other))
+                        reference(std::declval<self_type>()) == other))
             { reference(*this) = other; return *this; }
 
             /// assign from tuple of member contents (move semantics)
             self_type& operator=(value_type&& other) noexcept(noexcept(
-                        reference(self_type()) == std::move(other)))
+                        reference(std::declval<self_type>()) == std::move(other)))
             { reference(*this) = std::move(other); return *this; }
 
             /// assign from tuple of member contents
             self_type& operator=(const reference& other) noexcept(noexcept(
-                        reference(self_type()) == other))
+                        reference(std::declval<self_type>()) == other))
             { reference(*this) = other; return *this; }
 
             /// assign from tuple of member contents (move semantics)
             self_type& operator=(reference&& other) noexcept(noexcept(
-                        reference(self_type()) == std::move(other)))
+                        reference(std::declval<self_type>()) == std::move(other)))
             { reference(*this) = std::move(other); return *this; }
 
             /// assign from tuple of member contents
             self_type& operator=(const const_reference& other) noexcept(
-                    noexcept(reference(self_type()) == other))
+                    noexcept(reference(std::declval<self_type>()) == other))
             { reference(*this) = other; return *this; }
 
             /// assignment operator (value semantics)
             self_type& operator=(const self_type& other) noexcept(noexcept(
-                        reference(self_type()) = const_reference(other)))
+                        reference(std::declval<self_type>()) = const_reference(other)))
             {
                 if (other.m_storage != m_storage || other.m_index != m_index)
                     reference(*this) = const_reference(other);
@@ -217,7 +217,7 @@ namespace SOA {
 
             /// move assignment operator (value semantics)
             self_type& operator=(self_type&& other) noexcept(noexcept(
-                        reference(self_type()) = std::move(reference(other))))
+                        reference(std::declval<self_type>()) = std::move(reference(other))))
             {
                 if (other.m_storage != m_storage || other.m_index != m_index)
                     reference(*this) = std::move(reference(other));

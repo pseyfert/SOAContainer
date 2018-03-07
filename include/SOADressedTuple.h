@@ -186,9 +186,10 @@ namespace SOA {
             template <typename T>
             typename std::enable_if<is_assignable<TUPLE, T>::value,
                      self_type>::type&
-            operator=(T&& t) noexcept(noexcept(
-                    assign(std::make_index_sequence<tuple_size<T>::value>(),
-                        std::forward<T>(t))))
+            operator=(T&& t) noexcept(noexcept(std::declval<
+                        DressedTuple<TUPLE, CONTAINER> >().assign(
+                            std::make_index_sequence<tuple_size<T>::value>(),
+                            std::forward<T>(t))))
             {
                 if (static_cast<void*>(this) != &t)
                     assign(std::make_index_sequence<tuple_size<T>::value>(),
