@@ -5,6 +5,7 @@
 #include <random>
 #include <cmath>
 #include <tuple>
+#include <array>
 
 using namespace std;
 
