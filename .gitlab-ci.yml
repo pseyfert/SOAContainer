@@ -66,6 +66,36 @@ build_stretch-clang39:
         - (cd builddir; make)
         - (cd builddir; make test)
 
+build_stretch-clang38-libc++:
+    image: debian:stretch
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-3.8 libboost-all-dev libc++-dev
+    stage: build_and_test
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+build_stretch-clang39-libc++:
+    image: debian:stretch
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-3.9 libboost-all-dev libc++-dev
+    stage: build_and_test
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
 build_centos7-clang4:
     image: cern/cc7-base
     before_script:
