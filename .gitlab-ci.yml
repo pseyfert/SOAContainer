@@ -74,10 +74,9 @@ build_centos7-clang4:
         - yum install -q -y git cmake3 make boost-devel devtoolset-7-llvm
     stage: build_and_test
     script:
-        - source /opt/rh/llvm-toolset-7/enable
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake3 -DCMAKE_C_COMPILER=`which clang` -DCMAKE_CXX_COMPILER=`which clang++` ..)
+        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -89,10 +88,36 @@ build_centos7-gcc72:
         - yum install -q -y git cmake3 make boost-devel devtoolset-7-gcc-c++
     stage: build_and_test
     script:
-        - source /opt/rh/devtoolset-7/enable
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake3 -DCMAKE_C_COMPILER=`which gcc` -DCMAKE_CXX_COMPILER=`which g++` ..)
+        - (cd builddir; source /opt/rh/devtoolset-7/enable; cmake3 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
+build_sid-clang40:
+    image: debian:stretch
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-4.0 libboost-all-dev
+    stage: build_and_test
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+build_sid-clang40-libc++:
+    image: debian:stretch
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-4.0 libboost-all-dev libc++-dev
+    stage: build_and_test
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
