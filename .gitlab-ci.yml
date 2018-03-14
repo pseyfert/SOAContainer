@@ -95,7 +95,7 @@ build_centos7-gcc72:
         - (cd builddir; make test)
 
 build_sid-clang40:
-    image: debian:stretch
+    image: debian:sid
     before_script:
         - apt-get update
         - apt-get install -y git cmake clang-4.0 libboost-all-dev
@@ -108,7 +108,7 @@ build_sid-clang40:
         - (cd builddir; make test)
 
 build_sid-clang40-libc++:
-    image: debian:stretch
+    image: debian:sid
     before_script:
         - apt-get update
         - apt-get install -y git cmake clang-4.0 libboost-all-dev libc++-dev
@@ -121,3 +121,88 @@ build_sid-clang40-libc++:
         - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 ..)
         - (cd builddir; make)
         - (cd builddir; make test)
+
+build_sid-clang50:
+    image: debian:sid
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-5.0 libboost-all-dev
+    stage: build_and_test
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+build_sid-clang50-libc++:
+    image: debian:sid
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-5.0 libboost-all-dev libc++-dev
+    stage: build_and_test
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+build_sid-clang60:
+    image: debian:sid
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-6.0 libboost-all-dev
+    stage: build_and_test
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+build_sid-clang60-libc++:
+    image: debian:sid
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-6.0 libboost-all-dev libc++-dev
+    stage: build_and_test
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+build_sid-clang7:
+    image: debian:sid
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-7 libboost-all-dev
+    stage: build_and_test
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+build_sid-clang7-libc++:
+    image: debian:sid
+    before_script:
+        - apt-get update
+        - apt-get install -y git cmake clang-7 libboost-all-dev libc++-dev
+    stage: build_and_test
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
