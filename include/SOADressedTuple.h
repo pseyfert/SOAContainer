@@ -152,10 +152,8 @@ namespace SOA {
             /// fallback constructor to see past dressed tuples
             template <typename... Ts, typename std::enable_if<
                 std::is_constructible<TUPLE, Ts...>::value, int>::type = 0>
-            constexpr DressedTuple(Ts&&... ts) noexcept(
-                    noexcept(DressedTuple(std::make_index_sequence<
-                            sizeof...(Ts)>(), std::forward_as_tuple(
-                                std::forward<Ts>(ts)...)))) :
+            constexpr DressedTuple(Ts&&... ts) noexcept(noexcept(
+                        TUPLE(std::declval<Ts>()...))) :
                 DressedTuple(std::make_index_sequence<sizeof...(Ts)>(),
                         std::forward_as_tuple(std::forward<Ts>(ts)...))
             {}
@@ -163,10 +161,8 @@ namespace SOA {
             /// fallback constructor to see past dressed tuples
             template <typename... Ts, typename DUMMY = typename std::enable_if<
                 is_constructible<TUPLE, std::tuple<Ts...> >::value, int>::type>
-            constexpr DressedTuple(Ts&&... ts, DUMMY = 0) noexcept(
-                    noexcept(DressedTuple(std::make_index_sequence<
-                            sizeof...(Ts)>(), std::forward_as_tuple(
-                                std::forward<Ts>(ts)...)))) :
+            constexpr DressedTuple(Ts&&... ts, DUMMY = 0) noexcept(noexcept(
+                        TUPLE(std::declval<Ts>()...))) :
                 DressedTuple(std::make_index_sequence<sizeof...(Ts)>(),
                         std::forward_as_tuple(std::forward<Ts>(ts)...))
             {}
