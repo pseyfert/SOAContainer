@@ -577,11 +577,11 @@ TEST (SOAView, SimpleTests) {
     }
     // check that we can access the underlying ranges
     auto rx = view.range<field_x>();
-    EXPECT_EQ(rx.size(), view.size());
+    EXPECT_EQ(std::size_t(rx.size()), std::size_t(view.size()));
     EXPECT_EQ(&vx.front(), &rx.front());
     // check subranges
     auto rxsub = view.range<field_x>(view.begin() + 1, view.end());
-    EXPECT_EQ(rxsub.size() + 1, view.size());
+    EXPECT_EQ(std::size_t(rxsub.size()) + 1, std::size_t(view.size()));
     EXPECT_EQ(&*(vx.begin() + 1), &rxsub.front());
 }
 

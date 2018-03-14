@@ -567,7 +567,7 @@ namespace SOA {
                     size_type m_sz;
                     template <typename T>
                     void operator()(const T& range) const {
-                        if (m_sz != range.size())
+                        if (m_sz != size_type(range.size()))
                             throw std::logic_error("_View: range sizes must match!");
                     }
                 };
@@ -696,7 +696,7 @@ namespace SOA {
             {
                 // verify size of ranges
                 SOA::Utils::map(typename impl_detail::rangeSizeCheckHelper{
-                            std::get<0>(m_storage).size()}, m_storage);
+                            size_type(std::get<0>(m_storage).size())}, m_storage);
             }
             /// copy constructor
             _View(const self_type& other) = default;

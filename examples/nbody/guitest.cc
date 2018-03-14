@@ -23,7 +23,7 @@ class Animator: public TTimer, NBody<MASSPOINTS>
 {
     public:
 	Animator(int t) : TTimer(t), NBody<MASSPOINTS>() {  
-	    markers = make_unique<TPolyMarker3D>(this->nbentries);
+	    markers = std::make_unique<TPolyMarker3D>(this->nbentries);
 	    markers->SetMarkerSize(1);
 	    markers->SetMarkerColor(kWhite);
 	    markers->SetMarkerStyle(1);
