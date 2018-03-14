@@ -81,3 +81,17 @@ build_stretch-clang39:
         - (cd builddir; make)
         - (cd builddir; make test)
 
+build_centos7-clang4:
+    image: cern/cc7-base
+    before_script:
+        - yum update -y
+        - yum install -y git cmake3 make root root-* boost-devel devtoolset-7-llvm
+    stage: build_and_test
+    script:
+        - source /opt/rh/llvm-toolset-7/enable
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake3 -DCMAKE_C_COMPILER=`which clang` -DCMAKE_CXX_COMPILER=`which clang++` ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
