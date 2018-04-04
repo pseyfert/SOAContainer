@@ -42,7 +42,7 @@ namespace SOA {
             /// look for first NEEDLE in HAYSTACK (base case, out of HAYSTACK)
             template <typename NEEDLE, std::size_t IDX>
             struct first_index<NEEDLE, IDX> : std::integral_constant<
-                std::size_t, -1> {};
+                std::size_t, -std::size_t(1)> {};
             template <typename NEEDLE, std::size_t IDX, typename STRAW,
                      typename... HAYSTACK>
             /// look for first NEEDLE in HAYSTACK (recursion)
