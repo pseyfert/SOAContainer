@@ -2,10 +2,7 @@ stages:
     - build_and_test
 
 build_jessie-gcc48:
-    image: debian:jessie
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake g\+\+-4.8 libboost-all-dev
+    image: malaschiller/debian-jessie-dev:latest
     stage: build_and_test
     script:
         - git submodule update --init
@@ -15,10 +12,7 @@ build_jessie-gcc48:
         - (cd builddir; make test)
 
 build_jessie-gcc49:
-    image: debian:jessie
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake g\+\+-4.9 libboost-all-dev
+    image: malaschiller/debian-jessie-dev:latest
     stage: build_and_test
     script:
         - git submodule update --init
@@ -28,10 +22,7 @@ build_jessie-gcc49:
         - (cd builddir; make test)
 
 build_stretch-gcc63:
-    image: debian:stretch
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake g\+\+-6 libboost-all-dev
+    image: malaschiller/debian-stretch-dev:latest
     stage: build_and_test
     script:
         - git submodule update --init
@@ -41,10 +32,7 @@ build_stretch-gcc63:
         - (cd builddir; make test)
 
 build_stretch-clang38:
-    image: debian:stretch
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake clang-3.8 libboost-all-dev
+    image: malaschiller/debian-stretch-dev:latest
     stage: build_and_test
     script:
         - git submodule update --init
@@ -54,10 +42,7 @@ build_stretch-clang38:
         - (cd builddir; make test)
 
 build_stretch-clang39:
-    image: debian:stretch
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake clang-3.9 libboost-all-dev
+    image: malaschiller/debian-stretch-dev:latest
     stage: build_and_test
     script:
         - git submodule update --init
@@ -67,10 +52,7 @@ build_stretch-clang39:
         - (cd builddir; make test)
 
 build_stretch-clang38-libc++:
-    image: debian:stretch
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake clang-3.8 libboost-all-dev libc++-dev
+    image: malaschiller/debian-stretch-dev:latest
     stage: build_and_test
     script:
         - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
@@ -82,10 +64,7 @@ build_stretch-clang38-libc++:
         - (cd builddir; make test)
 
 build_stretch-clang39-libc++:
-    image: debian:stretch
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake clang-3.9 libboost-all-dev libc++-dev
+    image: malaschiller/debian-stretch-dev:latest
     stage: build_and_test
     script:
         - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
@@ -97,11 +76,7 @@ build_stretch-clang39-libc++:
         - (cd builddir; make test)
 
 build_centos7-clang4:
-    image: cern/cc7-base
-    before_script:
-        - yum -q -y install deltarpm
-        - yum update -q -y
-        - yum install -q -y git cmake3 make boost-devel devtoolset-7-llvm
+    image: malaschiller/centos7-dev:latest
     stage: build_and_test
     script:
         - git submodule update --init
@@ -111,11 +86,7 @@ build_centos7-clang4:
         - (cd builddir; make test)
 
 build_centos7-gcc72:
-    image: cern/cc7-base
-    before_script:
-        - yum -q -y install deltarpm
-        - yum update -q -y
-        - yum install -q -y git cmake3 make boost-devel devtoolset-7-gcc-c++
+    image: malaschiller/centos7-dev:latest
     stage: build_and_test
     script:
         - git submodule update --init
@@ -125,10 +96,7 @@ build_centos7-gcc72:
         - (cd builddir; make test)
 
 build_sid-clang40:
-    image: debian:sid
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake clang-4.0 libboost-all-dev
+    image: malaschiller/debian-sid-dev:latest
     stage: build_and_test
     script:
         - git submodule update --init
@@ -138,10 +106,7 @@ build_sid-clang40:
         - (cd builddir; make test)
 
 build_sid-clang40-libc++:
-    image: debian:sid
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake clang-4.0 libboost-all-dev libc++-dev
+    image: malaschiller/debian-sid-dev:latest
     stage: build_and_test
     script:
         - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
@@ -153,10 +118,7 @@ build_sid-clang40-libc++:
         - (cd builddir; make test)
 
 build_sid-clang50:
-    image: debian:sid
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake clang-5.0 libboost-all-dev
+    image: malaschiller/debian-sid-dev:latest
     stage: build_and_test
     script:
         - git submodule update --init
@@ -166,10 +128,7 @@ build_sid-clang50:
         - (cd builddir; make test)
 
 build_sid-clang50-libc++:
-    image: debian:sid
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake clang-5.0 libboost-all-dev libc++-dev
+    image: malaschiller/debian-sid-dev:latest
     stage: build_and_test
     script:
         - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
@@ -181,10 +140,7 @@ build_sid-clang50-libc++:
         - (cd builddir; make test)
 
 build_sid-clang60:
-    image: debian:sid
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake clang-6.0 libboost-all-dev
+    image: malaschiller/debian-sid-dev:latest
     stage: build_and_test
     script:
         - git submodule update --init
@@ -194,10 +150,7 @@ build_sid-clang60:
         - (cd builddir; make test)
 
 build_sid-clang60-libc++:
-    image: debian:sid
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake clang-6.0 libboost-all-dev libc++-dev
+    image: malaschiller/debian-sid-dev:latest
     stage: build_and_test
     script:
         - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
@@ -209,10 +162,7 @@ build_sid-clang60-libc++:
         - (cd builddir; make test)
 
 build_sid-clang7:
-    image: debian:sid
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake clang-7 libboost-all-dev
+    image: malaschiller/debian-sid-dev:latest
     stage: build_and_test
     script:
         - git submodule update --init
@@ -222,10 +172,7 @@ build_sid-clang7:
         - (cd builddir; make test)
 
 build_sid-clang7-libc++:
-    image: debian:sid
-    before_script:
-        - apt-get update
-        - apt-get install -y git cmake clang-7 libboost-all-dev libc++-dev
+    image: malaschiller/debian-sid-dev:latest
     stage: build_and_test
     script:
         - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
