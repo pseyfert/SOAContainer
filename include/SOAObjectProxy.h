@@ -146,11 +146,11 @@ namespace SOA {
 
         public:
             /// default constructor
-            ObjectProxy() noexcept = default;
+            ObjectProxy() = default;
             /// copy constructor
-            ObjectProxy(const self_type& other) noexcept = default;
+            ObjectProxy(const self_type& other) = default;
             /// move constructor
-            ObjectProxy(self_type&& other) noexcept = default;
+            ObjectProxy(self_type&& other) = default;
 
             /// convert to tuple of member contents
             operator value_type() const noexcept(noexcept(

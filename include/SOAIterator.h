@@ -83,12 +83,12 @@ namespace SOA {
 
         public:
             /// default constructor (nullptr equivalent)
-            ConstIterator() noexcept = default;
+            ConstIterator() = default;
 
             /// copy constructor
-            ConstIterator(const self_type& other) noexcept = default;
+            ConstIterator(const self_type& other) = default;
             /// move constructor
-            ConstIterator(self_type&& other) noexcept = default;
+            ConstIterator(self_type&& other) = default;
 
             /// assignment
             self_type& operator=(const self_type& other) noexcept
@@ -305,17 +305,17 @@ namespace SOA {
 
         public:
             /// default constructor (nullptr equivalent)
-            Iterator() noexcept = default;
+            Iterator() = default;
 
             /// copy constructor
-            Iterator(const self_type& other) noexcept = default;
+            Iterator(const self_type& other) = default;
             /// move constructor
-            Iterator(self_type&& other) noexcept = default;
+            Iterator(self_type&& other) = default;
 
             /// assignment
-            self_type& operator=(const self_type& other) noexcept = default;
+            self_type& operator=(const self_type& other) = default;
             /// assignment (move semantics)
-            self_type& operator=(self_type&& other) noexcept = default;
+            self_type& operator=(self_type&& other) = default;
 
             /// deference pointer (*p)
             reference operator*() noexcept
