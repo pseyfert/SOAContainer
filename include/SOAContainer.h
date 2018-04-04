@@ -194,6 +194,22 @@ namespace SOA {
                 typename SOA::Typelist::to_tuple<SOA::Typelist::typelist<FIELDS...>
                          >::template container_tuple<CONTAINER>,
                 SKIN, FIELDS...>;
+
+            /// disable capacity for underlying containers that don't have it
+            template<typename T, typename = void>
+            struct has_capacity : std::false_type {};
+            /// enable capacity for underlying containers that do have it
+            template <typename T>
+            struct has_capacity<T, std::void_t<decltype(
+                    std::declval<T>().capacity())> > : std::true_type {};
+            /// disable reserve for underlying containers that don't have it
+            template<typename T, typename = void>
+            struct has_reserve: std::false_type {};
+            /// enable reserve for underlying containers that do have it
+            template <typename T>
+            struct has_reserve<T, std::void_t<decltype(
+                    std::declval<T>().reserve(1))> > : std::true_type {};
+
         public:
             /// type for sizes
             using size_type = typename BASE::size_type;
@@ -305,7 +321,11 @@ namespace SOA {
             }
 
             /// reserve space for at least sz elements
-            void reserve(size_type sz) noexcept(noexcept(
+            template <typename DUMMY = int, typename CONT =
+                decltype(std::get<0>(std::declval<SOAStorage>()))>
+            void reserve(size_type sz, DUMMY = 0,
+                    typename std::enable_if<has_reserve<
+                    CONT>::value>::type* = nullptr) noexcept(noexcept(
                 SOA::Utils::map(
                         typename SOA::impl::reserveHelper<size_type>{sz},
                         std::declval<self_type*>()->m_storage)))
@@ -315,7 +335,10 @@ namespace SOA {
             }
 
             /// return capacity of container
-            size_type capacity() const
+            template <typename DUMMY = int, typename CONT =
+                decltype(std::get<0>(std::declval<SOAStorage>()))>
+            size_type capacity(DUMMY = 0, typename std::enable_if<
+                    has_capacity<CONT>::value>::type* = nullptr)
             {
                 return SOA::Utils::foldl<size_type>(
                         [] (size_type a, size_type b) noexcept
