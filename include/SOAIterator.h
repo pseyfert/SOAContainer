@@ -83,7 +83,7 @@ namespace SOA {
 
         public:
             /// default constructor (nullptr equivalent)
-            ConstIterator() noexcept : ConstIterator(nullptr, 0) { }
+            ConstIterator() noexcept = default;
 
             /// copy constructor
             ConstIterator(const self_type& other) noexcept = default;
@@ -305,7 +305,7 @@ namespace SOA {
 
         public:
             /// default constructor (nullptr equivalent)
-            Iterator() noexcept : Iterator(nullptr, 0) { }
+            Iterator() noexcept = default;
 
             /// copy constructor
             Iterator(const self_type& other) noexcept = default;
@@ -313,11 +313,9 @@ namespace SOA {
             Iterator(self_type&& other) noexcept = default;
 
             /// assignment
-            self_type& operator=(const self_type& other) noexcept
-            { ConstIterator<proxy>::operator=(other); return *this; }
+            self_type& operator=(const self_type& other) noexcept = default;
             /// assignment (move semantics)
-            self_type& operator=(self_type&& other) noexcept
-            { ConstIterator<proxy>::operator=(std::move(other)); return *this; }
+            self_type& operator=(self_type&& other) noexcept = default;
 
             /// deference pointer (*p)
             reference operator*() noexcept

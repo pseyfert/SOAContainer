@@ -71,8 +71,8 @@ namespace SOA {
             /// typelist of fields
             using fields_typelist = typename parent_type::fields_typelist;
 
-            SOAStorage* m_storage;  ///< underlying SOA storage of members
-            size_type m_index;      ///< index into underlying SOA storage
+            SOAStorage* m_storage = nullptr;  ///< underlying SOA storage of members
+            size_type m_index = 0;            ///< index into underlying SOA storage
 
             // _Container is allowed to invoke the private constructor
             friend parent_type;
