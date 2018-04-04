@@ -15,9 +15,6 @@
 namespace SOA {
     /// implementation details for convenient SOA fields
     namespace impl {
-        // forward decl.
-        struct dummy;
-
         /** @brief class from which a field tag derives
          *
          * @tparam T            type of the field

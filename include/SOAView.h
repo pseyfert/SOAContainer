@@ -543,7 +543,7 @@ namespace SOA {
              * of typedefs, inheritance, templates and friend declarations (and
              * insist that that constructor is protected, despite a friend
              * declaration), we work around that limitation by requiring safe code
-             * to supply a dummy struct of a type that the user cannot instantiate
+             * to supply a dummy union of a type that the user cannot instantiate
              * or even see.
              */
             using its_safe_tag = union {};

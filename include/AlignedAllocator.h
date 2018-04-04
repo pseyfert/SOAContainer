@@ -50,9 +50,9 @@ class AlignedAllocator {
 
     public:
         /// constructor
-        AlignedAllocator() {}
+        AlignedAllocator() = default;
         /// copy constructor
-        AlignedAllocator(const AlignedAllocator<T, ALIGN>&) {}
+        AlignedAllocator(const AlignedAllocator<T, ALIGN>&) = default;
         /// rebinding constructor
         template <typename U>
         AlignedAllocator(const AlignedAllocator<U, ALIGN>&) {}
