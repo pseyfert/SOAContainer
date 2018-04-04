@@ -30,7 +30,7 @@ void benchmark()
 }
 
 
-int main(int argc, char *argv[])
+int main(int /* argc */, char * /* argv */ [])
 {
     std::cout << "Running AOS code:" << std::endl;
     benchmark<MPoints>();
