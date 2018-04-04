@@ -12,91 +12,74 @@
 #ifndef SOATYPELIST_H
 #define SOATYPELIST_H
 
+#include <tuple>
 #include <cstdint>
 #include <type_traits>
+
+#include "c++14_compat.h"
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {
     /// namespace for typelist type used by Container and related utilities
     namespace Typelist {
         // forward declarations
-        namespace typelist_impl { struct empty_typelist; }
-        template <typename HEAD = typelist_impl::empty_typelist, typename... ARGS>
-        struct typelist;
-    
         namespace typelist_impl {
-        /// the empty typelist
-        struct empty_typelist {
-            /// typelist empty?
-            constexpr static bool empty() noexcept { return true; }
-            /// size of typelist
-            constexpr static std::size_t size() noexcept { return 0; }
-            /// no types at any indices!
-            template <std::size_t IDX> struct at {};
-            /// find a type, return its index, or -1 if not found
-            template <typename T, std::size_t = 0>
-            constexpr static std::size_t find() noexcept
-            { return -1; }
-            template <typename T>
-            constexpr static std::size_t count() noexcept { return 0; }
-        };
-    
-        /// little switch for typelist
-        template <std::size_t LEN, typename... ARGS> struct __typelist {
-            using type = typelist<ARGS...>;
-        };
-        /// little switch for typelist (specialisation)
-        template <typename... ARGS> struct __typelist<0, ARGS...> {
-            using type = empty_typelist;
-        };
+            /// sum up an empty index_sequence
+            constexpr std::size_t sum(std::index_sequence<>) noexcept
+            { return 0; }
+            /// sum up a one-element index_sequence
+            template <std::size_t INIT>
+            constexpr std::size_t sum(std::index_sequence<INIT>) noexcept
+            { return INIT; }
+            /// sum up an index_sequence
+            template <std::size_t INIT, std::size_t... ARGS>
+            constexpr std::size_t sum(std::index_sequence<INIT, ARGS...>) noexcept
+            { return INIT + sum(std::index_sequence<ARGS...>{}); }
+
+            /// look for first NEEDLE in HAYSTACK
+            template <typename NEEDLE, std::size_t IDX, typename... HAYSTACK>
+            struct first_index;
+            /// look for first NEEDLE in HAYSTACK (base case, out of HAYSTACK)
+            template <typename NEEDLE, std::size_t IDX>
+            struct first_index<NEEDLE, IDX> : std::integral_constant<
+                std::size_t, -1> {};
+            template <typename NEEDLE, std::size_t IDX, typename STRAW,
+                     typename... HAYSTACK>
+            /// look for first NEEDLE in HAYSTACK (recursion)
+            struct first_index<NEEDLE, IDX, STRAW, HAYSTACK...> :
+                std::integral_constant<std::size_t, std::is_same<
+                NEEDLE, STRAW>::value ? IDX : first_index<NEEDLE,
+                IDX + 1, HAYSTACK...>::value> {};
         } // namespace typelist_impl
-    
-        template <typename HEAD, typename... ARGS>
+
+        /// a very simple type list
+        template <typename... ARGS>
         struct typelist {
-            /// first element
-            using head_type = HEAD;
-            /// typelist empty?
+            /// return if typelist is empty
             constexpr static bool empty() noexcept
-            { return std::is_same<HEAD, typelist_impl::empty_typelist>::value; }
-            /// size of typelist
+            { return 0 == sizeof...(ARGS); }
+            /// return number of elements in typelist
             constexpr static std::size_t size() noexcept
-            { return (!empty()) + sizeof...(ARGS); }
-            /// tail typelist
-            using tail_types = typename typelist_impl::__typelist<size(), ARGS...>::type;
-            /// return type at index IDX
-            template <std::size_t IDX, bool PASTEND =
-                (IDX >= typelist<HEAD, ARGS...>::size()), int DUMMY = 0>
-            struct at;
-            /// specialisation: short-circuit reads past end of list early
-            template <std::size_t IDX, int DUMMY> struct at<IDX, true, DUMMY> {};
-            /// specialisation: specialisation for reading types at valid indices
-            template <std::size_t IDX, int DUMMY> struct at<IDX, false, DUMMY>
-            { using type = typename tail_types::template at<IDX - 1>::type; };
-            /// specialisation: specialisation for reading types at valid indices
-            template <int DUMMY> struct at<0, false, DUMMY>
-            { using type = head_type; };
-            /// find a type, return its index, or -1 if not found
-            template <typename T, std::size_t OFS = 0>
-            constexpr static std::size_t find() noexcept
-            {
-                return std::is_same<T, head_type>::value ? OFS :
-                    tail_types::template find<T, OFS + 1>();
-            }
-            /// count how often T appears in the type list
+            { return sizeof...(ARGS); }
+            /// get type at index IDX
+            template <std::size_t IDX>
+            struct at : std::tuple_element<
+                        IDX, std::tuple<ARGS...> > {};
+            /// count how often T occurs in typelist
             template <typename T>
             constexpr static std::size_t count() noexcept
             {
-                return std::is_same<T, HEAD>::value +
-                    tail_types::template count<T>();
+                return typelist_impl::sum(std::index_sequence<
+                        std::is_same<T, ARGS>::value...>{});
             }
+            /// find index of first occurrence of T, -1 otherwise
+            template <typename T>
+            constexpr static std::size_t find() noexcept
+            { return typelist_impl::first_index<T, 0, ARGS...>::value; }
             /// little helper to map over the types in the typelist
             template <template <typename ARG> class OP>
-            using map_t = typelist<OP<HEAD>, OP<ARGS>...>;
-            // make sure we construct only valid typelists
-            static_assert(!empty() || (empty() && 0 == size()),
-                    "typelist: head empty_typelist with non-empty tail not allowed!");
+            using map_t = typelist<OP<ARGS>...>;
         };
-        template<> struct typelist<typelist_impl::empty_typelist, typelist_impl::empty_typelist> : typelist_impl::empty_typelist {};
     
         /// check basic properties to validate implementation
         namespace __impl_compile_time_tests {
