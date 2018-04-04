@@ -27,10 +27,6 @@ namespace SOA {
             /// sum up an empty index_sequence
             constexpr std::size_t sum(std::index_sequence<>) noexcept
             { return 0; }
-            /// sum up a one-element index_sequence
-            template <std::size_t INIT>
-            constexpr std::size_t sum(std::index_sequence<INIT>) noexcept
-            { return INIT; }
             /// sum up an index_sequence
             template <std::size_t INIT, std::size_t... ARGS>
             constexpr std::size_t sum(std::index_sequence<INIT, ARGS...>) noexcept
