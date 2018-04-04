@@ -455,12 +455,14 @@ namespace SOA {
                     "need to supply at least one field");
                 /// little helper to verify the FIELDS template parameter
                 template <typename T>
-                struct is_pod_or_wrapped : std::integral_constant<bool,
-                    std::is_pod<T>::value ||
-                    SOA::Typelist::is_wrapped<T>::value> {};
+                constexpr static bool is_pod_or_wrapped() noexcept
+                {
+                    return std::is_pod<T>::value ||
+                        SOA::Typelist::is_wrapped<T>::value;
+                }
                 // and check that all fields are either pod or wrapped
                 static_assert(SOA::Utils::ALL(
-                            is_pod_or_wrapped<FIELDS>::value...),
+                            is_pod_or_wrapped<FIELDS>()...),
                     "Fields should be either plain old data (POD) or "
                     "wrapped types.");
 
@@ -470,8 +472,9 @@ namespace SOA {
                         "Number of fields does not match storage.");
                 /// little helper: check if element in a tuple F matches field
                 template <size_t N, class T, typename FIELD>
-                struct verify_storage_element : public std::integral_constant<bool,
-                    std::is_same<typename contained_type<
+                constexpr static bool verify_storage_element() noexcept
+                {
+                    return std::is_same<typename contained_type<
                         typename std::tuple_element<N, T>::type>::type,
                         SOA::Typelist::unwrap_t<FIELD> >::value ||
                     std::is_same<typename std::remove_cv<typename contained_type<
@@ -480,56 +483,40 @@ namespace SOA {
                     std::is_same<typename std::remove_cv<
                         typename std::remove_reference<typename contained_type<
                         typename std::tuple_element<N, T>::type>::type>::type>::type,
-                        SOA::Typelist::unwrap_t<FIELD> >::value> {};
+                        SOA::Typelist::unwrap_t<FIELD> >::value;
+                }
 
-                /// little helper verifying the storage matches the fields
-                template <size_t N, class T, typename... ARGS>
-                struct verify_storage;
-                /// specialisation for > 1 field
-                template <size_t N, class T, typename HEAD, typename... TAIL>
-                struct verify_storage<N, T, HEAD, TAIL...> : public
-                    std::integral_constant<bool,
-                        verify_storage_element<N, T, HEAD>::value &&
-                        verify_storage<N + 1, T, TAIL...>::value> { };
-                /// specialisation for one field
-                template <size_t N, class T, typename HEAD>
-                struct verify_storage<N, T, HEAD> : public
-                    std::integral_constant<bool,
-                        verify_storage_element<N, T, HEAD>::value> { };
-                /// specialisation for empty tuples
-                template <size_t N, typename... ARGS>
-                struct verify_storage<N, std::tuple<>, ARGS...> :
-                    public std::false_type { };
+                template <typename T, std::size_t... IDXS>
+                constexpr static bool verify_storage(std::index_sequence<IDXS...>) noexcept
+                {
+                    return ALL(verify_storage_element<IDXS, T, FIELDS>()...);
+                }
+
                 // make sure the storage matches the fields provided
-                static_assert(verify_storage<0, STORAGE, FIELDS...>::value,
+                static_assert(verify_storage<STORAGE>(
+                            std::make_index_sequence<sizeof...(FIELDS)>{}),
                         "Type of provided storage must match fields.");
             };
 
             /// work out if what is contained in a range is constant
             template <typename RANGE>
-            struct is_contained_constant : std::integral_constant<bool,
-                std::is_const<RANGE>::value || std::is_const<
-                    typename contained_type<RANGE>::type>::value> { };
+            constexpr static bool is_contained_constant() noexcept
+            {
+                return std::is_const<RANGE>::value || std::is_const<
+                    typename contained_type<RANGE>::type>::value;
+            }
 
             /// is any field a constant range?
-            template <typename... ARGS>
-            struct _is_any_field_constant : std::integral_constant<bool,
-                SOA::Utils::ANY(is_contained_constant<ARGS>::value...)> { };
-
-            /// helper for _is_any_field_constant: extract parameter pack
             template <template <typename...> class T, typename... ARGS>
             constexpr static bool is_any_field_constant(const T<ARGS...>*) noexcept
-            { return _is_any_field_constant<ARGS...>::value; }
+            { return SOA::Utils::ANY(is_contained_constant<ARGS>()...); }
 
             /// record if the _View should be a const one
-            enum {
-                is_constant = _View<STORAGE, SKIN, FIELDS...
-                    >::is_any_field_constant(static_cast<const STORAGE*>(nullptr))
-            };
+            constexpr static bool is_constant = is_any_field_constant(static_cast<const STORAGE*>(nullptr));
 
         public:
             /// type to tag this as a SOA::View
-            using view_tag = struct {};
+            using view_tag = void;
             /// type to represent sizes and indices
             using size_type = std::size_t;
             /// type to represent differences of indices
@@ -559,7 +546,7 @@ namespace SOA {
              * to supply a dummy struct of a type that the user cannot instantiate
              * or even see.
              */
-            using its_safe_tag = struct {};
+            using its_safe_tag = union {};
             /// implementation details
             struct impl_detail {
                 /// little helper to check range sizes at construction time

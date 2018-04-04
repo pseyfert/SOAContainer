@@ -292,7 +292,7 @@ namespace SOA {
 
         namespace test {
             struct no_view {};
-            struct a_view { using view_tag = struct {}; };
+            struct a_view { using view_tag = void; };
             static_assert(!is_view<no_view>::value &&
                     is_view<a_view>::value,
                     "Implementation bug in is_view");

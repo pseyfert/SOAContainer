@@ -8,11 +8,16 @@
 #define SOATYPELISTUTILS_H
 
 #include <tuple>
-#include <vector>
 
 #include "SOATypelist.h"
 #include "AlignedAllocator.h"
 #include "c++14_compat.h"
+
+// forward decl
+namespace std {
+    template <typename, typename> class vector;
+    template <typename, typename> class deque;
+}
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {
@@ -29,10 +34,10 @@ namespace SOA {
         template<typename T, bool DUMMY = is_wrapped<T>::value> struct wrap_type;
         /// specialisation: wrapping a wrap_type results in the type itself
         template<typename T> struct wrap_type<T, true>
-        { using wrap_tag = struct {}; using type = typename T::type; };
+        { using wrap_tag = void; using type = typename T::type; };
         /// specialisation: wrap a type
         template<typename T> struct wrap_type<T, false>
-        { using wrap_tag = struct {}; using type = T; };
+        { using wrap_tag = void; using type = T; };
         /// little helper to "unwrap" wrapped types (wrap_type, see above)
         template <typename T> using unwrap_t = typename wrap_type<T>::type;
 
@@ -77,10 +82,19 @@ namespace SOA {
             struct select_concrete_container {
                 using _t = CONTAINER<T>;
             };
-            /// specialisation: std::vectors are cache-line aligned by default
+            /* specialisations: std::vectors and std::deque
+             * allocations are cache-line aligned by default
+             *
+             * pity deque's iterators are too complex to be understood by the
+             * compiler in most STL implementations I've seen...
+             */
             template <typename T>
             struct select_concrete_container<T, std::vector> {
                 using _t = std::vector<T, CacheLineAlignedAllocator<T> >;
+            };
+            template <typename T>
+            struct select_concrete_container<T, std::deque> {
+                using _t = std::deque<T, CacheLineAlignedAllocator<T> >;
             };
         }
 

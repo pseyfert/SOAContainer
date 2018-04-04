@@ -64,7 +64,7 @@ namespace SOA {
                     typename FIELDS::template accessors<SkinBase, SOA::Typelist::typelist<FIELDS...>, BASE> >::value...),
                     "Field accessors may not contain data or virtual methods!");
             /// inform the framework that we're a skin
-            using skin_tag = struct {};
+            using skin_tag = void;
             /// we're the base class underlying classes that inherit from us
             using base_type = SkinBase;
             /// typelist listing all fields

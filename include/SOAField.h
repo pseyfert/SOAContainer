@@ -35,7 +35,7 @@ namespace SOA {
                 /// the field tag itself
                 using self_type = FIELD;
                 /// tell Container/View that we wrap a type
-                using wrap_tag = struct {};
+                using wrap_tag = void;
                 /// type we wrap
                 using type = T;
             protected:
