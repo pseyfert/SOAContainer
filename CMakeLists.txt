@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(SOAContainer CXX)
 
-find_package(Boost REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
-
 # C++11 without GNU extensions
 # Requires CMAKE 3.1+ for Mac
 if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} LESS 3.1)

@@ -93,8 +93,22 @@ namespace SOA {
                 using _t = std::vector<T, CacheLineAlignedAllocator<T> >;
             };
             template <typename T>
-            struct select_concrete_container<T, std::deque> {
+            struct select_concrete_container<T, std::deque>
+            {
                 using _t = std::deque<T, CacheLineAlignedAllocator<T> >;
+#if __cplusplus >= 201402L // be nice an give users a hint
+                // a deque-like data structure to back the SOA::Container
+                // or SOA::View is not a bad idea in principle, but I haven't
+                // seen good code from current implementations - maybe
+                // somebody writes a custom deque which the compiler will
+                // basically optimize away...
+                [[deprecated("std::deque performance is bad in all STL "
+                        "implementations I have seen (libstdc++, libc++), "
+                        "since the compiler doesn't " "seem to optimize "
+                        "out the iterators, and hence does not vectorize")]]
+                constexpr static inline int __bad() { return 0; }
+                enum { _bad = __bad() };
+#endif
             };
         }
 
