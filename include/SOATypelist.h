@@ -28,24 +28,25 @@ namespace SOA {
             constexpr std::size_t sum(std::index_sequence<>) noexcept
             { return 0; }
             /// sum up an index_sequence
-            template <std::size_t INIT, std::size_t... ARGS>
-            constexpr std::size_t sum(std::index_sequence<INIT, ARGS...>) noexcept
-            { return INIT + sum(std::index_sequence<ARGS...>{}); }
+            template <std::size_t HEAD, std::size_t... TAIL>
+            constexpr std::size_t sum(std::index_sequence<HEAD, TAIL...>) noexcept
+            { return HEAD + sum(std::index_sequence<TAIL...>{}); }
 
-            /// look for first NEEDLE in HAYSTACK
-            template <typename NEEDLE, std::size_t IDX, typename... HAYSTACK>
-            struct first_index;
-            /// look for first NEEDLE in HAYSTACK (base case, out of HAYSTACK)
-            template <typename NEEDLE, std::size_t IDX>
-            struct first_index<NEEDLE, IDX> : std::integral_constant<
-                std::size_t, -std::size_t(1)> {};
-            template <typename NEEDLE, std::size_t IDX, typename STRAW,
-                     typename... HAYSTACK>
-            /// look for first NEEDLE in HAYSTACK (recursion)
-            struct first_index<NEEDLE, IDX, STRAW, HAYSTACK...> :
-                std::integral_constant<std::size_t, std::is_same<
-                NEEDLE, STRAW>::value ? IDX : first_index<NEEDLE,
-                IDX + 1, HAYSTACK...>::value> {};
+            /// look for first T in LIST
+            template <typename T, typename... LIST> struct first_index;
+            // base case: return -1: no T in empty list
+            template <typename T> struct first_index<T> :
+                std::integral_constant<std::size_t, std::size_t(-1)> {};
+            // base case: found T at beginning of list
+            template <typename T, typename... TAIL>
+            struct first_index<T, T, TAIL...> :
+                std::integral_constant<std::size_t, 0> {};
+            // recursion case: either found or not found in tail of list
+            template <typename T, typename HEAD, typename... TAIL>
+            struct first_index<T, HEAD, TAIL...> :
+                std::integral_constant<std::size_t,
+                std::size_t(-1 != first_index<T, TAIL...>::value) +
+                    first_index<T, TAIL...>::value> {};
         } // namespace typelist_impl
 
         /// a very simple type list
@@ -71,12 +72,12 @@ namespace SOA {
             /// find index of first occurrence of T, -1 otherwise
             template <typename T>
             constexpr static std::size_t find() noexcept
-            { return typelist_impl::first_index<T, 0, ARGS...>::value; }
+            { return typelist_impl::first_index<T, ARGS...>::value; }
             /// little helper to map over the types in the typelist
             template <template <typename ARG> class OP>
             using map_t = typelist<OP<ARGS>...>;
         };
-    
+
         /// check basic properties to validate implementation
         namespace __impl_compile_time_tests {
             template <typename T> using add_const_t = const T;
