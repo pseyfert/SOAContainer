@@ -13,6 +13,12 @@
 #include <stdexcept>
 #include <type_traits>
 
+#ifndef __GNUC__
+#define __builtin_expect(c, val) ((c))
+#else // __GNUC__
+// gnu/clang/... and friends have __builtin_expect
+#endif // __GNUC__
+
 namespace SOA {
     /** @brief your standard, dumb iterator range
      *
@@ -60,7 +66,7 @@ namespace SOA {
             ~iterator_range() = default;
             /// construct from a pair of iterators
             template <typename ITFWD>
-            explicit iterator_range(ITFWD&& first, ITFWD&& last,
+            constexpr explicit iterator_range(ITFWD&& first, ITFWD&& last,
                     typename std::enable_if<std::is_same<
                     typename std::decay<ITFWD>::type,
                     typename std::decay<ITFWD>::type>::value>* = nullptr) :
@@ -68,56 +74,88 @@ namespace SOA {
                 m_last(std::forward<ITFWD>(last)) {}
 
             /// is range empty
-            bool empty() const { return m_last == m_first; }
+            constexpr bool empty() const { return m_last == m_first; }
             /// size of range
-            size_type size() const
+            constexpr size_type size() const
             { return std::distance(m_first, m_last); }
             /// element at position idx
-            reference operator[](std::size_t idx) const
-            {
-                auto p = m_first;
-                std::advance(p, idx);
-                return *p;
-            }
+            template <typename SZ = std::size_t>
+            constexpr typename std::enable_if<
+                    std::is_integral<SZ>::value &&
+                    std::is_base_of<std::random_access_iterator_tag,
+                    iterator_category>::value,
+            reference>::type operator[](SZ idx) const
+            { return *(m_first + idx); }
             /// check access to element at idx (can throw!)
-            reference at(std::size_t idx) const
+            template <typename SZ = std::size_t>
+            typename std::enable_if<
+                    std::is_integral<SZ>::value &&
+                    std::is_base_of<std::random_access_iterator_tag,
+                    iterator_category>::value,
+            reference>::type at(SZ idx) const
             {
-                if (idx >= size()) {
+                if (__builtin_expect(std::size_t(idx) >= size(), false)) {
                     throw std::out_of_range("SOA::iterator_range::at("
                             "std::size_t): out of bounds");
                 }
-                auto p = m_first;
-                std::advance(p, idx);
-                return *p;
+                return *(m_first + idx);
             }
 
             /// start of range
-            iterator begin() const
+            constexpr iterator begin() const
             { return m_first; }
             /// end of range
-            iterator end() const
+            constexpr iterator end() const
             { return m_last; }
             /// start of reverse range
             template <typename DUMMY = typename std::enable_if<
                 std::is_same<std::bidirectional_iterator_tag,
                 iterator_category>::value>*>
-            reverse_iterator rbegin(DUMMY = nullptr) const
+            constexpr reverse_iterator rbegin(DUMMY = nullptr) const
             { return reverse_iterator{ m_last }; }
             /// end of reverse range
             template <typename DUMMY = typename std::enable_if<
                 std::is_same<std::bidirectional_iterator_tag,
                 iterator_category>::value>*>
-            reverse_iterator rend(DUMMY = nullptr) const
+            constexpr reverse_iterator rend(DUMMY = nullptr) const
             { return reverse_iterator{ m_first }; }
             /// access to first element
-            reference front() const { return *begin(); }
+            constexpr reference front() const { return *begin(); }
             /// access to last element
-            reference back() const
+            template <typename SZ = void*>
+            typename std::enable_if<
+                    std::is_same<SZ, void*>::value &&
+                    !std::is_base_of<std::random_access_iterator_tag,
+                    iterator_category>::value &&
+                    !std::is_base_of<std::bidirectional_iterator_tag,
+                    iterator_category>::value,
+            reference>::type back(SZ = nullptr) const
             {
                 auto p = m_first;
                 std::advance(p, size() - 1);
                 return *p;
             }
+            /// access to last element
+            template <typename SZ = void*>
+            typename std::enable_if<
+                    std::is_same<SZ, void*>::value &&
+                    !std::is_base_of<std::random_access_iterator_tag,
+                    iterator_category>::value &&
+                    std::is_base_of<std::bidirectional_iterator_tag,
+                    iterator_category>::value,
+            reference>::type back(SZ = nullptr) const
+            {
+                auto p = m_first;
+                return *--p;
+            }
+            /// access to last element
+            template <typename SZ = void*>
+            constexpr typename std::enable_if<
+                    std::is_same<SZ, void*>::value &&
+                    std::is_base_of<std::random_access_iterator_tag,
+                    iterator_category>::value,
+            reference>::type back(SZ = nullptr) const
+            { return *(m_last - 1); }
     };
 
     /** @brief build an iterator_range given two iterators
@@ -130,13 +168,17 @@ namespace SOA {
      * @returns iterator_range<IT> from [first, last(
      */
     template <typename IT>
-    iterator_range<IT> make_iterator_range(
+    constexpr iterator_range<IT> make_iterator_range(
             IT&& first, IT&& last)
     {
         return iterator_range<IT>{
             std::forward<IT>(first), std::forward<IT>(last) };
     }
 } // namespace SOA
+
+#ifndef __GNUC__
+#undef __builtin_expect // clean up
+#endif // __GNUC__
 
 #endif // SOA_ITERATOR_RANGE_H
 
