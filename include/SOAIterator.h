@@ -1,6 +1,8 @@
 #ifndef SOAITERATOR_H
 #define SOAITERATOR_H
 
+#include <ostream>
+
 namespace SOA {
     template < template <typename...> class CONTAINER,
         template <typename> class SKIN, typename... FIELDS>
@@ -50,8 +52,6 @@ namespace SOA {
         // deference/index/operator->
         constexpr reference operator*() const noexcept
         { return reference{ POSITION(*this) }; }
-        constexpr const reference* const operator->() const noexcept
-        { return reinterpret_cast<const reference* const>(this); }
         reference* operator->() noexcept
         { return reinterpret_cast<reference*>(this); }
         constexpr reference operator[](size_type ofs) const noexcept
@@ -74,44 +74,8 @@ namespace SOA {
         pointer& operator-=(difference_type inc) noexcept
         { idx() -= inc; return *this; }
 
-        template <typename PTR, typename INC>
-        constexpr friend typename std::enable_if<
-            std::is_same<typename std::remove_reference<typename
-            std::remove_cv<PTR>::type>::type, pointer>::value &&
-            std::is_convertible<INC, difference_type>::value,
-        pointer>::type operator+(PTR&& p, INC inc) noexcept
-        {
-            return pointer(std::forward<PTR>(p)) +=
-                static_cast<difference_type>(inc);
-        }
-
-        template <typename PTR, typename INC>
-        constexpr friend typename std::enable_if<
-            std::is_same<typename std::remove_reference<typename
-            std::remove_cv<PTR>::type>::type, pointer>::value &&
-            std::is_convertible<INC, difference_type>::value,
-        pointer>::type operator-(PTR&& p, INC inc) noexcept
-        {
-            return pointer(std::forward<PTR>(p)) -=
-                static_cast<difference_type>(inc);
-        }
-
-        template <typename PTR, typename INC>
-        constexpr friend typename std::enable_if<
-            std::is_same<typename std::remove_reference<typename
-            std::remove_cv<PTR>::type>::type, pointer>::value &&
-            std::is_convertible<INC, difference_type>::value,
-        pointer>::type operator+(INC inc, PTR&& p) noexcept
-        {
-            return pointer(std::forward<PTR>(p)) +=
-                static_cast<difference_type>(inc);
-        }
-
         // distance between iterators
-        template <typename PTR>
-        constexpr typename std::enable_if<std::is_same<PTR, pointer>::value &&
-            std::is_same<PTR, const_pointer>::value,
-        difference_type>::type operator-(const PTR& p) const noexcept
+        difference_type operator-(const pointer& p) const noexcept
         { return idx() - p.idx(); }
 
         // pointer equality
@@ -135,11 +99,42 @@ namespace SOA {
         { return q < p; }
         friend constexpr bool operator<=(
                 const pointer& p, const pointer& q) noexcept
-        { return !(q < p); }
+        { return !(p > q); }
         friend constexpr bool operator>=(
                 const pointer& p, const pointer& q) noexcept
         { return !(p < q); }
+
+        friend std::ostream& operator<<(std::ostream& os, const pointer& p)
+        {
+            os << "iterator{ stor=" << p.stor() << ", pos=" << p.idx() << " }";
+            return os;
+        }
     };
+
+    /// iterator + integer constant (or similar)
+    template <typename POSITION, bool CONST, typename INC>
+    constexpr typename std::enable_if<std::is_convertible<
+              typename Iterator<POSITION, CONST>::difference_type, INC>::value,
+    Iterator<POSITION, CONST> >::type operator+(
+            const Iterator<POSITION, CONST>& pos, INC inc) noexcept
+    { return Iterator<POSITION, CONST>(pos) += inc; }
+
+    /// integer constant (or similar) + iterator
+    template <typename POSITION, bool CONST, typename INC>
+    constexpr typename std::enable_if<std::is_convertible<
+              typename Iterator<POSITION, CONST>::difference_type, INC>::value,
+    Iterator<POSITION, CONST> >::type operator+(INC inc,
+            const Iterator<POSITION, CONST>& pos) noexcept
+    { return Iterator<POSITION, CONST>(pos) += inc; }
+
+    /// iterator - integer constant (or similar)
+    template <typename POSITION, bool CONST, typename INC>
+    constexpr typename std::enable_if<std::is_convertible<
+              typename Iterator<POSITION, CONST>::difference_type, INC>::value,
+    Iterator<POSITION, CONST> >::type operator-(
+            const Iterator<POSITION, CONST>& pos, INC inc) noexcept
+    { return Iterator<POSITION, CONST>(pos) -= inc; }
+
 } // namespace SOA
 
 #endif // SOAITERATOR_H

@@ -135,7 +135,8 @@ namespace SOA {
 
             /// convert to tuple of member contents
             operator value_type() const noexcept(noexcept(
-                        helper{ idx() }.to_value(*stor(),
+                        helper{ std::declval<self_type>().idx() }.to_value(
+                                *std::declval<self_type>().stor(),
                             std::make_index_sequence<
                             fields_typelist::size()>())))
             {
@@ -144,7 +145,8 @@ namespace SOA {
             }
             /// convert to tuple of references to members
             operator reference() noexcept(noexcept(
-                        helper{ idx() }.to_reference(*stor(),
+                        helper{ std::declval<self_type>().idx() }.to_reference(
+                                *std::declval<self_type>().stor(),
                             std::make_index_sequence<
                             fields_typelist::size()>())))
             {
@@ -153,7 +155,8 @@ namespace SOA {
             }
             /// convert to tuple of const references to members
             operator const_reference() const noexcept(noexcept(
-                        helper{ idx() }.to_const_reference(*stor(),
+                        helper{ std::declval<self_type>().idx() }.to_const_reference(
+                                *std::declval<self_type>().stor(),
                             std::make_index_sequence<
                             fields_typelist::size()>())))
             {
@@ -163,74 +166,75 @@ namespace SOA {
             }
 
             /// assign from tuple of member contents
-            self_type& operator=(const value_type& other) noexcept(noexcept(
-                        reference(std::declval<self_type>()) == other))
-            { reference(*this) = other; return *this; }
+            template <typename VALUE_TYPE>
+            typename std::enable_if<std::is_same<value_type,
+                     typename std::remove_cv<typename
+                         std::remove_reference<VALUE_TYPE>::type>::type>::value,
+            self_type>::type& operator=(VALUE_TYPE&& other) noexcept(noexcept(
+                        reference(std::declval<self_type>()) ==
+                        std::forward<VALUE_TYPE>(other)))
+            { reference(*this) = std::forward<VALUE_TYPE>(other); return *this; }
 
-            /// assign from tuple of member contents (move semantics)
-            self_type& operator=(value_type&& other) noexcept(noexcept(
-                        reference(std::declval<self_type>()) == std::move(other)))
-            { reference(*this) = std::move(other); return *this; }
-
-            /// assign from tuple of member contents
-            self_type& operator=(const reference& other) noexcept(noexcept(
-                        reference(std::declval<self_type>()) == other))
-            { reference(*this) = other; return *this; }
-
-            /// assign from tuple of member contents (move semantics)
-            self_type& operator=(reference&& other) noexcept(noexcept(
-                        reference(std::declval<self_type>()) == std::move(other)))
-            { reference(*this) = std::move(other); return *this; }
-
-            /// assign from tuple of member contents
-            self_type& operator=(const const_reference& other) noexcept(
-                    noexcept(reference(std::declval<self_type>()) == other))
-            { reference(*this) = other; return *this; }
-
-            /// assignment operator (value semantics)
-            self_type& operator=(const self_type& other) noexcept(noexcept(
-                        reference(std::declval<self_type>()) = const_reference(other)))
+            template <typename REFERENCE_TYPE>
+            typename std::enable_if<std::is_same<reference, typename
+                std::remove_cv<typename
+                std::remove_reference<REFERENCE_TYPE>::type>::type>::value,
+            self_type>::type& operator=(REFERENCE_TYPE&& other)
+                noexcept(noexcept( reference(std::declval<self_type>()) ==
+                            std::forward<REFERENCE_TYPE>(other)))
             {
-                if (other.stor() != stor() || other.idx() != idx())
-                    reference(*this) = const_reference(other);
+                reference(*this) = std::forward<REFERENCE_TYPE>(other);
                 return *this;
             }
 
-            /// move assignment operator (value semantics)
-            self_type& operator=(self_type&& other) noexcept(noexcept(
-                        reference(std::declval<self_type>()) = std::move(reference(other))))
+            template <typename CONST_REFERENCE_TYPE>
+            typename std::enable_if<std::is_same<const_reference, typename
+                std::remove_cv<typename std::remove_reference<
+                CONST_REFERENCE_TYPE>::type>::type>::value,
+            self_type>::type& operator=(CONST_REFERENCE_TYPE&& other)
+                noexcept(noexcept( reference(std::declval<self_type>()) ==
+                            std::forward<CONST_REFERENCE_TYPE>(other)))
+            {
+                reference(*this) = std::forward<CONST_REFERENCE_TYPE>(other);
+                return *this;
+            }
+
+            template <typename SELF_TYPE>
+            typename std::enable_if<std::is_same<self_type, typename
+                std::remove_cv<typename
+                std::remove_reference<SELF_TYPE>::type>::type>::value,
+            self_type>::type& operator=(SELF_TYPE&& other) noexcept(noexcept(
+                        reference(std::declval<self_type>()) ==
+                        std::forward<SELF_TYPE>(other)))
             {
                 if (other.stor() != stor() || other.idx() != idx())
-                    reference(*this) = std::move(reference(other));
+                    reference(*this) = std::forward<SELF_TYPE>(other);
                 return *this;
             }
 
             /// assignment (pointer-like semantics)
-            self_type& assign(const self_type& other) noexcept
+            template <typename SELF_TYPE>
+            typename std::enable_if<std::is_same<self_type, typename std::remove_cv<
+                typename std::remove_reference<SELF_TYPE>::type>::type>::value,
+            self_type>::type& assign(SELF_TYPE&& other) noexcept
             {
                 if (this != std::addressof(other))
                     stor() = other.stor(), idx() = other.idx();
-                return *this;
-            }
-            /// move assignment (pointer-like semantics)
-            self_type& assign(self_type&& other) noexcept
-            {
-                if (this != std::addressof(other))
-                    stor() = std::move(other.stor()),
-                              idx() = std::move(other.idx());
                 return *this;
             }
 
             /// access to member by number
             template <size_type MEMBERNO>
             auto get() noexcept -> decltype(
-                    std::get<MEMBERNO>(*stor())[idx()])
+                    std::get<MEMBERNO>(*std::declval<self_type>().stor())[
+                    std::declval<self_type>().idx()])
             { return std::get<MEMBERNO>(*stor())[idx()]; }
             /// access to member by "member tag"
             template <typename MEMBER, size_type MEMBERNO =
                 parent_type::template memberno<MEMBER>()>
             auto get() noexcept -> decltype(
-                    std::get<MEMBERNO>(*stor())[idx()])
+                    std::get<MEMBERNO>(*std::declval<self_type>().stor())[
+                    std::declval<self_type>().idx()])
             {
                 static_assert(parent_type::template memberno<MEMBER>() ==
                         MEMBERNO, "Called with wrong template argument(s).");
@@ -239,13 +243,15 @@ namespace SOA {
             /// access to member by number (read-only)
             template <size_type MEMBERNO>
             auto get() const noexcept -> decltype(
-                    std::get<MEMBERNO>(*stor())[idx()])
+                    std::get<MEMBERNO>(*std::declval<self_type>().stor())[
+                    std::declval<self_type>().idx()])
             { return std::get<MEMBERNO>(*stor())[idx()]; }
             /// access to member by "member tag" (read-only)
             template <typename MEMBER, size_type MEMBERNO =
                 parent_type::template memberno<MEMBER>()>
             auto get() const noexcept -> decltype(
-                    std::get<MEMBERNO>(*stor())[idx()])
+                    std::get<MEMBERNO>(*std::declval<self_type>().stor())[
+                    std::declval<self_type>().idx()])
             {
                 static_assert(parent_type::template memberno<MEMBER>() ==
                         MEMBERNO, "Called with wrong template argument(s).");
@@ -254,8 +260,8 @@ namespace SOA {
 
             /// swap the contents of two ObjectProxy instances
             void swap(self_type& other) noexcept(noexcept(
-                        SOA::Utils::map(swapHelper{ idx(), other.idx() },
-                        SOA::Utils::zip(*stor(), *other.stor()))))
+                        SOA::Utils::map(swapHelper{ other.idx(), other.idx() },
+                        SOA::Utils::zip(*other.stor(), *other.stor()))))
             {
                 SOA::Utils::map(swapHelper{ idx(), other.idx() },
                         SOA::Utils::zip(*stor(), *other.stor()));
