@@ -18,14 +18,12 @@
 /// namespace to encapsulate SOA stuff
 namespace SOA {
     // forward declarations
-    template <typename PROXY> class ConstIterator;
-    template <typename PROXY> class Iterator;
     template <class STORAGE,
              template <typename> class SKIN, typename... FIELDS>
-    class _View;
+                 class _View;
     template <template <typename...> class CONTAINER,
              template <typename> class SKIN, typename... FIELDS>
-    class _Container;
+                 class _Container;
 } // namespace SOA
 
 namespace SOA {
@@ -43,13 +41,13 @@ namespace SOA {
      * support for accessing members, assigment of the whole conceptual
      * object from a tuple of its members, and similar functionality.
      */
-    template <typename PARENTCONTAINER>
-    class ObjectProxy {
+    template <typename POSITION>
+    class ObjectProxy : protected POSITION {
         public:
             /// type of parent container
-            using parent_type = PARENTCONTAINER;
+            using parent_type = typename POSITION::parent_type;
             /// type to refer to this type
-            using self_type = ObjectProxy<PARENTCONTAINER>;
+            using self_type = ObjectProxy<POSITION>;
             /// type to hold the distance between two iterators
             using difference_type = typename parent_type::difference_type;
             /// type to hold the size of a container
@@ -61,9 +59,9 @@ namespace SOA {
             /// type for tuple of const references to members
             using const_reference = typename parent_type::value_const_reference;
             /// type of a pointer
-            using pointer = SOA::Iterator<typename parent_type::proxy>;
+            using pointer = typename parent_type::pointer;
             /// type of a const pointer
-            using const_pointer = SOA::ConstIterator<typename parent_type::proxy>;
+            using const_pointer = typename parent_type::const_pointer;
 
         protected:
             /// type used by the parent container to hold the SOA data
@@ -71,39 +69,22 @@ namespace SOA {
             /// typelist of fields
             using fields_typelist = typename parent_type::fields_typelist;
 
-            SOAStorage* m_storage = nullptr;  ///< underlying SOA storage of members
-            size_type m_index = 0;            ///< index into underlying SOA storage
+            using POSITION::stor;
+            using POSITION::idx;
 
-            // _Container is allowed to invoke the private constructor
-            friend parent_type;
-            // so is the pointer/iterator type
-            friend pointer;
-            // and the const pointer/iterator type
-            friend const_pointer;
             /// corresponding _Containers are friends
             template <template <typename...> class CONTAINER,
                      template <typename> class SKIN, typename... FIELDS>
             friend class _Container;
 
         public:
-            /// constructor is private, but parent container is a friend
-            explicit ObjectProxy(
-                    SOAStorage* storage, size_type index,
-                    typename parent_type::its_safe_tag) noexcept :
-                m_storage(storage), m_index(index)
-            {
-                /* FIXME: This used to be a protected constructor, with the
-                 * appropriate friend declarations, but apparently only the
-                 * latest C++ compilers saw through that, and compiled things
-                 * without a problem. Therefore, the constructor became
-                 * public, and an explicit one, and it now has a dummy
-                 * argument of type _SOAView<...>::its_safe_tag that is
-                 * private to _SOAView, and a few of its friends. That way,
-                 * user code cannot call this constructor, since they cannot
-                 * supply the third argument, which essentially amounts to the
-                 * same kind of protection that the old version enjoyed.
-                 */
-            }
+            // magic constructor
+            template <typename POS, typename =
+                typename std::enable_if<
+                std::is_base_of<POSITION, POS>::value>::type>
+            constexpr explicit ObjectProxy(POS&& pos) noexcept :
+                POSITION(std::forward<POS>(pos))
+            {}
 
         private:
             /// little helper to implement conversion to tuple
@@ -154,29 +135,29 @@ namespace SOA {
 
             /// convert to tuple of member contents
             operator value_type() const noexcept(noexcept(
-                        helper{ m_index }.to_value(*m_storage,
+                        helper{ idx() }.to_value(*stor(),
                             std::make_index_sequence<
                             fields_typelist::size()>())))
             {
-                return helper{ m_index }.to_value(*m_storage,
+                return helper{ idx() }.to_value(*stor(),
                         std::make_index_sequence<fields_typelist::size()>());
             }
             /// convert to tuple of references to members
             operator reference() noexcept(noexcept(
-                        helper{ m_index }.to_reference(*m_storage,
+                        helper{ idx() }.to_reference(*stor(),
                             std::make_index_sequence<
                             fields_typelist::size()>())))
             {
-                return helper{ m_index }.to_reference(*m_storage,
+                return helper{ idx() }.to_reference(*stor(),
                         std::make_index_sequence<fields_typelist::size()>());
             }
             /// convert to tuple of const references to members
             operator const_reference() const noexcept(noexcept(
-                        helper{ m_index }.to_const_reference(*m_storage,
+                        helper{ idx() }.to_const_reference(*stor(),
                             std::make_index_sequence<
                             fields_typelist::size()>())))
             {
-                return helper{ m_index }.to_const_reference(*m_storage,
+                return helper{ idx() }.to_const_reference(*stor(),
                         std::make_index_sequence<
                         fields_typelist::size()>());
             }
@@ -210,7 +191,7 @@ namespace SOA {
             self_type& operator=(const self_type& other) noexcept(noexcept(
                         reference(std::declval<self_type>()) = const_reference(other)))
             {
-                if (other.m_storage != m_storage || other.m_index != m_index)
+                if (other.stor() != stor() || other.idx() != idx())
                     reference(*this) = const_reference(other);
                 return *this;
             }
@@ -219,7 +200,7 @@ namespace SOA {
             self_type& operator=(self_type&& other) noexcept(noexcept(
                         reference(std::declval<self_type>()) = std::move(reference(other))))
             {
-                if (other.m_storage != m_storage || other.m_index != m_index)
+                if (other.stor() != stor() || other.idx() != idx())
                     reference(*this) = std::move(reference(other));
                 return *this;
             }
@@ -228,56 +209,56 @@ namespace SOA {
             self_type& assign(const self_type& other) noexcept
             {
                 if (this != std::addressof(other))
-                    m_storage = other.m_storage, m_index = other.m_index;
+                    stor() = other.stor(), idx() = other.idx();
                 return *this;
             }
             /// move assignment (pointer-like semantics)
             self_type& assign(self_type&& other) noexcept
             {
                 if (this != std::addressof(other))
-                    m_storage = std::move(other.m_storage),
-                              m_index = std::move(other.m_index);
+                    stor() = std::move(other.stor()),
+                              idx() = std::move(other.idx());
                 return *this;
             }
 
             /// access to member by number
             template <size_type MEMBERNO>
             auto get() noexcept -> decltype(
-                    std::get<MEMBERNO>(*m_storage)[m_index])
-            { return std::get<MEMBERNO>(*m_storage)[m_index]; }
+                    std::get<MEMBERNO>(*stor())[idx()])
+            { return std::get<MEMBERNO>(*stor())[idx()]; }
             /// access to member by "member tag"
             template <typename MEMBER, size_type MEMBERNO =
-                PARENTCONTAINER::template memberno<MEMBER>()>
+                parent_type::template memberno<MEMBER>()>
             auto get() noexcept -> decltype(
-                    std::get<MEMBERNO>(*m_storage)[m_index])
+                    std::get<MEMBERNO>(*stor())[idx()])
             {
-                static_assert(PARENTCONTAINER::template memberno<MEMBER>() ==
+                static_assert(parent_type::template memberno<MEMBER>() ==
                         MEMBERNO, "Called with wrong template argument(s).");
-                return std::get<MEMBERNO>(*m_storage)[m_index];
+                return std::get<MEMBERNO>(*stor())[idx()];
             }
             /// access to member by number (read-only)
             template <size_type MEMBERNO>
             auto get() const noexcept -> decltype(
-                    std::get<MEMBERNO>(*m_storage)[m_index])
-            { return std::get<MEMBERNO>(*m_storage)[m_index]; }
+                    std::get<MEMBERNO>(*stor())[idx()])
+            { return std::get<MEMBERNO>(*stor())[idx()]; }
             /// access to member by "member tag" (read-only)
             template <typename MEMBER, size_type MEMBERNO =
-                PARENTCONTAINER::template memberno<MEMBER>()>
+                parent_type::template memberno<MEMBER>()>
             auto get() const noexcept -> decltype(
-                    std::get<MEMBERNO>(*m_storage)[m_index])
+                    std::get<MEMBERNO>(*stor())[idx()])
             {
-                static_assert(PARENTCONTAINER::template memberno<MEMBER>() ==
+                static_assert(parent_type::template memberno<MEMBER>() ==
                         MEMBERNO, "Called with wrong template argument(s).");
-                return std::get<MEMBERNO>(*m_storage)[m_index];
+                return std::get<MEMBERNO>(*stor())[idx()];
             }
 
             /// swap the contents of two ObjectProxy instances
             void swap(self_type& other) noexcept(noexcept(
-                        SOA::Utils::map(swapHelper{ m_index, other.m_index },
-                        SOA::Utils::zip(*m_storage, *other.m_storage))))
+                        SOA::Utils::map(swapHelper{ idx(), other.idx() },
+                        SOA::Utils::zip(*stor(), *other.stor()))))
             {
-                SOA::Utils::map(swapHelper{ m_index, other.m_index },
-                        SOA::Utils::zip(*m_storage, *other.m_storage));
+                SOA::Utils::map(swapHelper{ idx(), other.idx() },
+                        SOA::Utils::zip(*stor(), *other.stor()));
             }
 
             /// comparison (equality)
@@ -319,9 +300,11 @@ namespace SOA {
             { return const_reference(*this) >= const_reference(other); }
 
             /// return pointer to element pointed to be this proxy
-            pointer operator&() noexcept;
+            pointer operator&() noexcept
+            { return pointer{ POSITION(*this) }; }
             /// return const pointer to element pointed to be this proxy
-            const_pointer operator&() const noexcept;
+            const_pointer operator&() const noexcept
+            { return const_pointer{ POSITION(*this) }; }
     };
 
     /// comparison (equality)
@@ -354,26 +337,6 @@ namespace SOA {
     void swap(ObjectProxy<T> a, ObjectProxy<T> b) noexcept(
             noexcept(a.swap(b)))
     { a.swap(b); }
-} // namespace SOA
-
-#include "SOAIterator.h"
-
-namespace SOA {
-    template <typename PARENTCONTAINER>
-    typename ObjectProxy<PARENTCONTAINER>::pointer
-    ObjectProxy<PARENTCONTAINER>::operator&() noexcept
-    {
-        return pointer{ m_storage, m_index,
-            typename parent_type::its_safe_tag() };
-    }
-
-    template <typename PARENTCONTAINER>
-    typename ObjectProxy<PARENTCONTAINER>::const_pointer
-    ObjectProxy<PARENTCONTAINER>::operator&() const noexcept
-    {
-        return const_pointer{ m_storage, m_index,
-            typename parent_type::its_safe_tag() };
-    }
 } // namespace SOA
 
 #endif // SOAOBJECTPROXY_H

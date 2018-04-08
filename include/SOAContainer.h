@@ -259,8 +259,8 @@ namespace SOA {
             /// (naked) tuple type used as const reference
             using naked_const_reference_tuple_type =
                 typename BASE::naked_const_reference_tuple_type;
-            /// use the parent's its_safe_tag (make sure this stays protected)
-            using its_safe_tag = typename BASE::its_safe_tag;
+            /// use the parent's position (make sure this stays protected)
+            using position = typename BASE::position;
 
         public:
             /// default constructor
@@ -402,12 +402,11 @@ namespace SOA {
                             std::declval<SOAStorage&>(),
                             std::forward<T>(val))))
             {
-                assert((*pos).m_storage == &this->m_storage);
+                assert((*pos).stor() == &this->m_storage);
                 SOA::Utils::apply_zip(
-                        impl::insertHelper<size_type>{pos.m_proxy.m_index},
+                        impl::insertHelper<size_type>{pos.idx()},
                         this->m_storage, std::forward<T>(val));
-                return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
-                    its_safe_tag() };
+                return iterator{ position{ pos.stor(), pos.idx() } };
             }
 
             /// insert count copies of value at the given position
@@ -417,12 +416,11 @@ namespace SOA {
                             impl::insertHelper2<size_type>{0, 0},
                             std::declval<SOAStorage&>(), val)))
             {
-                assert((*pos).m_storage == &this->m_storage);
+                assert((*pos).stor() == &this->m_storage);
                 SOA::Utils::apply_zip(
-                        impl::insertHelper2<size_type>{pos.m_proxy.m_index, count},
+                        impl::insertHelper2<size_type>{pos.idx(), count},
                         this->m_storage, val);
-                return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
-                    its_safe_tag() };
+                return iterator{ position{ pos.stor(), pos.idx() } };
             }
 
             /// insert elements between first and last at position pos
@@ -435,8 +433,7 @@ namespace SOA {
                 // moreover, if we can determine the distance between first and
                 // last, we should make a hole of the right size to avoid moving
                 // data more than once
-                iterator retVal(pos.m_proxy.m_storage, pos.m_proxy.m_index,
-                        its_safe_tag());
+                iterator retVal{ position{ pos.stor(), pos.idx() } };
                 while (first != last) { insert(pos, *first); ++first; ++pos; }
                 return retVal;
             }
@@ -444,36 +441,31 @@ namespace SOA {
             /// erase an element at the given position
             iterator erase(const_iterator pos) noexcept(noexcept(
                         SOA::Utils::map(
-                            typename SOA::impl::eraseHelper<size_type>{
-                                    static_cast<size_type>(pos - pos)},
+                            typename SOA::impl::eraseHelper<size_type>{0},
                             std::declval<self_type*>()->m_storage)))
             {
-                assert((*pos).m_storage == &this->m_storage);
+                assert((*pos).stor() == &this->m_storage);
                 SOA::Utils::map(
-                        typename SOA::impl::eraseHelper<size_type>{ pos.m_proxy.m_index },
+                        typename SOA::impl::eraseHelper<size_type>{ pos.idx() },
                         this->m_storage);
-                return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
-                    its_safe_tag() };
+                return iterator{ position{ pos.stor(), pos.idx() } };
             }
 
             /// erase elements from first to last
             iterator erase(const_iterator first, const_iterator last) noexcept(
                     noexcept(
                         SOA::Utils::map(
-                            typename SOA::impl::eraseHelper_N<size_type>{
-                                static_cast<size_type>(first - first),
-                                static_cast<size_type>(last - first)},
+                            typename SOA::impl::eraseHelper_N<size_type>{0, 0},
                                 std::declval<self_type*>()->m_storage)))
             {
-                assert((*first).m_storage == &this->m_storage);
-                assert((*last).m_storage == &this->m_storage);
+                assert((*first).stor() == &this->m_storage);
+                assert((*last).stor() == &this->m_storage);
                 SOA::Utils::map(
                         typename SOA::impl::eraseHelper_N<size_type>{
-                                first.m_proxy.m_index,
+                                first.idx(),
                                 static_cast<size_type>(last - first)},
                             this->m_storage);
-                return iterator{ first.m_proxy.m_storage, first.m_proxy.m_index,
-                    its_safe_tag() };
+                return iterator{ position{ first.stor(), first.idx() } };
             }
 
             /// assign the vector to contain count copies of val
@@ -557,52 +549,49 @@ namespace SOA {
             template <typename... ARGS>
             iterator emplace(const_iterator pos, ARGS&&... args) noexcept(
                     noexcept(SOA::Utils::apply_zip(
-                            SOA::impl::emplaceHelper<size_type>{ pos.m_proxy.m_index },
+                            SOA::impl::emplaceHelper<size_type>{ pos.idx() },
                             std::declval<SOAStorage&>(),
                             std::forward_as_tuple(std::forward<ARGS>(args)...))))
             {
                 static_assert(std::is_constructible<naked_value_tuple_type,
                         ARGS...>::value || std::is_constructible<value_type,
                         ARGS...>::value, "Wrong arguments to emplace.");
-                assert(&this->m_storage == (*pos).m_storage);
+                assert(&this->m_storage == (*pos).stor());
                 SOA::Utils::apply_zip(
-                        SOA::impl::emplaceHelper<size_type>{ pos.m_proxy.m_index },
+                        SOA::impl::emplaceHelper<size_type>{ pos.idx() },
                         this->m_storage,
                         std::forward_as_tuple(std::forward<ARGS>(args)...));
-                return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
-                    its_safe_tag() };
+                return iterator{ position{ pos.stor(), pos.idx() } };
             }
 
             /// construct a new element at position pos from naked_value_tuple_type
             iterator emplace(const_iterator pos,
                 naked_value_tuple_type&& val) noexcept(noexcept(
                         SOA::Utils::apply_zip(
-                            SOA::impl::emplaceHelper<size_type>{ pos.m_proxy.m_index },
+                            SOA::impl::emplaceHelper<size_type>{ pos.idx() },
                             std::declval<SOAStorage&>(),
                             std::forward<naked_value_tuple_type>(val))))
             {
                 SOA::Utils::apply_zip(
-                        SOA::impl::emplaceHelper<size_type>{ pos.m_proxy.m_index },
+                        SOA::impl::emplaceHelper<size_type>{ pos.idx() },
                         this->m_storage,
                         std::forward<naked_value_tuple_type>(val));
-                return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
-                    its_safe_tag() };
+                return iterator{ position{ pos.stor(), pos.idx() } };
             }
 
             /// construct a new element at position pos from value_type
             iterator emplace(const_iterator pos,
                 value_type&& val) noexcept(noexcept(
                         SOA::Utils::apply_zip(
-                            SOA::impl::emplaceHelper<size_type>{ pos.m_proxy.m_index },
+                            SOA::impl::emplaceHelper<size_type>{ pos.idx() },
                             std::declval<SOAStorage&>(),
                             std::forward<value_type>(val))))
             {
                 SOA::Utils::apply_zip(
-                        SOA::impl::emplaceHelper<size_type>{ pos.m_proxy.m_index },
+                        SOA::impl::emplaceHelper<size_type>{ pos.idx() },
                         this->m_storage,
                         std::forward<value_type>(val));
-                return iterator{ pos.m_proxy.m_storage, pos.m_proxy.m_index,
-                    its_safe_tag() };
+                return iterator{ position{ pos.stor(), pos.idx() } };
             }
     };
 

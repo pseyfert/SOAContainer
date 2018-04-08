@@ -57,13 +57,6 @@ namespace SOA {
             using iterator = IT;
             using reverse_iterator = std::reverse_iterator<iterator>;
 
-            /// default construction, destruction, assignment
-            iterator_range() = default;
-            iterator_range(const iterator_range&) = default;
-            iterator_range(iterator_range&&) = default;
-            iterator_range& operator=(const iterator_range&) = default;
-            iterator_range& operator=(iterator_range&&) = default;
-            ~iterator_range() = default;
             /// construct from a pair of iterators
             template <typename ITFWD>
             constexpr explicit iterator_range(ITFWD&& first, ITFWD&& last,
@@ -125,13 +118,11 @@ namespace SOA {
             template <typename SZ = void*>
             typename std::enable_if<
                     std::is_same<SZ, void*>::value &&
-                    !std::is_base_of<std::random_access_iterator_tag,
-                    iterator_category>::value &&
                     !std::is_base_of<std::bidirectional_iterator_tag,
                     iterator_category>::value,
             reference>::type back(SZ = nullptr) const
             {
-                auto p = m_first;
+                auto p = begin();
                 std::advance(p, size() - 1);
                 return *p;
             }
@@ -139,23 +130,20 @@ namespace SOA {
             template <typename SZ = void*>
             typename std::enable_if<
                     std::is_same<SZ, void*>::value &&
-                    !std::is_base_of<std::random_access_iterator_tag,
-                    iterator_category>::value &&
                     std::is_base_of<std::bidirectional_iterator_tag,
+                    iterator_category>::value &&
+                    !std::is_base_of<std::random_access_iterator_tag,
                     iterator_category>::value,
             reference>::type back(SZ = nullptr) const
-            {
-                auto p = m_first;
-                return *--p;
-            }
+            { auto p = end(); --p; return *p; }
             /// access to last element
             template <typename SZ = void*>
             constexpr typename std::enable_if<
                     std::is_same<SZ, void*>::value &&
-                    std::is_base_of<std::random_access_iterator_tag,
+                    std::is_base_of<std::bidirectional_iterator_tag,
                     iterator_category>::value,
             reference>::type back(SZ = nullptr) const
-            { return *(m_last - 1); }
+            { return *(end() - 1); }
     };
 
     /** @brief build an iterator_range given two iterators

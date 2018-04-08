@@ -534,19 +534,23 @@ namespace SOA {
             { return fields_typelist::template find<MEMBER>(); }
 
         protected:
-            /** @brief a tag to be used when calling ObjectProxy's constructor
-             *
-             * The idea is to forbid user code to call ObjectProxy's constructor
-             * that takes a SOAStorage* and an index into it; this constructor is
-             * dangerous, since it can be used to break const-correctness. Since
-             * older versions of gcc/clang cannot see through the complex interplay
-             * of typedefs, inheritance, templates and friend declarations (and
-             * insist that that constructor is protected, despite a friend
-             * declaration), we work around that limitation by requiring safe code
-             * to supply a dummy union of a type that the user cannot instantiate
-             * or even see.
-             */
+            /// magic class for use with iterators and proxies
             using its_safe_tag = union {};
+            class position {
+            private:
+                SOAStorage* m_stor = nullptr;
+                size_type m_idx = 0;
+            public:
+                using parent_type = self_type;
+                using safe_tag = its_safe_tag;
+                constexpr position(SOAStorage* stor, size_type idx) noexcept :
+                    m_stor(stor), m_idx(idx) {}
+                SOAStorage*& stor() noexcept { return m_stor; }
+                constexpr SOAStorage* stor() const noexcept { return m_stor; }
+                size_type& idx() noexcept { return m_idx; }
+                constexpr size_type idx() const noexcept { return m_idx; }
+            };
+
             /// implementation details
             struct impl_detail {
                 /// little helper to check range sizes at construction time
@@ -641,7 +645,7 @@ namespace SOA {
 
         public:
             /// naked proxy type (to be given a "skin" later)
-            using naked_proxy = SOA::ObjectProxy<self_type>;
+            using naked_proxy = SOA::ObjectProxy<position>;
             friend naked_proxy;
             /// corresponding _Containers are friends
             template < template <typename...> class CONTAINER,
@@ -650,18 +654,16 @@ namespace SOA {
             /// type of proxy
             using proxy = SKIN<naked_proxy>;
             friend proxy;
-            /// pointer to contained objects
-            using pointer = SOA::Iterator<proxy>;
-            friend pointer;
-            /// iterator type
-            using iterator = pointer;
             /// reference to contained objects
             using reference = proxy;
             /// reference to contained objects
             using const_reference = const reference;
+            /// pointer to contained objects
+            using pointer = SOA::Iterator<position, false>;
             /// const pointer to contained objects
-            using const_pointer = SOA::ConstIterator<proxy>;
-            friend const_pointer;
+            using const_pointer = SOA::Iterator<position, true>;
+            /// iterator type
+            using iterator = pointer;
             /// const iterator type
             using const_iterator = const_pointer;
             /// reverse iterator type
@@ -669,6 +671,21 @@ namespace SOA {
             /// const reverse iterator type
             using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+        private:
+            // check that the dirty tricks we play in the iterator class
+            // will work
+            static_assert(std::is_base_of<position, reference>::value &&
+                    std::is_base_of<position, const_reference>::value &&
+                    std::is_base_of<position, pointer>::value &&
+                    std::is_base_of<position, const_pointer>::value &&
+                    sizeof(position) == sizeof(reference) &&
+                    sizeof(position) == sizeof(const_reference) &&
+                    sizeof(position) == sizeof(pointer) &&
+                    sizeof(position) == sizeof(const_pointer),
+                "reference and pointer classes must be derived from "
+                "position, and have the same size as position");
+
+        public:
             /// constructor from the underlying storage
             _View(const SOAStorage& other) :
                 m_storage(other) { }
@@ -706,12 +723,12 @@ namespace SOA {
             /// access specified element
             typename std::enable_if<!is_constant, reference>::type
             operator[](size_type idx) noexcept
-            { return reference{ &m_storage, idx, its_safe_tag() }; }
+            { return reference{ position{ &m_storage, idx } }; }
             /// access specified element (read access only)
             const_reference operator[](size_type idx) const noexcept
             {
-                return const_reference{ &const_cast<SOAStorage&>(m_storage), idx,
-                    its_safe_tag()  };
+                return const_reference{ position{
+                    &const_cast<SOAStorage&>(m_storage), idx } };
             }
             /// access specified element with out of bounds checking
             typename std::enable_if<!is_constant, reference>::type
@@ -745,23 +762,23 @@ namespace SOA {
             /// iterator pointing to first element
             typename std::enable_if<!is_constant, iterator>::type
             begin() noexcept
-            { return iterator{ &m_storage, 0, its_safe_tag() }; }
+            { return iterator{ position{ &m_storage, 0 } }; }
             /// iterator pointing one element behind the last element
             typename std::enable_if<!is_constant, iterator>::type
             end() noexcept
-            { return iterator{ &m_storage, size(), its_safe_tag() }; }
+            { return iterator{ position{ &m_storage, size() } }; }
 
             /// const iterator pointing to first element
             const_iterator begin() const noexcept
             {
-                return const_iterator{ const_cast<SOAStorage*>(&m_storage), 0,
-                    its_safe_tag() };
+                return const_iterator{ position{
+                    const_cast<SOAStorage*>(&m_storage), 0 } };
             }
             /// const iterator pointing one element behind the last element
             const_iterator end() const noexcept
             {
-                return const_iterator{ const_cast<SOAStorage*>(&m_storage), size(),
-                    its_safe_tag() };
+                return const_iterator{ position{
+                    const_cast<SOAStorage*>(&m_storage), size() } };
             }
 
             /// const iterator pointing to first element
@@ -973,10 +990,8 @@ namespace SOA {
             }
             /// return a reference to the underlying SOA storage range MEMBERNO
             template <size_type MEMBERNO>
-            auto range(iterator first, iterator last) noexcept -> decltype(
-                        make_iterator_range(
-                            std::get<MEMBERNO>(m_storage).begin() + (first - std::declval<iterator>()),
-                            std::get<MEMBERNO>(m_storage).begin() + (last - std::declval<iterator>())))
+            auto range(iterator first, iterator last) noexcept ->
+                iterator_range<decltype(std::get<MEMBERNO>(m_storage).begin())>
             {
                 return make_iterator_range(
                         std::get<MEMBERNO>(m_storage).begin() + (first - begin()),
@@ -984,10 +999,8 @@ namespace SOA {
             }
             /// return a const reference to the underlying SOA storage range MEMBERNO
             template <size_type MEMBERNO>
-            auto range(const_iterator first, const_iterator last) const noexcept -> decltype(
-                        make_iterator_range(
-                            std::get<MEMBERNO>(m_storage).begin() + (first - std::declval<const_iterator>()),
-                            std::get<MEMBERNO>(m_storage).begin() + (last - std::declval<const_iterator>())))
+            auto range(const_iterator first, const_iterator last) const noexcept ->
+                iterator_range<decltype(std::get<MEMBERNO>(m_storage).begin())>
             {
                 return make_iterator_range(
                         std::get<MEMBERNO>(m_storage).begin() + (first - begin()),
@@ -995,10 +1008,8 @@ namespace SOA {
             }
             /// return a reference to the underlying SOA storage range MEMBER
             template <typename MEMBER>
-            auto range(iterator first, iterator last) noexcept -> decltype(
-                        make_iterator_range(
-                            std::get<memberno<MEMBER>()>(m_storage).begin() + (first - std::declval<iterator>()),
-                            std::get<memberno<MEMBER>()>(m_storage).begin() + (last - std::declval<iterator>())))
+            auto range(iterator first, iterator last) noexcept ->
+                iterator_range<decltype(std::get<memberno<MEMBER>()>(m_storage).begin())>
             {
                 return make_iterator_range(
                         std::get<memberno<MEMBER>()>(m_storage).begin() + (first - begin()),
@@ -1006,10 +1017,8 @@ namespace SOA {
             }
             /// return a const reference to the underlying SOA storage range MEMBER
             template <typename MEMBER>
-            auto range(const_iterator first, const_iterator last) const noexcept -> decltype(
-                        make_iterator_range(
-                            std::get<memberno<MEMBER>()>(m_storage).begin() + (first - std::declval<const_iterator>()),
-                            std::get<memberno<MEMBER>()>(m_storage).begin() + (last - std::declval<const_iterator>())))
+            auto range(const_iterator first, const_iterator last) const noexcept ->
+                iterator_range<decltype(std::get<memberno<MEMBER>()>(m_storage).begin())>
             {
                 return make_iterator_range(
                         std::get<memberno<MEMBER>()>(m_storage).begin() + (first - begin()),

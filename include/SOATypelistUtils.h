@@ -8,16 +8,12 @@
 #define SOATYPELISTUTILS_H
 
 #include <tuple>
+#include <deque>
+#include <vector>
 
 #include "SOATypelist.h"
 #include "AlignedAllocator.h"
 #include "c++14_compat.h"
-
-// forward decl
-namespace std {
-    template <typename, typename> class vector;
-    template <typename, typename> class deque;
-}
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {
