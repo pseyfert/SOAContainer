@@ -38,53 +38,35 @@ namespace SOA {
          */
         class DressedTupleBase {
             protected:
-            /// helper to check constructibility of tuples - default: no
-            constexpr static inline std::false_type
-            _is_constructible(...) noexcept
-            { return std::false_type(); }
             /// helper to check constructibility of tuples - depends on tuples
-            template <typename... Ts1, typename... Ts2>
-            constexpr static inline typename std::enable_if<
-                sizeof...(Ts1) == sizeof...(Ts2), std::is_constructible<
-                std::tuple<Ts1...>, std::tuple<Ts2...> > >::type
-            _is_constructible(const std::tuple<Ts1...>&,
-                    const std::tuple<Ts2...>&) noexcept
-            {
-                return std::is_constructible<
-                    std::tuple<Ts1...>, std::tuple<Ts2...> >();
-            }
-            /// check constructibility of T1 from T2
             template <typename T1, typename T2>
-            using is_constructible = typename std::conditional<
-                    std::is_constructible<T1, T2>::value, std::false_type,
-                    decltype(_is_constructible(std::declval<const T1&>(),
-                                std::declval<const T2&>()))>::type;
+            static constexpr inline std::false_type
+            _is_constructible(const T1&, const T2&) noexcept { return {}; }
+            template <typename... Ts1, typename... Ts2>
+            static constexpr inline std::is_constructible<
+                std::tuple<Ts1...>, std::tuple<Ts2...> >
+            _is_constructible(const std::tuple<Ts1&&...>&,
+                    const std::tuple<Ts2&&...>&) noexcept { return {}; }
+            template <typename T1, typename T2>
+            using is_constructible = decltype(_is_constructible(
+                        std::declval<const T1&>(), std::declval<const T2&>()));
 
-            /// helper to check assignability of tuples - default: no
-            constexpr static inline std::false_type
-            _is_assignable(...) noexcept
-            { return std::false_type(); }
-            /// helper to check tuple's assignability - depends on tuples
-            template <typename... Ts1, typename... Ts2>
-            constexpr static inline typename std::enable_if<
-                sizeof...(Ts1) == sizeof...(Ts2), std::is_assignable<
-                std::tuple<Ts1...>, std::tuple<Ts2...> > >::type _is_assignable(
-                    const std::tuple<Ts1...>&, const std::tuple<Ts2...>&) noexcept
-            {
-                return std::is_assignable<
-                    std::tuple<Ts1...>, std::tuple<Ts2...> >();
-            }
-            /// figure out if tuple underlying T1 is assignable from T2
+            /// helper to check assignability of tuples - depends on tuples
             template <typename T1, typename T2>
-            using is_assignable = typename std::conditional<
-                    std::is_assignable<T1, T2>::value, std::false_type,
-                    decltype(_is_assignable(std::declval<const T1&>(),
-                        std::declval<const T2&>()))>::type;
-            /// helper to figure out the underlying tuple's size
+            static constexpr inline std::false_type
+            _is_assignable(const T1&, const T2&) noexcept { return {}; }
+            template <typename... Ts1, typename... Ts2>
+            static constexpr inline std::is_assignable<
+                std::tuple<Ts1...>, std::tuple<Ts2...> >
+            _is_assignable(const std::tuple<Ts1&&...>&,
+                    const std::tuple<Ts2&&...>&) noexcept { return {}; }
+            template <typename T1, typename T2>
+            using is_assignable = decltype(_is_assignable(
+                        std::declval<const T1&>(), std::declval<const T2&>()));
+
             template <typename... Ts>
             constexpr static inline std::tuple_size<std::tuple<Ts...> >
-            _tuple_size(const std::tuple<Ts...>&) noexcept
-            { return std::tuple_size<std::tuple<Ts...> >(); }
+            _tuple_size(const std::tuple<Ts...>&) noexcept { return {}; }
             /// figure out the underlying tuple's size
             template <typename T>
             using tuple_size = decltype(
@@ -105,13 +87,11 @@ namespace SOA {
         public:
             /// convenience typedef
             using self_type = DressedTuple<TUPLE, CONTAINER>;
-            /// use TUPLE's constructors where possible
             using TUPLE::TUPLE;
-            /// use TUPLE's assignment operators where possible
             using TUPLE::operator=;
 
             /// (copy) assignment from a naked proxy
-            DressedTuple& operator=(
+            /*DressedTuple& operator=(
                     const typename CONTAINER::naked_proxy& other) noexcept(
                         noexcept(std::declval<TUPLE>().operator=(typename
                                 SOA::Typelist::to_tuple<typename
@@ -120,7 +100,7 @@ namespace SOA {
                 TUPLE::operator=(typename SOA::Typelist::to_tuple<typename
                         CONTAINER::fields_typelist>::value_tuple(other));
                 return *this;
-            }
+            }*/
 
         private:
             /// helper for fallback constructors
@@ -143,6 +123,9 @@ namespace SOA {
             }
 
         public:
+#if 1
+            /// fallback constructor to see past dressed tuples
+#else
 #if (defined(__GNUC__) && (7 > __GNUC__ || (7 == __GNUC__ && \
                 __GNUC_MINOR__ <= 1)) && !defined(__clang__))
             // old versions of gcc don't need extra code, only gcc 7.2 or
@@ -169,18 +152,22 @@ namespace SOA {
 #elif (defined(__clang__) && 3 == __clang_major__ && 8 == __clang_minor__)
             // no extra code needed for clang 3.8
 #endif
+#endif
             /// fallback constructor to see past dressed tuples
-            template <typename T, typename std::enable_if<is_constructible<
-                    TUPLE, T>::value, int>::type = 0>
+            template <typename T, typename TDUMMY = T,
+                     typename = typename std::enable_if<
+                         is_constructible<TUPLE, TDUMMY>::value &&
+                         !std::is_base_of<TUPLE, TDUMMY>::value>,
+                     std::size_t N = tuple_size<TDUMMY>::value >
             constexpr DressedTuple(T&& t) noexcept(noexcept(
-                DressedTuple(std::make_index_sequence<tuple_size<T>::value>(),
+                DressedTuple(std::make_index_sequence<N>(),
                     std::forward<T>(t)))) :
-                DressedTuple(std::make_index_sequence<tuple_size<T>::value>(),
+                DressedTuple(std::make_index_sequence<N>(),
                         std::forward<T>(t))
             {}
             /// fallback assignment operator to see past dressed tuples
             template <typename T>
-            typename std::enable_if<is_assignable<TUPLE, T>::value,
+            typename std::enable_if<is_assignable<TUPLE, T>::value && !std::is_base_of<TUPLE, T>::value,
                      self_type>::type&
             operator=(T&& t) noexcept(noexcept(std::declval<
                         DressedTuple<TUPLE, CONTAINER> >().assign(
