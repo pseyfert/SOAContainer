@@ -91,11 +91,11 @@ namespace SOA {
         static auto
         _to_tuple(const self_type& t, std::index_sequence<IDXS...>) noexcept(
                 noexcept(std::forward_as_tuple(std::get<IDXS>(
-                        const_cast<const typename parent_type::SOAStorage&>(
-                                *t.stor()))[t.idx()]...)))
+                        std::declval<const typename
+                        parent_type::SOAStorage&>())[0]...)))
                 -> decltype(std::forward_as_tuple(std::get<IDXS>(
-                        const_cast<const typename parent_type::SOAStorage&>(
-                                *t.stor()))[t.idx()]...))
+                                std::declval<const typename
+                                parent_type::SOAStorage&>())[0]...))
         {
             return std::forward_as_tuple(std::get<IDXS>(
                     const_cast<const typename parent_type::SOAStorage&>(
@@ -104,10 +104,12 @@ namespace SOA {
         template <std::size_t... IDXS>
         static auto
         _to_tuple(self_type& t, std::index_sequence<IDXS...>) noexcept(
-                noexcept(std::forward_as_tuple(
-                        std::get<IDXS> (*t.stor())[t.idx()]...)))
-                -> decltype(std::forward_as_tuple(
-                        std::get<IDXS>(*t.stor())[t.idx()]...))
+                noexcept(std::forward_as_tuple(std::get<IDXS>(
+                        std::declval<typename
+                        parent_type::SOAStorage&>())[0]...)))
+                -> decltype(std::forward_as_tuple(std::get<IDXS>(
+                                std::declval<typename
+                                parent_type::SOAStorage&>())[0]...))
         {
             return std::forward_as_tuple(
                     std::get<IDXS>(*t.stor())[t.idx()]...);
@@ -115,10 +117,12 @@ namespace SOA {
         template <std::size_t... IDXS>
         static auto
         _to_tuple(self_type&& t, std::index_sequence<IDXS...>) noexcept(
-                noexcept(std::forward_as_tuple(
-                        std::get<IDXS> (*t.stor())[t.idx()]...)))
-                -> decltype(std::forward_as_tuple(
-                        std::get<IDXS>(*t.stor())[t.idx()]...))
+                noexcept(std::forward_as_tuple(std::get<IDXS>(
+                        std::declval<typename
+                        parent_type::SOAStorage&&>())[0]...)))
+                -> decltype(std::forward_as_tuple(std::get<IDXS>(
+                                std::declval<typename
+                                parent_type::SOAStorage&&>())[0]...))
         {
             return std::forward_as_tuple(
                     std::get<IDXS>(*t.stor())[t.idx()]...);
@@ -159,9 +163,11 @@ namespace SOA {
         static auto
         _to_tuple_val(const self_type& t, std::index_sequence<IDXS...>) noexcept(
                 noexcept(std::make_tuple(
-                        std::get<IDXS> (*t.stor())[t.idx()]...)))
+                        std::get<IDXS>(std::declval<const typename
+                            parent_type::SOAStorage&>())[0]...)))
                 -> decltype(std::make_tuple(
-                        std::get<IDXS>(*t.stor())[t.idx()]...))
+                        std::get<IDXS>(std::declval<const typename
+                            parent_type::SOAStorage&>())[0]...))
         {
             return std::make_tuple(std::get<IDXS>(*t.stor())[t.idx()]...);
         }
