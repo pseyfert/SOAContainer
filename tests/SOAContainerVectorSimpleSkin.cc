@@ -224,9 +224,15 @@ TEST(SOAContainerVector, SimpleSkin)
     for (unsigned i = 0; i < 1024; ++i) updateHits(ahits, 300.f, -0.01f);
 
     for (unsigned i = 0; i < 1024; ++i) {
-	EXPECT_EQ(hits[i].x(), ahits[i].x());
-	EXPECT_EQ(hits[i].z(), ahits[i].z());
-	EXPECT_EQ(hits[i].y(), ahits[i].y());
+        EXPECT_LT(std::abs(hits[i].x() - ahits[i].x()),
+                  1e-6f * std::max(std::abs(hits[i].x()),
+                                   std::abs(ahits[i].x())));
+        EXPECT_LT(std::abs(hits[i].z() - ahits[i].z()),
+                  1e-6f * std::max(std::abs(hits[i].z()),
+                                   std::abs(ahits[i].z())));
+        EXPECT_LT(std::abs(hits[i].y() - ahits[i].y()),
+                  1e-6f * std::max(std::abs(hits[i].y()),
+                                   std::abs(ahits[i].y())));
     }
 
     // test shifting the hits, hopefully autovectorised
@@ -246,9 +252,15 @@ TEST(SOAContainerVector, SimpleSkin)
     EXPECT_LT((t1 - t0), (t3 - t2));
 
     for (unsigned i = 0; i < 1024; ++i) {
-	EXPECT_EQ(hits[i].x(), ahits[i].x());
-	EXPECT_EQ(hits[i].z(), ahits[i].z());
-	EXPECT_EQ(hits[i].y(), ahits[i].y());
+        EXPECT_LT(std::abs(hits[i].x() - ahits[i].x()),
+                  1e-6f * std::max(std::abs(hits[i].x()),
+                                   std::abs(ahits[i].x())));
+        EXPECT_LT(std::abs(hits[i].z() - ahits[i].z()),
+                  1e-6f * std::max(std::abs(hits[i].z()),
+                                   std::abs(ahits[i].z())));
+        EXPECT_LT(std::abs(hits[i].y() - ahits[i].y()),
+                  1e-6f * std::max(std::abs(hits[i].y()),
+                                   std::abs(ahits[i].y())));
     }
 }
 
