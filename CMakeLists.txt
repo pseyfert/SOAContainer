@@ -12,7 +12,7 @@ else()
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 # be moderately paranoid with flags
-add_compile_options(-Wpedantic -Wall -Wextra -Weffc++)
+add_compile_options(-Wpedantic -Wall -Wextra)
 
 # CMAKE 2
 include_directories(include)
