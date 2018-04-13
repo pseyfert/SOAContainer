@@ -494,7 +494,7 @@ namespace SOA {
 
                 // make sure the storage matches the fields provided
                 static_assert(verify_storage<STORAGE>(
-                            std::make_index_sequence<sizeof...(FIELDS)>{}),
+                            std::make_index_sequence<sizeof...(FIELDS)>()),
                         "Type of provided storage must match fields.");
             };
 

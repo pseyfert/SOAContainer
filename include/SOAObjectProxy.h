@@ -220,14 +220,15 @@ namespace SOA {
 
         /// convert to tuple of member contents
         constexpr operator value_type() const
-                noexcept(noexcept(to_tuple_val(*this)))
+                noexcept(noexcept(to_tuple_val(std::declval<self_type>())))
         { return to_tuple_val(*this); }
         /// convert to tuple of references to members
-        operator reference() noexcept(noexcept(to_tuple(*this)))
+        operator reference() noexcept(
+                noexcept(to_tuple(std::declval<self_type>())))
         { return to_tuple(*this); }
         /// convert to tuple of const references to members
         constexpr operator const_reference() const
-                noexcept(noexcept(to_tuple(*this)))
+                noexcept(noexcept(to_tuple(std::declval<self_type>())))
         { return to_tuple(*this); }
 
         /// assign from other ObjectProxy - copy fields

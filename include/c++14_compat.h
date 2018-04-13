@@ -18,23 +18,24 @@ namespace std {
         static constexpr size_t size() { return sizeof...(indexes); }
     };
 
-    template<size_t currentIndex, size_t... indexes>
-    struct make_index_sequence_helper;
+    template <size_t... idxs1, size_t... idxs2>
+    constexpr static inline
+    index_sequence<idxs1..., (sizeof...(idxs1) + idxs2)...>
+    __cat_idx_seq(index_sequence<idxs1...>, index_sequence<idxs2...>) noexcept
+    { return {}; }
 
-    template<size_t...indexes>
-    struct make_index_sequence_helper<0, indexes...> {
-        using type = index_sequence<indexes...>;
-    };
-
-    template<size_t currentIndex, size_t... indexes>
-    struct make_index_sequence_helper {
-        using type = typename make_index_sequence_helper<currentIndex - 1,
-                currentIndex - 1, indexes...>::type;
-    };
+    template <size_t N>
+    struct __mk_idx_seq { using type = decltype(__cat_idx_seq(
+                std::declval<typename __mk_idx_seq<N - N / 2>::type>(),
+                std::declval<typename __mk_idx_seq<N / 2>::type>())); };
+    template <>
+    struct __mk_idx_seq<0> { using type = index_sequence<>; };
+    template <>
+    struct __mk_idx_seq<1> { using type = index_sequence<0>; };
 
     template<size_t N>
-    struct make_index_sequence : public make_index_sequence_helper<N>::type
-    { };
+    typename __mk_idx_seq<N>::type make_index_sequence() noexcept
+    { return {}; }
 }
 #else // __cplusplus
 // not even C++11 support
