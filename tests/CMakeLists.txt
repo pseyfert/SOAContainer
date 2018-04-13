@@ -4,6 +4,22 @@ add_subdirectory(googletest)
 
 include_directories(${gtest_SOURCE_DIR}/include)
 
+add_executable(SOAContainerVectorSimple SOAContainerVectorSimple.cc ${headers})
+target_link_libraries(SOAContainerVectorSimple gtest gtest_main)
+add_test(SOAContainerVectorSimple SOAContainerVectorSimple)
+
+add_executable(SOAContainerDequeSimple SOAContainerDequeSimple.cc ${headers})
+target_link_libraries(SOAContainerDequeSimple gtest gtest_main)
+add_test(SOAContainerDequeSimple SOAContainerDequeSimple)
+
+add_executable(SOAContainerVectorSimpleSkin SOAContainerVectorSimpleSkin.cc ${headers})
+target_link_libraries(SOAContainerVectorSimpleSkin gtest gtest_main)
+add_test(SOAContainerVectorSimpleSkin SOAContainerVectorSimpleSkin)
+
+add_executable(SOAContainerDequeSimpleSkin SOAContainerDequeSimpleSkin.cc ${headers})
+target_link_libraries(SOAContainerDequeSimpleSkin gtest gtest_main)
+add_test(SOAContainerDequeSimpleSkin SOAContainerDequeSimpleSkin)
+
 add_executable(SOAContainerTest SOAContainerTest.cc ${headers})
 target_link_libraries(SOAContainerTest gtest gtest_main)
 add_test(SOAContainerTest SOAContainerTest)

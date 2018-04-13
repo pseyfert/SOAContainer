@@ -1,0 +1,256 @@
+/** @file tests/SOAContainerDequeSimpleSkin.cc
+ *
+ * @brief test SOAContainer with std::vector and simple skins
+ *
+ * @author Manuel Schiller <Manuel.Schiller@cern.ch>
+ * @date 2015-04-11
+ */
+
+#include <cmath>
+#include <tuple>
+#include <deque>
+#include <random>
+#include <chrono>
+
+#include "gtest/gtest.h"
+#include "SOAContainer.h"
+
+namespace HitNamespace {
+    namespace Fields {
+        typedef struct : public SOA::Typelist::wrap_type<float> {} xAtYEq0;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} zAtYEq0;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} dxdy;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} dzdy;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} x;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} z;
+        typedef struct : public SOA::Typelist::wrap_type<float> {} y;
+    }
+
+    template <typename NAKEDPROXY>
+    class HitSkin : public SOA::PrintableNullSkin<NAKEDPROXY> {
+        public:
+            using fields_typelist =
+                    SOA::Typelist::typelist<Fields::xAtYEq0, Fields::xAtYEq0,
+                                            Fields::dxdy, Fields::dzdy,
+                                            Fields::x, Fields::y, Fields::z>;
+            using SOA::PrintableNullSkin<NAKEDPROXY>::PrintableNullSkin;
+            using SOA::PrintableNullSkin<NAKEDPROXY>::operator=;
+
+            auto xAtYEq0() const noexcept
+                    -> decltype(this->template get<Fields::xAtYEq0>())
+            {
+                return this->template get<Fields::xAtYEq0>();
+            }
+            auto zAtYEq0() const noexcept
+                    -> decltype(this->template get<Fields::zAtYEq0>())
+            {
+                return this->template get<Fields::zAtYEq0>();
+            }
+            auto x() const noexcept
+                    -> decltype(this->template get<Fields::x>())
+            {
+                return this->template get<Fields::x>();
+            }
+            auto y() const noexcept
+                    -> decltype(this->template get<Fields::y>())
+            {
+                return this->template get<Fields::y>();
+            }
+            auto z() const noexcept
+                    -> decltype(this->template get<Fields::z>())
+            {
+                return this->template get<Fields::z>();
+            }
+            auto dxdy() const noexcept
+                    -> decltype(this->template get<Fields::dxdy>())
+            {
+                return this->template get<Fields::dxdy>();
+            }
+            auto dzdy() const noexcept
+                    -> decltype(this->template get<Fields::dzdy>())
+            {
+                return this->template get<Fields::dzdy>();
+            }
+
+            void setX(float x) noexcept
+            {
+                this->template get<Fields::x>() = x;
+            }
+            void setY(float y) noexcept
+            {
+                this->template get<Fields::y>() = y;
+            }
+            void setZ(float z) noexcept
+            {
+                this->template get<Fields::z>() = z;
+            }
+
+            auto x(float y) const noexcept
+                    -> decltype(this->xAtYEq0() + this->dxdy() * y)
+            {
+                return xAtYEq0() + dxdy() * y;
+            }
+            auto z(float y) const noexcept
+                    -> decltype(this->zAtYEq0() + this->dzdy() * y)
+            {
+                return zAtYEq0() + dzdy() * y;
+            }
+
+            float y(float y0, float ySl) const noexcept
+            {
+                return (y0 + zAtYEq0() * ySl) / (1 - dzdy() * ySl);
+            }
+
+            float updateHit(float y0, float ySl) noexcept
+            {
+                setY(y(y0, ySl));
+                setZ(z(y())), setX(x(y()));
+                return y();
+            }
+    };
+
+    using namespace Fields;
+    typedef SOA::Container<std::deque, HitSkin, xAtYEq0, zAtYEq0, dxdy, dzdy,
+                           x, z, y>
+            Hits;
+    typedef typename Hits::reference Hit;
+} // namespace HitNamespace
+
+static void updateHits(HitNamespace::Hits& hits, float y0, float ySl)
+        __attribute__((noinline));
+static void updateHits(HitNamespace::Hits& hits, float y0, float ySl)
+{
+    using namespace HitNamespace;
+    for (auto hit : hits) hit.updateHit(y0, ySl);
+}
+
+static void updateHits_v(HitNamespace::Hits& hits, float y0, float ySl)
+        __attribute__((noinline));
+static void updateHits_v(HitNamespace::Hits& hits, float y0, float ySl)
+{
+    using namespace HitNamespace;
+    // give compiler a chance to not run out of registers, so it can
+    // autovectorise
+    for (auto hit : hits) hit.setY(hit.y(y0, ySl));
+    for (auto hit : hits) {
+        const auto y = hit.y();
+        hit.setZ(hit.z(y)), hit.setX(hit.x(y));
+    }
+}
+
+class AOSHit {
+private:
+    float m_xAtYEq0;
+    float m_zAtYEq0;
+    float m_dxdy;
+    float m_dzdy;
+    float m_x;
+    float m_z;
+    float m_y;
+
+public:
+    AOSHit(float xAtYEq0, float zAtYEq0, float dxdy, float dzdy, float x,
+           float z, float y)
+            : m_xAtYEq0(xAtYEq0), m_zAtYEq0(zAtYEq0), m_dxdy(dxdy),
+              m_dzdy(dzdy), m_x(x), m_z(z), m_y(y)
+    {}
+
+    float xAtYEq0() const noexcept { return m_xAtYEq0; }
+    float zAtYEq0() const noexcept { return m_zAtYEq0; }
+    float dxdy() const noexcept { return m_dxdy; }
+    float dzdy() const noexcept { return m_dzdy; }
+    float x() const noexcept { return m_x; }
+    float z() const noexcept { return m_z; }
+    float y() const noexcept { return m_y; }
+    float x(float y) const noexcept { return xAtYEq0() + dxdy() * y; }
+    float z(float y) const noexcept { return zAtYEq0() + dzdy() * y; }
+    float y(float y0, float ySl) const noexcept
+    {
+        return (y0 + zAtYEq0() * ySl) / (1 - dzdy() * ySl);
+    }
+
+    void setX(float x) noexcept { m_x = x; }
+    void setY(float y) noexcept { m_y = y; }
+    void setZ(float z) noexcept { m_z = z; }
+
+    float updateHit(float y0, float ySl) noexcept
+    {
+        setY(y(y0, ySl));
+        setZ(z(y())), setX(x(y()));
+        return y();
+    }
+};
+
+typedef std::deque<AOSHit> AOSHits;
+
+static void updateHits(AOSHits& hits, float y0, float ySl)
+        __attribute__((noinline));
+static void updateHits(AOSHits& hits, float y0, float ySl)
+{
+    for (auto& hit : hits) hit.updateHit(y0, ySl);
+}
+
+static void updateHits_v(AOSHits& hits, float y0, float ySl)
+        __attribute__((noinline));
+static void updateHits_v(AOSHits& hits, float y0, float ySl)
+{
+    // give compiler a chance to not run out of registers, so it can
+    // autovectorise
+    for (auto& hit : hits) hit.setY(hit.y(y0, ySl));
+    for (auto& hit : hits) {
+        const auto y = hit.y();
+        hit.setZ(hit.z(y)), hit.setX(hit.x(y));
+    }
+}
+
+TEST(SOAContainerVector, SimpleSkin)
+{
+    using namespace HitNamespace;
+    Hits hits;
+    AOSHits ahits;
+    for (unsigned i = 0; i < 1024; ++i) {
+	float x0, z0, dxdy, dzdy, x, z, y;
+        std::tie(x0, z0, dxdy, dzdy, x, z, y) = std::make_tuple(
+                0.5f * i, 8500.f, std::tan(5.f / 180.f * float(M_PI)),
+                3.6e-3f, 0.5f * i, 8500.f, 0.f);
+        hits.emplace_back(x0, z0, dxdy, dzdy, x, z, y);
+        ahits.emplace_back(x0, z0, dxdy, dzdy, x, z, y);
+    }
+
+    // test shifting the hits one by one
+    for (unsigned i = 0; i < 1024; ++i) updateHits(hits, 300.f, -0.01f);
+    for (unsigned i = 0; i < 1024; ++i) updateHits(ahits, 300.f, -0.01f);
+
+    for (unsigned i = 0; i < 1024; ++i) {
+	EXPECT_EQ(hits[i].x(), ahits[i].x());
+	EXPECT_EQ(hits[i].z(), ahits[i].z());
+	EXPECT_EQ(hits[i].y(), ahits[i].y());
+    }
+
+    // test shifting the hits, hopefully autovectorised
+    // heat up cache
+    updateHits_v(hits, 300.f, -0.01f);
+    const auto t0 = std::chrono::high_resolution_clock::now();
+    for (unsigned i = 0; i < 10; ++i)
+	updateHits_v(hits, 300.f, -0.01f);
+    const auto t1 = std::chrono::high_resolution_clock::now();
+    // heat up cache
+    updateHits_v(ahits, 300.f, -0.01f);
+    const auto t2 = std::chrono::high_resolution_clock::now();
+    for (unsigned i = 0; i < 10; ++i)
+	updateHits_v(ahits, 300.f, -0.01f);
+    const auto t3 = std::chrono::high_resolution_clock::now();
+    // deque does not vectorise nicely, since the deque iterators
+    // are not optimized away by the compiler - expect a larger time for the
+    // SOA version, so we get a shout from the test suite if the STL or
+    // compilers improve
+    EXPECT_GT((t1 - t0), (t3 - t2));
+
+    for (unsigned i = 0; i < 1024; ++i) {
+	EXPECT_EQ(hits[i].x(), ahits[i].x());
+	EXPECT_EQ(hits[i].z(), ahits[i].z());
+	EXPECT_EQ(hits[i].y(), ahits[i].y());
+    }
+}
+
+// vim: sw=4:tw=78:ft=cpp:et
