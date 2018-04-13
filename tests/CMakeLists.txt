@@ -24,13 +24,25 @@ add_executable(SOAContainerArrayAsField SOAContainerArrayAsField.cc ${headers})
 target_link_libraries(SOAContainerArrayAsField gtest gtest_main)
 add_test(SOAContainerArrayAsField SOAContainerArrayAsField)
 
+add_executable(SOAContainerVectorPartition SOAContainerVectorPartition.cc ${headers})
+target_link_libraries(SOAContainerVectorPartition gtest gtest_main)
+add_test(SOAContainerVectorPartition SOAContainerVectorPartition)
+
+add_executable(SOAContainerVectorConvenientSkin SOAContainerVectorConvenientSkin.cc ${headers})
+target_link_libraries(SOAContainerVectorConvenientSkin gtest gtest_main)
+add_test(SOAContainerVectorConvenientSkin SOAContainerVectorConvenientSkin)
+
+add_executable(SOAContainerVectorZipViews SOAContainerVectorZipViews.cc ${headers})
+target_link_libraries(SOAContainerVectorZipViews gtest gtest_main)
+add_test(SOAContainerVectorZipViews SOAContainerVectorZipViews)
+
+add_executable(SOAContainerVectorFieldExtraction SOAContainerVectorFieldExtraction.cc ${headers})
+target_link_libraries(SOAContainerVectorFieldExtraction gtest gtest_main)
+add_test(SOAContainerVectorFieldExtraction SOAContainerVectorFieldExtraction)
+
 add_executable(SOAViewSimple SOAViewSimple.cc ${headers})
 target_link_libraries(SOAViewSimple gtest gtest_main)
 add_test(SOAViewSimple SOAViewSimple)
-
-add_executable(SOAContainerTest SOAContainerTest.cc ${headers})
-target_link_libraries(SOAContainerTest gtest gtest_main)
-add_test(SOAContainerTest SOAContainerTest)
 
 add_executable(Branchless Branchless.cc ${headers})
 target_link_libraries(Branchless gtest gtest_main)
