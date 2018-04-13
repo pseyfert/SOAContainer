@@ -20,6 +20,14 @@ add_executable(SOAContainerDequeSimpleSkin SOAContainerDequeSimpleSkin.cc ${head
 target_link_libraries(SOAContainerDequeSimpleSkin gtest gtest_main)
 add_test(SOAContainerDequeSimpleSkin SOAContainerDequeSimpleSkin)
 
+add_executable(SOAContainerArrayAsField SOAContainerArrayAsField.cc ${headers})
+target_link_libraries(SOAContainerArrayAsField gtest gtest_main)
+add_test(SOAContainerArrayAsField SOAContainerArrayAsField)
+
+add_executable(SOAViewSimple SOAViewSimple.cc ${headers})
+target_link_libraries(SOAViewSimple gtest gtest_main)
+add_test(SOAViewSimple SOAViewSimple)
+
 add_executable(SOAContainerTest SOAContainerTest.cc ${headers})
 target_link_libraries(SOAContainerTest gtest gtest_main)
 add_test(SOAContainerTest SOAContainerTest)
