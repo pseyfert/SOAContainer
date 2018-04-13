@@ -48,9 +48,9 @@ add_executable(Branchless Branchless.cc ${headers})
 target_link_libraries(Branchless gtest gtest_main)
 add_test(Branchless Branchless)
 
-add_executable(EmplaceBackTest EmplaceBackTest.cc ${headers})
-target_link_libraries(EmplaceBackTest gtest gtest_main)
-add_test(EmplaceBackTest EmplaceBackTest)
+add_executable(SOAContainerVectorEmplaceBack SOAContainerVectorEmplaceBack.cc ${headers})
+target_link_libraries(SOAContainerVectorEmplaceBack gtest gtest_main)
+add_test(SOAContainerVectorEmplaceBack SOAContainerVectorEmplaceBack)
 
 add_executable(SOAIteratorRangeTest SOAIteratorRangeTest.cc ${headers})
 target_link_libraries(SOAIteratorRangeTest gtest gtest_main)
