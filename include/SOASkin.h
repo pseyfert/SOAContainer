@@ -20,15 +20,13 @@ namespace SOA {
         /// a dummy struct to stand in for the base class of a skin
         struct dummy { template <std::size_t> void get() const noexcept {} };
 
-        /// little helper checking for duplicate fields
+        /// check if there are duplicates in fields
         template <typename... FIELDS>
-        struct has_duplicate_fields {
+        constexpr static inline bool has_duplicate_fields()
+        {
             using TL = SOA::Typelist::typelist<FIELDS...>;
-            /// predicate to test if field T is duplicate in FIELDS...
-            template <typename T>
-            struct type : std::integral_constant<bool,
-                (TL::template count<T>() > 1)> {};
-        };
+            return SOA::Utils::ANY((TL::template count<FIELDS>() > 1)...);
+        }
         /// little helper checking for duplicate fields
         template <bool HASDUPLICATES, typename BASE, typename BASEBASE, typename... FIELDS>
         struct _NoDuplicateFieldsVerifier {
@@ -41,9 +39,8 @@ namespace SOA {
         /// little helper checking for duplicate fields
         template <typename BASE, typename BASEBASE, typename... FIELDS>
         using NoDuplicateFieldsVerifier = _NoDuplicateFieldsVerifier<
-            SOA::Utils::ANY(
-            has_duplicate_fields<FIELDS...>::template type<
-            FIELDS>::value...), BASE, BASEBASE, FIELDS...>;
+            SOA::Utils::ANY((SOA::Typelist::typelist<FIELDS...>::template count<FIELDS>() > 1)...),
+            BASE, BASEBASE, FIELDS...>;
         /** @brief base class of all convenient SOA skins
          *
          * @author Manuel Schiller <Manuel.Schiller@cern.ch>

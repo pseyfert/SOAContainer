@@ -59,10 +59,7 @@ namespace SOA {
 
             /// construct from a pair of iterators
             template <typename ITFWD>
-            constexpr explicit iterator_range(ITFWD&& first, ITFWD&& last,
-                    typename std::enable_if<std::is_same<
-                    typename std::decay<ITFWD>::type,
-                    typename std::decay<ITFWD>::type>::value>* = nullptr) :
+            constexpr explicit iterator_range(ITFWD&& first, ITFWD&& last) :
                 m_first(std::forward<ITFWD>(first)),
                 m_last(std::forward<ITFWD>(last)) {}
 
