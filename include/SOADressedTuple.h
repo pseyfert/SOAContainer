@@ -123,36 +123,6 @@ namespace SOA {
             }
 
         public:
-#if 1
-            /// fallback constructor to see past dressed tuples
-#else
-#if (defined(__GNUC__) && (7 > __GNUC__ || (7 == __GNUC__ && \
-                __GNUC_MINOR__ <= 1)) && !defined(__clang__))
-            // old versions of gcc don't need extra code, only gcc 7.2 or
-            // newer does
-#elif ((defined(__GNUC__) && !defined(__clang__)) || \
-        (defined(__clang__) && 4 <= __clang_major__))
-            /// fallback constructor to see past dressed tuples
-            template <typename... Ts, typename std::enable_if<
-                std::is_constructible<TUPLE, Ts...>::value, int>::type = 0>
-            constexpr DressedTuple(Ts&&... ts) noexcept(noexcept(
-                        TUPLE(std::declval<Ts>()...))) :
-                DressedTuple(std::make_index_sequence<sizeof...(Ts)>(),
-                        std::forward_as_tuple(std::forward<Ts>(ts)...))
-            {}
-#elif (defined(__clang__) && 3 == __clang_major__ && 9 == __clang_minor__)
-            /// fallback constructor to see past dressed tuples
-            template <typename... Ts, typename DUMMY = typename std::enable_if<
-                is_constructible<TUPLE, std::tuple<Ts...> >::value, int>::type>
-            constexpr DressedTuple(Ts&&... ts, DUMMY = 0) noexcept(noexcept(
-                        TUPLE(std::declval<Ts>()...))) :
-                DressedTuple(std::make_index_sequence<sizeof...(Ts)>(),
-                        std::forward_as_tuple(std::forward<Ts>(ts)...))
-            {}
-#elif (defined(__clang__) && 3 == __clang_major__ && 8 == __clang_minor__)
-            // no extra code needed for clang 3.8
-#endif
-#endif
             /// fallback constructor to see past dressed tuples
             template <typename T, typename TDUMMY = T,
                      typename = typename std::enable_if<
