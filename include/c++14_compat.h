@@ -34,7 +34,7 @@ namespace std {
     struct __mk_idx_seq<1> { using type = index_sequence<0>; };
 
     template<size_t N>
-    typename __mk_idx_seq<N>::type make_index_sequence() noexcept
+    constexpr typename __mk_idx_seq<N>::type make_index_sequence() noexcept
     { return {}; }
 }
 #else // __cplusplus

@@ -22,7 +22,6 @@
 namespace SOA {
     /// namespace for typelist type used by Container and related utilities
     namespace Typelist {
-        // forward declarations
         namespace typelist_impl {
             /// sum up an empty index_sequence
             constexpr std::size_t sum(std::index_sequence<>) noexcept
@@ -31,22 +30,23 @@ namespace SOA {
             template <std::size_t HEAD, std::size_t... TAIL>
             constexpr std::size_t sum(std::index_sequence<HEAD, TAIL...>) noexcept
             { return HEAD + sum(std::index_sequence<TAIL...>{}); }
-
-            /// look for first T in LIST
-            template <typename T, typename... LIST> struct first_index;
-            // base case: return -1: no T in empty list
-            template <typename T> struct first_index<T> :
-                std::integral_constant<std::size_t, std::size_t(-1)> {};
-            // base case: found T at beginning of list
-            template <typename T, typename... TAIL>
-            struct first_index<T, T, TAIL...> :
-                std::integral_constant<std::size_t, 0> {};
-            // recursion case: either found or not found in tail of list
-            template <typename T, typename HEAD, typename... TAIL>
-            struct first_index<T, HEAD, TAIL...> :
-                std::integral_constant<std::size_t,
-                std::size_t(-1 != first_index<T, TAIL...>::value) +
-                    first_index<T, TAIL...>::value> {};
+            /// minimum of an empty index_sequence
+            constexpr std::size_t min(std::index_sequence<>) noexcept
+            { return -1; }
+            /// minimum of an index_sequence
+            template <std::size_t HEAD, std::size_t... TAIL>
+            constexpr std::size_t min(std::index_sequence<HEAD, TAIL...>) noexcept
+            {
+                return HEAD <= min(std::index_sequence<TAIL...>{}) ? HEAD :
+                    min(std::index_sequence<TAIL...>{});
+            }
+            /// return index_sequence: IDX if NEEDLE in TL at IDX, else -1
+            template <typename NEEDLE, typename TL, std::size_t... IDXS>
+            constexpr static std::index_sequence<(std::is_same<
+                NEEDLE, typename TL::template at<IDXS>::type>::value ?
+                IDXS : std::size_t(-1))...>
+            _idx_if_found(std::index_sequence<IDXS...>) noexcept
+            { return {}; }
         } // namespace typelist_impl
 
         /// a very simple type list
@@ -72,7 +72,11 @@ namespace SOA {
             /// find index of first occurrence of T, -1 otherwise
             template <typename T>
             constexpr static std::size_t find() noexcept
-            { return typelist_impl::first_index<T, ARGS...>::value; }
+            {
+                return typelist_impl::min(
+                        typelist_impl::_idx_if_found<T, typelist<ARGS...> >(
+                            std::make_index_sequence<size()>()));
+            }
             /// little helper to map over the types in the typelist
             template <template <typename ARG> class OP>
             using map_t = typelist<OP<ARGS>...>;
