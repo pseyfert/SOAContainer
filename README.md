@@ -27,10 +27,10 @@ namespace XYZPoint {
     SOAFIELD_TRIVIAL(y, y, float); // ditto, for y
     SOAFIELD_TRIVIAL(z, z, float); // ditto, for z
     SOASKIN_TRIVIAL(Skin, x, y, z); // uses fields x, y, z
-};
+}
 // define a SOA container - mostly has std::vector's interface, so is
 // familiar
-SOA::Container<std::vector, Point::Skin> c = /* fill somehow... */;
+SOA::Container<std::vector, XYZPoint::Skin> c = /* fill somehow... */;
 
 // we now have a big vector of points in 3D, cartesian coordinates...
 // get the x/y portion of it
@@ -44,9 +44,9 @@ namespace RPhiPoint { // point in polar coordinates in xy plane
     SOAFIELD_TRIVIAL(r, r, float);
     SOAFIELD_TRIVIAL(phi, phi, float);
     SOASKIN_TRIVIAL(Skin, r, phi);
-};
+}
 // container to hold the converted r and phi quantities
-SOAContainer<std::vector, RPhiPoint::Skin> crphi;
+SOA::Container<std::vector, RPhiPoint::Skin> crphi;
 crphi.reserve(xyview.size());
 for (auto xy: xyview) { // calculate r and phi
     crphi.emplace_back(
