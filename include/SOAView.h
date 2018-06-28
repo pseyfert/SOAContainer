@@ -1321,17 +1321,14 @@ namespace SOA {
                         typename VV2::fields_typelist());
             }
         };
+        /// specialisation: "zipping" with no view for sfinae friendlyness
+        template <> struct _zipper<std::size_t(0)> {
+        };
         /// specialisation: "zipping" a single view is a no-op
         template <> struct _zipper<std::size_t(1)> {
             template <typename VIEW1>
-            static VIEW1 doIt(const VIEW1& v)
-            { return v; }
-            template <typename VIEW1>
-            static VIEW1 doIt(VIEW1& v)
-            { return v; }
-            template <typename VIEW1>
-            static VIEW1 doIt(VIEW1&& v)
-            { return std::move(v); }
+            static typename std::decay<VIEW1>::type doIt( VIEW1&& v )
+            { return std::forward<VIEW1>( v ); }
         };
         /// general case: zip views one-by-one
         template <std::size_t N> struct _zipper {
