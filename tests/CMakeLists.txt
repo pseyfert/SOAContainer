@@ -1,58 +1,58 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-add_subdirectory(googletest)
+add_subdirectory(googletest EXCLUDE_FROM_ALL)
 
 include_directories(${gtest_SOURCE_DIR}/include)
 
-add_executable(SOAContainerVectorSimple SOAContainerVectorSimple.cc ${headers})
+add_executable(SOAContainerVectorSimple SOAContainerVectorSimple.cc)
 target_link_libraries(SOAContainerVectorSimple gtest gtest_main)
 add_test(SOAContainerVectorSimple SOAContainerVectorSimple)
 
-add_executable(SOAContainerDequeSimple SOAContainerDequeSimple.cc ${headers})
+add_executable(SOAContainerDequeSimple SOAContainerDequeSimple.cc)
 target_link_libraries(SOAContainerDequeSimple gtest gtest_main)
 add_test(SOAContainerDequeSimple SOAContainerDequeSimple)
 
-add_executable(SOAContainerVectorSimpleSkin SOAContainerVectorSimpleSkin.cc ${headers})
+add_executable(SOAContainerVectorSimpleSkin SOAContainerVectorSimpleSkin.cc)
 target_link_libraries(SOAContainerVectorSimpleSkin gtest gtest_main)
 add_test(SOAContainerVectorSimpleSkin SOAContainerVectorSimpleSkin)
 
-add_executable(SOAContainerDequeSimpleSkin SOAContainerDequeSimpleSkin.cc ${headers})
+add_executable(SOAContainerDequeSimpleSkin SOAContainerDequeSimpleSkin.cc)
 target_link_libraries(SOAContainerDequeSimpleSkin gtest gtest_main)
 add_test(SOAContainerDequeSimpleSkin SOAContainerDequeSimpleSkin)
 
-add_executable(SOAContainerArrayAsField SOAContainerArrayAsField.cc ${headers})
+add_executable(SOAContainerArrayAsField SOAContainerArrayAsField.cc)
 target_link_libraries(SOAContainerArrayAsField gtest gtest_main)
 add_test(SOAContainerArrayAsField SOAContainerArrayAsField)
 
-add_executable(SOAContainerVectorPartition SOAContainerVectorPartition.cc ${headers})
+add_executable(SOAContainerVectorPartition SOAContainerVectorPartition.cc)
 target_link_libraries(SOAContainerVectorPartition gtest gtest_main)
 add_test(SOAContainerVectorPartition SOAContainerVectorPartition)
 
-add_executable(SOAContainerVectorConvenientSkin SOAContainerVectorConvenientSkin.cc ${headers})
+add_executable(SOAContainerVectorConvenientSkin SOAContainerVectorConvenientSkin.cc)
 target_link_libraries(SOAContainerVectorConvenientSkin gtest gtest_main)
 add_test(SOAContainerVectorConvenientSkin SOAContainerVectorConvenientSkin)
 
-add_executable(SOAContainerVectorZipViews SOAContainerVectorZipViews.cc ${headers})
+add_executable(SOAContainerVectorZipViews SOAContainerVectorZipViews.cc)
 target_link_libraries(SOAContainerVectorZipViews gtest gtest_main)
 add_test(SOAContainerVectorZipViews SOAContainerVectorZipViews)
 
-add_executable(SOAContainerVectorFieldExtraction SOAContainerVectorFieldExtraction.cc ${headers})
+add_executable(SOAContainerVectorFieldExtraction SOAContainerVectorFieldExtraction.cc)
 target_link_libraries(SOAContainerVectorFieldExtraction gtest gtest_main)
 add_test(SOAContainerVectorFieldExtraction SOAContainerVectorFieldExtraction)
 
-add_executable(SOAViewSimple SOAViewSimple.cc ${headers})
+add_executable(SOAViewSimple SOAViewSimple.cc)
 target_link_libraries(SOAViewSimple gtest gtest_main)
 add_test(SOAViewSimple SOAViewSimple)
 
-add_executable(Branchless Branchless.cc ${headers})
+add_executable(Branchless Branchless.cc)
 target_link_libraries(Branchless gtest gtest_main)
 add_test(Branchless Branchless)
 
-add_executable(SOAContainerVectorEmplaceBack SOAContainerVectorEmplaceBack.cc ${headers})
+add_executable(SOAContainerVectorEmplaceBack SOAContainerVectorEmplaceBack.cc)
 target_link_libraries(SOAContainerVectorEmplaceBack gtest gtest_main)
 add_test(SOAContainerVectorEmplaceBack SOAContainerVectorEmplaceBack)
 
-add_executable(SOAIteratorRangeTest SOAIteratorRangeTest.cc ${headers})
+add_executable(SOAIteratorRangeTest SOAIteratorRangeTest.cc)
 target_link_libraries(SOAIteratorRangeTest gtest gtest_main)
 add_test(SOAIteratorRangeTest SOAIteratorRangeTest)
 
