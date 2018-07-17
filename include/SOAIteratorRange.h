@@ -61,10 +61,10 @@ namespace SOA {
             using reverse_iterator = std::reverse_iterator<iterator>;
 
             /// construct from a pair of iterators
-            template <typename ITFWD>
-            constexpr explicit iterator_range(ITFWD&& first, ITFWD&& last) :
-                m_first(std::forward<ITFWD>(first)),
-                m_last(std::forward<ITFWD>(last)) {}
+            template <typename ITFWD1, typename ITFWD2>
+            constexpr explicit iterator_range(ITFWD1&& first, ITFWD2&& last) :
+                m_first(std::forward<ITFWD1>(first)),
+                m_last(std::forward<ITFWD2>(last)) {}
 
             /// construct from another range (if iterators are convertible)
             template <typename RANGE, typename DUMMY = RANGE, typename =
