@@ -153,12 +153,9 @@ namespace SOA {
      * @returns iterator_range<IT> from [first, last(
      */
     template <typename IT>
-    constexpr iterator_range<IT> make_iterator_range(
-            IT&& first, IT&& last)
-    {
-        return iterator_range<IT>{
-            std::forward<IT>(first), std::forward<IT>(last) };
-    }
+    constexpr iterator_range<typename std::remove_reference<IT>::type>
+    make_iterator_range(IT&& first, IT&& last)
+    { return { std::forward<IT>(first), std::forward<IT>(last) }; }
 } // namespace SOA
 
 #ifndef __GNUC__

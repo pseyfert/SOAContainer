@@ -2,6 +2,7 @@
 #define SOAITERATOR_H
 
 #include <ostream>
+#include <iterator>
 
 namespace SOA {
     template < template <typename...> class CONTAINER,
