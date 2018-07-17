@@ -16,13 +16,21 @@ add_compile_options(-Wpedantic -Wall -Wextra)
 
 # CMAKE 2
 include_directories(include)
-add_compile_options(-g -O2 -ffast-math -ftree-vectorize -march=native)
+add_compile_options(-ffast-math -ftree-vectorize -march=native)
+if (NOT CMAKE_BUILD_TYPE)
+  message(STATUS "No build type selected, default to RelWithDebInfo")
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo") # -O2 -g -DNDEBUG
+endif()
 
-file(GLOB headers include/*)
+if(${CMAKE_GENERATOR} STREQUAL "Ninja")
+  add_compile_options(-fdiagnostics-color)
+endif()
 
 enable_testing()
 add_subdirectory(tests)
 add_subdirectory(examples)
+
+install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 # CMAKE 3
 #target_include_directories(soa_container_test PUBLIC include)
