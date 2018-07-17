@@ -320,4 +320,31 @@ TEST(SOAIteratorRangeTest, StdVector) {
     EXPECT_EQ(7, *(foo.begin() + 7));
 }
 
+TEST(SOAIteratorRangeTest, MakeIteratorRangeFromReferencesToIterators) {
+    using C = std::vector<int>;
+    C v({ 0, 1, 2, 3, 4, 5, 6, 7 });
+    auto it = v.begin(), itEnd = v.end();
+    auto& rit = it, ritEnd = itEnd;
+    auto r = SOA::make_iterator_range(rit, ritEnd);
+    auto kt = v.begin(), ktEnd = v.end();
+    auto jt = r.begin();
+    for (; ktEnd != kt; ++jt, ++kt) {
+        EXPECT_EQ(*kt, *jt);
+    }
+}
+
+TEST(SOAIteratorRangeTest, ConversionToConstIterRange) {
+    using C = std::vector<int>;
+    C v({ 0, 1, 2, 3, 4, 5, 6, 7 });
+    auto r = SOA::make_iterator_range(v.begin(), v.end());
+    SOA::iterator_range<typename C::const_iterator> rc(r);
+    auto it = v.begin(), itEnd = v.end();
+    auto jt = r.begin();
+    auto kt = rc.begin();
+    for (; itEnd != it; ++it, ++jt, ++kt) {
+        EXPECT_EQ(*it, *jt);
+        EXPECT_EQ(*it, *kt);
+    }
+}
+
 // vim: sw=4:tw=78:ft=cpp:et

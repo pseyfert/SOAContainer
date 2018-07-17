@@ -20,6 +20,9 @@
 #endif // __GNUC__
 
 namespace SOA {
+    /// @brief tag to mark iterator ranges
+    struct iterator_range_tag {};
+
     /** @brief your standard, dumb iterator range
      *
      * This class models an iterator range, i.e. the range between two elements
@@ -38,7 +41,7 @@ namespace SOA {
      * IT must be at least a forward iterator.
      */
     template <typename IT>
-    class iterator_range {
+    class iterator_range : public SOA::iterator_range_tag {
         private:
             IT m_first, m_last; ///< two iterators
         public:
@@ -62,6 +65,13 @@ namespace SOA {
             constexpr explicit iterator_range(ITFWD&& first, ITFWD&& last) :
                 m_first(std::forward<ITFWD>(first)),
                 m_last(std::forward<ITFWD>(last)) {}
+
+            /// construct from another range (if iterators are convertible)
+            template <typename RANGE, typename DUMMY = RANGE, typename =
+                typename std::enable_if<std::is_base_of<
+                SOA::iterator_range_tag, DUMMY>::value>::type>
+            constexpr explicit iterator_range(const RANGE& range) :
+                iterator_range(range.begin(), range.end()) {}
 
             /// is range empty
             constexpr bool empty() const { return m_last == m_first; }
