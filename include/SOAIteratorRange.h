@@ -155,7 +155,10 @@ namespace SOA {
     template <typename IT>
     constexpr iterator_range<typename std::remove_reference<IT>::type>
     make_iterator_range(IT&& first, IT&& last)
-    { return { std::forward<IT>(first), std::forward<IT>(last) }; }
+    {
+        return iterator_range<typename std::remove_reference<IT>::type>{
+            std::forward<IT>(first), std::forward<IT>(last) };
+    }
 } // namespace SOA
 
 #ifndef __GNUC__
