@@ -72,6 +72,10 @@ namespace SOA {
                 SOA::iterator_range_tag, DUMMY>::value>::type>
             constexpr explicit iterator_range(const RANGE& range) :
                 iterator_range(range.begin(), range.end()) {}
+            /// construct from another range (if iterators are convertible)
+            template <typename T>
+            constexpr explicit iterator_range(const SOA::iterator_range<T*>& range) :
+                iterator_range(range.begin(), range.end()) {}
 
             /// is range empty
             constexpr bool empty() const { return m_last == m_first; }
