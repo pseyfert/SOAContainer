@@ -61,20 +61,19 @@ namespace SOA {
             using reverse_iterator = std::reverse_iterator<iterator>;
 
             /// construct from a pair of iterators
-            template <typename ITFWD1, typename ITFWD2>
+            template <typename ITFWD1, typename ITFWD2,
+                     typename DUMMY1 = ITFWD1, typename DUMMY2 = ITFWD2,
+                     typename = typename std::enable_if<
+                         std::is_constructible<IT, DUMMY1>::value &&
+                         std::is_constructible<IT, DUMMY2>::value>::type>
             constexpr explicit iterator_range(ITFWD1&& first, ITFWD2&& last) :
                 m_first(std::forward<ITFWD1>(first)),
                 m_last(std::forward<ITFWD2>(last)) {}
 
             /// construct from another range (if iterators are convertible)
-            template <typename RANGE, typename DUMMY = RANGE, typename =
-                typename std::enable_if<std::is_base_of<
-                SOA::iterator_range_tag, DUMMY>::value>::type>
-            constexpr explicit iterator_range(const RANGE& range) :
-                iterator_range(range.begin(), range.end()) {}
-            /// construct from another range (if iterators are convertible)
-            template <typename T>
-            constexpr explicit iterator_range(const SOA::iterator_range<T*>& range) :
+            template <typename JT, typename DUMMY = JT, typename = typename
+                std::enable_if<std::is_constructible<IT, JT>::value>::type>
+            constexpr iterator_range(const SOA::iterator_range<JT>& range) :
                 iterator_range(range.begin(), range.end()) {}
 
             /// is range empty
