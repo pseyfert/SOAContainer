@@ -64,15 +64,18 @@ namespace SOA {
             template <typename ITFWD1, typename ITFWD2,
                      typename DUMMY1 = ITFWD1, typename DUMMY2 = ITFWD2,
                      typename = typename std::enable_if<
-                         std::is_constructible<IT, DUMMY1>::value &&
-                         std::is_constructible<IT, DUMMY2>::value>::type>
+                         (std::is_constructible<IT, DUMMY1>::value ||
+                          std::is_convertible<DUMMY1, IT>::value) &&
+                         (std::is_constructible<IT, DUMMY2>::value ||
+                          std::is_convertible<DUMMY2, IT>::value)>::type>
             constexpr explicit iterator_range(ITFWD1&& first, ITFWD2&& last) :
                 m_first(std::forward<ITFWD1>(first)),
                 m_last(std::forward<ITFWD2>(last)) {}
 
             /// construct from another range (if iterators are convertible)
             template <typename JT, typename DUMMY = JT, typename = typename
-                std::enable_if<std::is_constructible<IT, JT>::value>::type>
+                std::enable_if<std::is_constructible<IT, JT>::value ||
+                std::is_convertible<JT, IT>::value>::type>
             constexpr iterator_range(const SOA::iterator_range<JT>& range) :
                 iterator_range(range.begin(), range.end()) {}
 
