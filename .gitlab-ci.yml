@@ -1,5 +1,6 @@
 stages:
     - build_and_test
+    - sanitize
 
 build_jessie-gcc48:
     image: malaschiller/debian-jessie-dev:latest
@@ -8,6 +9,16 @@ build_jessie-gcc48:
         - git submodule update --init
         - mkdir builddir
         - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-address_jessie-gcc48:
+    image: malaschiller/debian-jessie-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -21,6 +32,36 @@ build_jessie-gcc49:
         - (cd builddir; make)
         - (cd builddir; make test)
 
+sanitize-address_jessie-gcc49:
+    image: malaschiller/debian-jessie-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_jessie-gcc49:
+    image: malaschiller/debian-jessie-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-leak_jessie-gcc49:
+    image: malaschiller/debian-jessie-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
 build_stretch-gcc63:
     image: malaschiller/debian-stretch-dev:latest
     stage: build_and_test
@@ -28,6 +69,36 @@ build_stretch-gcc63:
         - git submodule update --init
         - mkdir builddir
         - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-address_stretch-gcc63:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_stretch-gcc63:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-leak_stretch-gcc63:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -41,6 +112,46 @@ build_stretch-clang38:
         - (cd builddir; make)
         - (cd builddir; make test)
 
+sanitize-address_stretch-clang38:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_stretch-clang38:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-leak_stretch-clang38:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-memory_stretch-clang38:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
 build_stretch-clang39:
     image: malaschiller/debian-stretch-dev:latest
     stage: build_and_test
@@ -48,6 +159,46 @@ build_stretch-clang39:
         - git submodule update --init
         - mkdir builddir
         - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-address_stretch-clang39:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_stretch-clang39:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-leak_stretch-clang39:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-memory_stretch-clang39:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -63,6 +214,54 @@ build_stretch-clang38-libc++:
         - (cd builddir; make)
         - (cd builddir; make test)
 
+sanitize-address_stretch-clang38-libc++:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_stretch-clang38-libc++:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-leak_stretch-clang38-libc++:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-memory_stretch-clang38-libc++:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
 build_stretch-clang39-libc++:
     image: malaschiller/debian-stretch-dev:latest
     stage: build_and_test
@@ -72,6 +271,54 @@ build_stretch-clang39-libc++:
         - git submodule update --init
         - mkdir builddir
         - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-address_stretch-clang39-libc++:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_stretch-clang39-libc++:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-leak_stretch-clang39-libc++:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-memory_stretch-clang39-libc++:
+    image: malaschiller/debian-stretch-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -85,6 +332,49 @@ build_centos7-clang4:
         - (cd builddir; make)
         - (cd builddir; make test)
 
+# docker containers seem to have insufficient privileges to run
+# the leak and address sanitizers, so disable them for now
+#
+#sanitize-address_centos7-clang4:
+#    image: malaschiller/centos7-dev:latest
+#    stage: sanitize
+#    script:
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-leak_centos7-clang4:
+#    image: malaschiller/centos7-dev:latest
+#    stage: sanitize
+#    script:
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+
+sanitize-undefined_centos7-clang4:
+    image: malaschiller/centos7-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-memory_centos7-clang4:
+    image: malaschiller/centos7-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
 build_centos7-gcc72:
     image: malaschiller/centos7-dev:latest
     stage: build_and_test
@@ -92,6 +382,39 @@ build_centos7-gcc72:
         - git submodule update --init
         - mkdir builddir
         - (cd builddir; source /opt/rh/devtoolset-7/enable; cmake3 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+# docker containers seem to have insufficient privileges to run
+# the leak and address sanitizers, so disable them for now
+#
+#sanitize-address_centos7-gcc72:
+#    image: malaschiller/centos7-dev:latest
+#    stage: sanitize
+#    script:
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; source /opt/rh/devtoolset-7/enable; cmake3 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-leak_centos7-gcc72:
+#    image: malaschiller/centos7-dev:latest
+#    stage: sanitize
+#    script:
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; source /opt/rh/devtoolset-7/enable; cmake3 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+
+sanitize-undefined_centos7-gcc72:
+    image: malaschiller/centos7-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; source /opt/rh/devtoolset-7/enable; cmake3 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -180,6 +503,361 @@ build_sid-clang7-libc++:
         - git submodule update --init
         - mkdir builddir
         - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+# docker containers seem to have insufficient privileges to run
+# the leak and address sanitizers, so disable them for now
+#
+#sanitize-address_sid-clang40:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-address_sid-clang40-libc++:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+#        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-address_sid-clang50:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-address_sid-clang50-libc++:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+#        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-address_sid-clang60:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-address_sid-clang60-libc++:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+#        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-address_sid-clang7:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-address_sid-clang7-libc++:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+#        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-leak_sid-clang40:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-leak_sid-clang40-libc++:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+#        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-leak_sid-clang50:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-leak_sid-clang50-libc++:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+#        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-leak_sid-clang60:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-leak_sid-clang60-libc++:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+#        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-leak_sid-clang7:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+#
+#sanitize-leak_sid-clang7-libc++:
+#    image: malaschiller/debian-sid-dev:latest
+#    stage: sanitize
+#    script:
+#        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+#        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+#        - git submodule update --init
+#        - mkdir builddir
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; make)
+#        - (cd builddir; make test)
+
+sanitize-memory_sid-clang40:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-memory_sid-clang40-libc++:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-memory_sid-clang50:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-memory_sid-clang50-libc++:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-memory_sid-clang60:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-memory_sid-clang60-libc++:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-memory_sid-clang7:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-memory_sid-clang7-libc++:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_sid-clang40:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_sid-clang40-libc++:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_sid-clang50:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_sid-clang50-libc++:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_sid-clang60:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_sid-clang60-libc++:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_sid-clang7:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; make)
+        - (cd builddir; make test)
+
+sanitize-undefined_sid-clang7-libc++:
+    image: malaschiller/debian-sid-dev:latest
+    stage: sanitize
+    script:
+        - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
+        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
+        - git submodule update --init
+        - mkdir builddir
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
