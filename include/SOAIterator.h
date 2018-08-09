@@ -46,9 +46,12 @@ namespace SOA {
             POSITION(std::forward<POS>(pos))
         {}
 
-        // test for "nullness"
-        constexpr operator bool() const noexcept
+        // test for nullness
+        constexpr explicit operator bool() const noexcept
         { return stor() && (idx() < std::get<0>(*stor()).size()); }
+        // test for non-nullness
+        constexpr bool operator!() const noexcept
+        { return !bool(*this); }
 
         // deference/index/operator->
         constexpr reference operator*() const noexcept
@@ -118,7 +121,10 @@ namespace SOA {
               typename Iterator<POSITION, CONST>::difference_type, INC>::value,
     Iterator<POSITION, CONST> >::type operator+(
             const Iterator<POSITION, CONST>& pos, INC inc) noexcept
-    { return Iterator<POSITION, CONST>(pos) += inc; }
+    {
+        return Iterator<POSITION, CONST>(pos) +=
+               typename Iterator<POSITION, CONST>::difference_type(inc);
+    }
 
     /// integer constant (or similar) + iterator
     template <typename POSITION, bool CONST, typename INC>
@@ -126,7 +132,10 @@ namespace SOA {
               typename Iterator<POSITION, CONST>::difference_type, INC>::value,
     Iterator<POSITION, CONST> >::type operator+(INC inc,
             const Iterator<POSITION, CONST>& pos) noexcept
-    { return Iterator<POSITION, CONST>(pos) += inc; }
+    {
+        return Iterator<POSITION, CONST>(pos) +=
+               typename Iterator<POSITION, CONST>::difference_type(inc);
+    }
 
     /// iterator - integer constant (or similar)
     template <typename POSITION, bool CONST, typename INC>
@@ -134,7 +143,10 @@ namespace SOA {
               typename Iterator<POSITION, CONST>::difference_type, INC>::value,
     Iterator<POSITION, CONST> >::type operator-(
             const Iterator<POSITION, CONST>& pos, INC inc) noexcept
-    { return Iterator<POSITION, CONST>(pos) -= inc; }
+    {
+        return Iterator<POSITION, CONST>(pos) -=
+               typename Iterator<POSITION, CONST>::difference_type(inc);
+    }
 
 } // namespace SOA
 
