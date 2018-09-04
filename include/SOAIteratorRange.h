@@ -168,12 +168,15 @@ namespace SOA {
      *
      * @returns iterator_range<IT> from [first, last(
      */
-    template <typename IT>
+    template <typename IT, typename JT,
+              typename = typename std::enable_if<std::is_same<
+                      typename std::remove_reference<IT>::type,
+                      typename std::remove_reference<JT>::type>::value>::type>
     constexpr iterator_range<typename std::remove_reference<IT>::type>
-    make_iterator_range(IT&& first, IT&& last)
+    make_iterator_range(IT&& first, JT&& last)
     {
         return iterator_range<typename std::remove_reference<IT>::type>{
-            std::forward<IT>(first), std::forward<IT>(last) };
+            std::forward<IT>(first), std::forward<JT>(last) };
     }
 } // namespace SOA
 
