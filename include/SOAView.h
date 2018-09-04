@@ -630,7 +630,7 @@ namespace SOA {
             using naked_const_reference_tuple_type = typename SOA::Typelist::to_tuple<
                 fields_typelist>::const_reference_tuple;
 
-            _View() {}
+            _View() = default;
 
         public:
             /// (notion of) type of the contained objects
@@ -706,6 +706,8 @@ namespace SOA {
             _View(const self_type& other) = default;
             /// move constructor
             _View(self_type&& other) = default;
+            /// destructor
+            ~_View() = default;
 
             /// assignment from other _View
             self_type& operator=(const self_type& other) = default;

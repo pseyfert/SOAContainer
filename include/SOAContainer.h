@@ -264,11 +264,13 @@ namespace SOA {
 
         public:
             /// default constructor
-            _Container() : BASE() { }
+            _Container() = default;
             /// copy constructor
             _Container(const self_type& other) = default;
             /// move constructor
             _Container(self_type&& other) = default;
+            /// destructor
+            ~_Container() = default;
             /// assignment from other _Container
             self_type& operator=(const self_type& other) = default;
             /// move-assignment from other _Container

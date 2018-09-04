@@ -15,12 +15,12 @@ namespace SOA {
         template < template <typename...> class CONTAINER,
             template <typename> class SKIN, typename... FIELDS>
         friend class _Container;
-        using parent_type = typename POSITION::parent_type;
 
         using POSITION::stor;
         using POSITION::idx;
 
     public:
+        using parent_type = typename POSITION::parent_type;
         using iterator_category = std::random_access_iterator_tag;
         using reference = typename std::conditional<ISCONST,
               typename parent_type::const_reference,
@@ -112,6 +112,24 @@ namespace SOA {
         {
             os << "iterator{ stor=" << p.stor() << ", pos=" << p.idx() << " }";
             return os;
+        }
+
+        /// convert SOA iterator into iterator for given field
+        template <typename FIELD>
+        auto for_field() const noexcept -> typename std::conditional<
+                ISCONST,
+                decltype(std::get<parent_type::template memberno<FIELD>()>(
+                                 *std::declval<POSITION>().stor())
+                                 .cbegin() +
+                         std::declval<POSITION>().idx()),
+                decltype(std::get<parent_type::template memberno<FIELD>()>(
+                                 *std::declval<POSITION>().stor())
+                                 .begin() +
+                         std::declval<POSITION>().idx())>::type
+        {
+            return std::get<parent_type::template memberno<FIELD>()>(*stor())
+                           .begin() +
+                   idx();
         }
     };
 
