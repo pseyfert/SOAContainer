@@ -31,6 +31,12 @@ namespace SOA {
         using pointer = Iterator<POSITION, ISCONST>;
         using const_pointer = Iterator<POSITION, true>;
 
+        constexpr Iterator() noexcept = default;
+        constexpr Iterator(const Iterator<POSITION, ISCONST>&) noexcept = default;
+        constexpr Iterator(Iterator<POSITION, ISCONST>&&) noexcept = default;
+        Iterator<POSITION, ISCONST>& operator=(const Iterator<POSITION, ISCONST>&) noexcept = default;
+        Iterator<POSITION, ISCONST>& operator=(Iterator<POSITION, ISCONST>&&) noexcept = default;
+
         // "magic" constructor to be used by SOA container classes only
         //
         // it's "magic" in the sense that it's kind of hard to get at the

@@ -538,11 +538,16 @@ namespace SOA {
             using its_safe_tag = union {};
             class position {
             private:
-                SOAStorage* m_stor = nullptr;
-                size_type m_idx = 0;
+                SOAStorage* m_stor;
+                size_type m_idx;
             public:
                 using parent_type = self_type;
                 using safe_tag = its_safe_tag;
+                constexpr position() noexcept : m_stor(nullptr), m_idx(0) {}
+                constexpr position(const position&) noexcept = default;
+                constexpr position(position&&) noexcept = default;
+                position& operator=(const position&) noexcept = default;
+                position& operator=(position&&) noexcept = default;
                 constexpr position(SOAStorage* stor, size_type idx) noexcept :
                     m_stor(stor), m_idx(idx) {}
                 SOAStorage*& stor() noexcept { return m_stor; }
