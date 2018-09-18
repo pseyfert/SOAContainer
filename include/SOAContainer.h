@@ -394,6 +394,18 @@ namespace SOA {
                         std::forward<T>(val));
             }
 
+            /// push element from related View or Container at back of array
+            template <typename REF>
+            typename std::enable_if<
+                    !std::is_constructible<value_type, REF>::value &&
+                    std::is_same<fields_typelist,
+                                 typename REF::fields_typelist>::value>::type
+            push_back(REF val) noexcept(
+                    noexcept(push_back(typename REF::const_reference(val))))
+            {
+                push_back(typename REF::const_reference(val));
+            }
+
             /// insert a value at the given position
             template <typename T>
             typename std::enable_if<std::is_constructible<value_type,
@@ -411,6 +423,18 @@ namespace SOA {
                 return iterator{ position{ pos.stor(), pos.idx() } };
             }
 
+            /// insert element from related View or Container at pos
+            template <typename REF>
+            typename std::enable_if<
+                    !std::is_constructible<value_type, REF>::value &&
+                    std::is_same<fields_typelist,
+                                 typename REF::fields_typelist>::value, iterator>::type
+            insert(const_iterator pos, REF val) noexcept(
+                    noexcept(insert(pos, typename REF::const_reference(val))))
+            {
+                return insert(pos, typename REF::const_reference(val));
+            }
+
             /// insert count copies of value at the given position
             iterator insert(const_iterator pos, size_type count,
                 const value_type& val) noexcept(
@@ -423,6 +447,18 @@ namespace SOA {
                         impl::insertHelper2<size_type>{pos.idx(), count},
                         this->m_storage, val);
                 return iterator{ position{ pos.stor(), pos.idx() } };
+            }
+
+            /// insert count copies of element from related View or Container at pos
+            template <typename REF>
+            typename std::enable_if<
+                    !std::is_constructible<value_type, REF>::value &&
+                    std::is_same<fields_typelist,
+                                 typename REF::fields_typelist>::value, iterator>::type
+            insert(const_iterator pos, size_type count, REF val) noexcept(
+                    noexcept(insert(pos, count, typename REF::const_reference(val))))
+            {
+                return insert(pos, count, typename REF::const_reference(val));
             }
 
             /// insert elements between first and last at position pos
