@@ -401,7 +401,7 @@ namespace SOA {
                     std::is_same<fields_typelist,
                                  typename REF::fields_typelist>::value>::type
             push_back(REF val) noexcept(
-                    noexcept(push_back(typename REF::const_reference(val))))
+                    noexcept(std::declval<self_type&>().push_back(typename REF::const_reference(val))))
             {
                 push_back(typename REF::const_reference(val));
             }
@@ -430,7 +430,7 @@ namespace SOA {
                     std::is_same<fields_typelist,
                                  typename REF::fields_typelist>::value, iterator>::type
             insert(const_iterator pos, REF val) noexcept(
-                    noexcept(insert(pos, typename REF::const_reference(val))))
+                    noexcept(std::declval<self_type&>().insert(pos, typename REF::const_reference(val))))
             {
                 return insert(pos, typename REF::const_reference(val));
             }
@@ -456,7 +456,7 @@ namespace SOA {
                     std::is_same<fields_typelist,
                                  typename REF::fields_typelist>::value, iterator>::type
             insert(const_iterator pos, size_type count, REF val) noexcept(
-                    noexcept(insert(pos, count, typename REF::const_reference(val))))
+                    noexcept(std::declval<self_type&>().insert(pos, count, typename REF::const_reference(val))))
             {
                 return insert(pos, count, typename REF::const_reference(val));
             }
