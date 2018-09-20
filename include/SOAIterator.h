@@ -91,7 +91,7 @@ namespace SOA {
         // pointer equality
         friend constexpr bool operator==(
                 const pointer& p, const pointer& q) noexcept
-        { return p.stor() == q.stor() && p.idx() == q.idx(); }
+        { return p.idx() == q.idx() && p.stor() == q.stor(); }
         friend constexpr bool operator!=(
                 const pointer& p, const pointer& q) noexcept
         { return !(p == q); }
@@ -101,8 +101,8 @@ namespace SOA {
         friend constexpr bool operator<(
                 const pointer& p, const pointer& q) noexcept
         {
-            return (p.stor() < q.stor()) ||
-                (!(q.stor() < p.stor()) && p.idx() < q.idx());
+            return (p.idx() < q.idx()) ||
+                   (!(q.idx() < p.idx()) && (p.stor() < q.stor()));
         }
         friend constexpr bool operator>(
                 const pointer& p, const pointer& q) noexcept
