@@ -209,7 +209,7 @@ TEST(SOAContainerVector, SimpleSkin)
     Hits hits;
     AOSHits ahits;
     for (unsigned i = 0; i < 1024; ++i) {
-	float x0, z0, dxdy, dzdy, x, z, y;
+        float x0, z0, dxdy, dzdy, x, z, y;
         std::tie(x0, z0, dxdy, dzdy, x, z, y) = std::make_tuple(
                 0.5f * i, 8500.f, std::tan(5.f / 180.f * float(M_PI)),
                 3.6e-3f, 0.5f * i, 8500.f, 0.f);
@@ -222,9 +222,9 @@ TEST(SOAContainerVector, SimpleSkin)
     for (unsigned i = 0; i < 1024; ++i) updateHits(ahits, 300.f, -0.01f);
 
     for (unsigned i = 0; i < 1024; ++i) {
-	EXPECT_EQ(hits[i].x(), ahits[i].x());
-	EXPECT_EQ(hits[i].z(), ahits[i].z());
-	EXPECT_EQ(hits[i].y(), ahits[i].y());
+        EXPECT_EQ(hits[i].x(), ahits[i].x());
+        EXPECT_EQ(hits[i].z(), ahits[i].z());
+        EXPECT_EQ(hits[i].y(), ahits[i].y());
     }
 
     // test shifting the hits, hopefully autovectorised
@@ -232,24 +232,25 @@ TEST(SOAContainerVector, SimpleSkin)
     updateHits_v(hits, 300.f, -0.01f);
     const auto t0 = std::chrono::high_resolution_clock::now();
     for (unsigned i = 0; i < 10; ++i)
-	updateHits_v(hits, 300.f, -0.01f);
+        updateHits_v(hits, 300.f, -0.01f);
     const auto t1 = std::chrono::high_resolution_clock::now();
     // heat up cache
     updateHits_v(ahits, 300.f, -0.01f);
     const auto t2 = std::chrono::high_resolution_clock::now();
     for (unsigned i = 0; i < 10; ++i)
-	updateHits_v(ahits, 300.f, -0.01f);
+        updateHits_v(ahits, 300.f, -0.01f);
     const auto t3 = std::chrono::high_resolution_clock::now();
     // deque does not vectorise nicely, since the deque iterators
     // are not optimized away by the compiler - expect a larger time for the
     // SOA version, so we get a shout from the test suite if the STL or
     // compilers improve
-    EXPECT_GT((t1 - t0), (t3 - t2));
+    const std::chrono::duration<double> dt0 = t1 - t0, dt1 = t3 - t2;
+    EXPECT_GT(dt0.count(), dt1.count());
 
     for (unsigned i = 0; i < 1024; ++i) {
-	EXPECT_EQ(hits[i].x(), ahits[i].x());
-	EXPECT_EQ(hits[i].z(), ahits[i].z());
-	EXPECT_EQ(hits[i].y(), ahits[i].y());
+        EXPECT_EQ(hits[i].x(), ahits[i].x());
+        EXPECT_EQ(hits[i].z(), ahits[i].z());
+        EXPECT_EQ(hits[i].y(), ahits[i].y());
     }
 }
 

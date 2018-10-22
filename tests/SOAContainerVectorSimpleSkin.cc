@@ -211,7 +211,7 @@ TEST(SOAContainerVector, SimpleSkin)
     AOSHits ahits;
     ahits.reserve(1024);
     for (unsigned i = 0; i < 1024; ++i) {
-	float x0, z0, dxdy, dzdy, x, z, y;
+        float x0, z0, dxdy, dzdy, x, z, y;
         std::tie(x0, z0, dxdy, dzdy, x, z, y) = std::make_tuple(
                 0.5f * i, 8500.f, std::tan(5.f / 180.f * float(M_PI)),
                 3.6e-3f, 0.5f * i, 8500.f, 0.f);
@@ -240,16 +240,17 @@ TEST(SOAContainerVector, SimpleSkin)
     updateHits_v(hits, 300.f, -0.01f);
     const auto t0 = std::chrono::high_resolution_clock::now();
     for (unsigned i = 0; i < 10; ++i)
-	updateHits_v(hits, 300.f, -0.01f);
+        updateHits_v(hits, 300.f, -0.01f);
     const auto t1 = std::chrono::high_resolution_clock::now();
     // heat up cache
     updateHits_v(ahits, 300.f, -0.01f);
     const auto t2 = std::chrono::high_resolution_clock::now();
     for (unsigned i = 0; i < 10; ++i)
-	updateHits_v(ahits, 300.f, -0.01f);
+        updateHits_v(ahits, 300.f, -0.01f);
     const auto t3 = std::chrono::high_resolution_clock::now();
     // make sure the vectorised version is faster
-    EXPECT_LT((t1 - t0), (t3 - t2));
+    const std::chrono::duration<double> dt0 = t1 - t0, dt1 = t3 - t2;
+    EXPECT_LT(dt0.count(), dt1.count());
 
     for (unsigned i = 0; i < 1024; ++i) {
         EXPECT_LT(std::abs(hits[i].x() - ahits[i].x()),
