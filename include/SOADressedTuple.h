@@ -90,18 +90,6 @@ namespace SOA {
             using TUPLE::TUPLE;
             using TUPLE::operator=;
 
-            /// (copy) assignment from a naked proxy
-            /*DressedTuple& operator=(
-                    const typename CONTAINER::naked_proxy& other) noexcept(
-                        noexcept(std::declval<TUPLE>().operator=(typename
-                                SOA::Typelist::to_tuple<typename
-                                CONTAINER::fields_typelist>::value_tuple(other))))
-            {
-                TUPLE::operator=(typename SOA::Typelist::to_tuple<typename
-                        CONTAINER::fields_typelist>::value_tuple(other));
-                return *this;
-            }*/
-
         private:
             /// helper for fallback constructors
             template <std::size_t... IDXS, typename T>
@@ -125,15 +113,14 @@ namespace SOA {
         public:
             /// fallback constructor to see past dressed tuples
             template <typename T, typename TDUMMY = T,
-                     typename = typename std::enable_if<
-                         is_constructible<TUPLE, TDUMMY>::value &&
-                         !std::is_base_of<TUPLE, TDUMMY>::value>,
-                     std::size_t N = tuple_size<TDUMMY>::value >
-            constexpr DressedTuple(T&& t) noexcept(noexcept(
-                DressedTuple(std::make_index_sequence<N>(),
-                    std::forward<T>(t)))) :
-                DressedTuple(std::make_index_sequence<N>(),
-                        std::forward<T>(t))
+                      typename = typename std::enable_if<
+                              is_constructible<TUPLE, TDUMMY>::value &&
+                              !std::is_base_of<TUPLE, TDUMMY>::value>,
+                      std::size_t N = tuple_size<TDUMMY>::value>
+            constexpr DressedTuple(T&& t) noexcept(noexcept(DressedTuple(
+                    std::make_index_sequence<N>(), std::forward<T>(t))))
+                    : DressedTuple(std::make_index_sequence<N>(),
+                                   std::forward<T>(t))
             {}
             /// fallback assignment operator to see past dressed tuples
             template <typename T>
@@ -156,9 +143,9 @@ namespace SOA {
             { return std::get<MEMBERNO>(*this); }
 
             /// provide the member function template get interface of proxies
-            template<typename CONTAINER::size_type MEMBERNO>
-            auto get() const noexcept -> decltype(std::get<MEMBERNO>(
-                        std::declval<const self_type&>()))
+            template <typename CONTAINER::size_type MEMBERNO>
+            constexpr auto get() const noexcept -> decltype(
+                    std::get<MEMBERNO>(std::declval<const self_type&>()))
             { return std::get<MEMBERNO>(*this); }
 
             /// provide the member function template get interface of proxies
@@ -172,10 +159,11 @@ namespace SOA {
             }
 
             /// provide the member function template get interface of proxies
-            template<typename MEMBER, typename CONTAINER::size_type MEMBERNO =
-                CONTAINER::template memberno<MEMBER>()>
-            auto get() const noexcept -> decltype(std::get<MEMBERNO>(
-                        std::declval<const self_type&>()))
+            template <typename MEMBER,
+                      typename CONTAINER::size_type MEMBERNO =
+                              CONTAINER::template memberno<MEMBER>()>
+            constexpr auto get() const noexcept -> decltype(
+                    std::get<MEMBERNO>(std::declval<const self_type&>()))
             {
                 static_assert(CONTAINER::template memberno<MEMBER>() ==
                         MEMBERNO, "Called with wrong template argument(s).");

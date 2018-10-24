@@ -91,11 +91,11 @@ namespace SOA {
         static auto
         _to_tuple(const self_type& t, std::index_sequence<IDXS...>) noexcept(
                 noexcept(std::forward_as_tuple(std::get<IDXS>(
-                        std::declval<const typename
-                        parent_type::SOAStorage&>())[0]...)))
+                        std::declval<const typename parent_type::
+                                             SOAStorage&>())[0]...)))
                 -> decltype(std::forward_as_tuple(std::get<IDXS>(
-                                std::declval<const typename
-                                parent_type::SOAStorage&>())[0]...))
+                        std::declval<const typename parent_type::
+                                             SOAStorage&>())[0]...))
         {
             return std::forward_as_tuple(std::get<IDXS>(
                     const_cast<const typename parent_type::SOAStorage&>(
@@ -218,11 +218,11 @@ namespace SOA {
 
     public:
         /// default constructor
-        ObjectProxy() = default;
+        constexpr ObjectProxy() = default;
         /// copy constructor
-        ObjectProxy(const self_type& other) = default;
+        constexpr ObjectProxy(const self_type& other) = default;
         /// move constructor
-        ObjectProxy(self_type&& other) = default;
+        constexpr ObjectProxy(self_type&& other) = default;
 
         /// convert to tuple of member contents
         constexpr operator value_type() const
@@ -299,7 +299,7 @@ namespace SOA {
         }
         /// access to member by number (read-only)
         template <size_type MEMBERNO>
-        auto get() const noexcept -> decltype(std::get<MEMBERNO>(
+        constexpr auto get() const noexcept -> decltype(std::get<MEMBERNO>(
                 *std::declval<const POSITION&>()
                          .stor())[std::declval<const POSITION&>().idx()])
         {
@@ -311,7 +311,7 @@ namespace SOA {
         template <
                 typename MEMBER,
                 size_type MEMBERNO = parent_type::template memberno<MEMBER>()>
-        auto get() const noexcept -> decltype(std::get<MEMBERNO>(
+        constexpr auto get() const noexcept -> decltype(std::get<MEMBERNO>(
                 *std::declval<const POSITION&>()
                          .stor())[std::declval<const POSITION&>().idx()])
         {

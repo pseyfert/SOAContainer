@@ -67,9 +67,9 @@ namespace SOA {
             return {};
         }
 
-        AlignedAllocator() = default;
-        AlignedAllocator(const AlignedAllocator<T, ALIGN>&) = default;
-        AlignedAllocator(AlignedAllocator<T, ALIGN>&&) = default;
+        constexpr AlignedAllocator() = default;
+        constexpr AlignedAllocator(const AlignedAllocator<T, ALIGN>&) = default;
+        constexpr AlignedAllocator(AlignedAllocator<T, ALIGN>&&) = default;
         AlignedAllocator<T, ALIGN>&
         operator=(const AlignedAllocator<T, ALIGN>&) = default;
         AlignedAllocator<T, ALIGN>&

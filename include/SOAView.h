@@ -339,7 +339,7 @@ namespace SOA {
      * @endcode
      */
     template <template <typename> class SKIN, typename... RANGES>
-    View<std::tuple<
+    constexpr View<std::tuple<
         typename impl::remove_rvalue_reference<RANGES>::type...>, SKIN>
     make_soaview(RANGES&&... ranges)
     {
@@ -581,7 +581,7 @@ namespace SOA {
                     tuple_element_iterator& operator++() noexcept(
                             noexcept(++m_it))
                     { ++m_it; return *this; }
-                    auto operator*() const noexcept(
+                    constexpr auto operator*() const noexcept(
                             noexcept(std::get<IDX>(*m_it))) -> decltype(
                             std::get<IDX>(*m_it))
                     { return std::get<IDX>(*m_it); }
@@ -635,7 +635,7 @@ namespace SOA {
             using naked_const_reference_tuple_type = typename SOA::Typelist::to_tuple<
                 fields_typelist>::const_reference_tuple;
 
-            _View() = default;
+            constexpr _View() = default;
 
         public:
             /// (notion of) type of the contained objects
@@ -692,10 +692,10 @@ namespace SOA {
 
         public:
             /// constructor from the underlying storage
-            _View(const SOAStorage& other) :
+            constexpr _View(const SOAStorage& other) :
                 m_storage(other) { }
             /// constructor from the underlying storage
-            _View(SOAStorage&& other) :
+            constexpr _View(SOAStorage&& other) :
                 m_storage(std::move(other)) { }
             /// constructor from a list of ranges
             template <typename... RANGES, typename std::enable_if<
@@ -708,9 +708,9 @@ namespace SOA {
                             size_type(std::get<0>(m_storage).size())}, m_storage);
             }
             /// copy constructor
-            _View(const self_type& other) = default;
+            constexpr _View(const self_type& other) = default;
             /// move constructor
-            _View(self_type&& other) = default;
+            constexpr _View(self_type&& other) = default;
             /// destructor
             ~_View() = default;
 
@@ -732,7 +732,7 @@ namespace SOA {
             operator[](size_type idx) noexcept
             { return reference{ position{ &m_storage, idx } }; }
             /// access specified element (read access only)
-            const_reference operator[](size_type idx) const noexcept
+            constexpr const_reference operator[](size_type idx) const noexcept
             {
                 return const_reference{ position{
                     &const_cast<SOAStorage&>(m_storage), idx } };
@@ -755,15 +755,18 @@ namespace SOA {
             typename std::enable_if<!is_constant, reference>::type
             front() noexcept { return operator[](0); }
             /// access first element (non-empty container, read-only)
-            const_reference front() const noexcept { return operator[](0); }
+            constexpr const_reference front() const noexcept
+            {
+                return operator[](0);
+            }
             /// access last element (non-empty container)
             typename std::enable_if<!is_constant, reference>::type
             back() noexcept(noexcept(
                         std::declval<self_type>().size()))
             { return operator[](size() - 1); }
             /// access last element (non-empty container, read-only)
-            const_reference back() const noexcept(noexcept(
-                        std::declval<self_type>().size()))
+            constexpr const_reference back() const
+                    noexcept(noexcept(std::declval<self_type>().size()))
             { return operator[](size() - 1); }
 
             /// iterator pointing to first element
@@ -776,22 +779,22 @@ namespace SOA {
             { return iterator{ position{ &m_storage, size() } }; }
 
             /// const iterator pointing to first element
-            const_iterator begin() const noexcept
+            constexpr const_iterator begin() const noexcept
             {
                 return const_iterator{ position{
                     const_cast<SOAStorage*>(&m_storage), 0 } };
             }
             /// const iterator pointing one element behind the last element
-            const_iterator end() const noexcept
+            constexpr const_iterator end() const noexcept
             {
                 return const_iterator{ position{
                     const_cast<SOAStorage*>(&m_storage), size() } };
             }
 
             /// const iterator pointing to first element
-            const_iterator cbegin() const noexcept { return begin(); }
+            constexpr const_iterator cbegin() const noexcept { return begin(); }
             /// const iterator pointing one element behind the last element
-            const_iterator cend() const noexcept { return end(); }
+            constexpr const_iterator cend() const noexcept { return end(); }
 
             /// get begin iterator of storage vector for member MEMBERNO
             template <size_type MEMBERNO>
@@ -821,45 +824,45 @@ namespace SOA {
 
             /// get begin iterator of storage vector for member MEMBERNO
             template <size_type MEMBERNO>
-            auto begin() const noexcept -> decltype(
+            constexpr auto begin() const noexcept -> decltype(
                     std::get<MEMBERNO>(m_storage).begin())
             { return std::get<MEMBERNO>(m_storage).begin(); }
             /// get end iterator of storage vector for member MEMBERNO
             template <size_type MEMBERNO>
-            auto end() const noexcept -> decltype(
+            constexpr auto end() const noexcept -> decltype(
                     std::get<MEMBERNO>(m_storage).end())
             { return std::get<MEMBERNO>(m_storage).end(); }
 
             /// get begin iterator of storage vector for member with tag MEMBER
             template <typename MEMBER>
-            auto begin() const noexcept -> decltype(
+            constexpr auto begin() const noexcept -> decltype(
                     std::get<memberno<MEMBER>()>(m_storage).begin())
             { return std::get<memberno<MEMBER>()>(m_storage).begin(); }
             /// get end iterator of storage vector for member with tag MEMBER
             template <typename MEMBER>
-            auto end() const noexcept -> decltype(
+            constexpr auto end() const noexcept -> decltype(
                     std::get<memberno<MEMBER>()>(m_storage).end())
             { return std::get<memberno<MEMBER>()>(m_storage).end(); }
 
             /// get begin iterator of storage vector for member MEMBERNO
             template <size_type MEMBERNO>
-            auto cbegin() const noexcept -> decltype(
+            constexpr auto cbegin() const noexcept -> decltype(
                     std::get<MEMBERNO>(m_storage).cbegin())
             { return std::get<MEMBERNO>(m_storage).cbegin(); }
             /// get end iterator of storage vector for member MEMBERNO
             template <size_type MEMBERNO>
-            auto cend() const noexcept -> decltype(
+            constexpr auto cend() const noexcept -> decltype(
                     std::get<MEMBERNO>(m_storage).cend())
             { return std::get<MEMBERNO>(m_storage).cend(); }
 
             /// get begin iterator of storage vector for member with tag MEMBER
             template <typename MEMBER>
-            auto cbegin() const noexcept -> decltype(
+            constexpr auto cbegin() const noexcept -> decltype(
                     std::get<memberno<MEMBER>()>(m_storage).cbegin())
             { return std::get<memberno<MEMBER>()>(m_storage).cbegin(); }
             /// get end iterator of storage vector for member with tag MEMBER
             template <typename MEMBER>
-            auto cend() const noexcept -> decltype(
+            constexpr auto cend() const noexcept -> decltype(
                     std::get<memberno<MEMBER>()>(m_storage).cend())
             { return std::get<memberno<MEMBER>()>(m_storage).cend(); }
 
@@ -872,16 +875,22 @@ namespace SOA {
             rend() noexcept { return reverse_iterator(begin()); }
 
             /// const iterator pointing to first element
-            const_reverse_iterator rbegin() const noexcept
+            constexpr const_reverse_iterator rbegin() const noexcept
             { return const_reverse_iterator(end()); }
             /// const iterator pointing one element behind the last element
-            const_reverse_iterator rend() const noexcept
+            constexpr const_reverse_iterator rend() const noexcept
             { return const_reverse_iterator(begin()); }
 
             /// const iterator pointing to first element
-            const_reverse_iterator crbegin() const noexcept { return rbegin(); }
+            constexpr const_reverse_iterator crbegin() const noexcept
+            {
+                return rbegin();
+            }
             /// const iterator pointing one element behind the last element
-            const_reverse_iterator crend() const noexcept { return rend(); }
+            constexpr const_reverse_iterator crend() const noexcept
+            {
+                return rend();
+            }
 
             /// get begin iterator of storage vector for member MEMBERNO
             template <size_type MEMBERNO>
@@ -911,51 +920,51 @@ namespace SOA {
 
             /// get begin iterator of storage vector for member MEMBERNO
             template <size_type MEMBERNO>
-            auto rbegin() const noexcept -> decltype(
+            constexpr auto rbegin() const noexcept -> decltype(
                     std::get<MEMBERNO>(m_storage).rbegin())
             { return std::get<MEMBERNO>(m_storage).rbegin(); }
             /// get end iterator of storage vector for member MEMBERNO
             template <size_type MEMBERNO>
-            auto rend() const noexcept -> decltype(
+            constexpr auto rend() const noexcept -> decltype(
                     std::get<MEMBERNO>(m_storage).rend())
             { return std::get<MEMBERNO>(m_storage).rend(); }
 
             /// get begin iterator of storage vector for member with tag MEMBER
             template <typename MEMBER>
-            auto rbegin() const noexcept -> decltype(
+            constexpr auto rbegin() const noexcept -> decltype(
                     std::get<memberno<MEMBER>()>(m_storage).rbegin())
             { return std::get<memberno<MEMBER>()>(m_storage).rbegin(); }
             /// get end iterator of storage vector for member with tag MEMBER
             template <typename MEMBER>
-            auto rend() const noexcept -> decltype(
+            constexpr auto rend() const noexcept -> decltype(
                     std::get<memberno<MEMBER>()>(m_storage).rend())
             { return std::get<memberno<MEMBER>()>(m_storage).rend(); }
 
             /// get begin iterator of storage vector for member MEMBERNO
             template <size_type MEMBERNO>
-            auto crbegin() const noexcept -> decltype(
+            constexpr auto crbegin() const noexcept -> decltype(
                     std::get<MEMBERNO>(m_storage).crbegin())
             { return std::get<MEMBERNO>(m_storage).crbegin(); }
             /// get end iterator of storage vector for member MEMBERNO
             template <size_type MEMBERNO>
-            auto crend() const noexcept -> decltype(
+            constexpr auto crend() const noexcept -> decltype(
                     std::get<MEMBERNO>(m_storage).crend())
             { return std::get<MEMBERNO>(m_storage).crend(); }
 
             /// get begin iterator of storage vector for member with tag MEMBER
             template <typename MEMBER>
-            auto crbegin() const noexcept -> decltype(
+            constexpr auto crbegin() const noexcept -> decltype(
                     std::get<memberno<MEMBER>()>(m_storage).crbegin())
             { return std::get<memberno<MEMBER>()>(m_storage).crbegin(); }
             /// get end iterator of storage vector for member with tag MEMBER
             template <typename MEMBER>
-            auto crend() const noexcept -> decltype(
+            constexpr auto crend() const noexcept -> decltype(
                     std::get<memberno<MEMBER>()>(m_storage).crend())
             { return std::get<memberno<MEMBER>()>(m_storage).crend(); }
 
             /// return a const reference to the underlying SOA storage range MEMBERNO
             template <size_type MEMBERNO>
-            auto range() const noexcept -> decltype(
+            constexpr auto range() const noexcept -> decltype(
                         make_iterator_range(
                             std::get<MEMBERNO>(m_storage).begin(),
                             std::get<MEMBERNO>(m_storage).end()))
@@ -977,7 +986,7 @@ namespace SOA {
             }
             /// return a const reference to the underlying SOA storage range MEMBER
             template <typename MEMBER>
-            auto range() const noexcept -> decltype(make_iterator_range(
+            constexpr auto range() const noexcept -> decltype(make_iterator_range(
                             std::get<memberno<MEMBER>()>(m_storage).begin(),
                             std::get<memberno<MEMBER>()>(m_storage).end()))
             {
@@ -1006,7 +1015,7 @@ namespace SOA {
             }
             /// return a const reference to the underlying SOA storage range MEMBERNO
             template <size_type MEMBERNO>
-            auto range(const_iterator first, const_iterator last) const noexcept ->
+            constexpr auto range(const_iterator first, const_iterator last) const noexcept ->
                 iterator_range<decltype(std::get<MEMBERNO>(m_storage).begin())>
             {
                 return make_iterator_range(
@@ -1024,7 +1033,7 @@ namespace SOA {
             }
             /// return a const reference to the underlying SOA storage range MEMBER
             template <typename MEMBER>
-            auto range(const_iterator first, const_iterator last) const noexcept ->
+            constexpr auto range(const_iterator first, const_iterator last) const noexcept ->
                 iterator_range<decltype(std::get<memberno<MEMBER>()>(m_storage).begin())>
             {
                 return make_iterator_range(
@@ -1108,12 +1117,16 @@ namespace SOA {
              * @endcode
              */
             template <typename... FIELDS2, typename... ARGS>
-            auto view(ARGS&&... args) -> typename std::enable_if<!impl::is_skin<FIELDS2...>(), decltype(
-                    SOA::view<FIELDS2...>(*this, std::forward<ARGS>(args)...))>::type
+            auto view(ARGS&&... args) -> typename std::enable_if<
+                    !impl::is_skin<FIELDS2...>(),
+                    decltype(SOA::view<FIELDS2...>(
+                            *this, std::forward<ARGS>(args)...))>::type
             { return SOA::view<FIELDS2...>(*this, std::forward<ARGS>(args)...); }
             template <template <class> class SKIN2, typename... ARGS>
-            auto view(ARGS&&... args) -> typename std::enable_if<impl::is_skin<SKIN2>(), decltype(
-                    SOA::view<SKIN2>(*this, std::forward<ARGS>(args)...))>::type
+            auto view(ARGS&&... args) -> typename std::enable_if<
+                    impl::is_skin<SKIN2>(),
+                    decltype(SOA::view<SKIN2>(
+                            *this, std::forward<ARGS>(args)...))>::type
             { return SOA::view<SKIN2>(*this, std::forward<ARGS>(args)...); }
             /** @brief create a new view
              *
@@ -1153,12 +1166,16 @@ namespace SOA {
              * @endcode
              */
             template <typename... FIELDS2, typename... ARGS>
-            auto view(ARGS&&... args) const -> typename std::enable_if<!impl::is_skin<FIELDS2...>(), decltype(
-                    SOA::view<FIELDS2...>(*this, std::forward<ARGS>(args)...))>::type
+            auto view(ARGS&&... args) const -> typename std::enable_if<
+                    !impl::is_skin<FIELDS2...>(),
+                    decltype(SOA::view<FIELDS2...>(
+                            *this, std::forward<ARGS>(args)...))>::type
             { return SOA::view<FIELDS2...>(*this, std::forward<ARGS>(args)...); }
             template <template <class> class SKIN2, typename... ARGS>
-            auto view(ARGS&&... args) const -> typename std::enable_if<impl::is_skin<SKIN2>(), decltype(
-                    SOA::view<SKIN2>(*this, std::forward<ARGS>(args)...))>::type
+            auto view(ARGS&&... args) const -> typename std::enable_if<
+                    impl::is_skin<SKIN2>(),
+                    decltype(SOA::view<SKIN2>(
+                            *this, std::forward<ARGS>(args)...))>::type
             { return SOA::view<SKIN2>(*this, std::forward<ARGS>(args)...); }
     };
 

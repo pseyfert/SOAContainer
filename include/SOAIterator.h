@@ -85,7 +85,7 @@ namespace SOA {
         { idx() -= inc; return *this; }
 
         // distance between iterators
-        difference_type operator-(const pointer& p) const noexcept
+        constexpr difference_type operator-(const pointer& p) const noexcept
         { return idx() - p.idx(); }
 
         // pointer equality
@@ -122,7 +122,8 @@ namespace SOA {
 
         /// convert SOA iterator into iterator for given field
         template <typename FIELD>
-        auto for_field() const noexcept -> typename std::conditional<
+        constexpr auto
+        for_field() const noexcept -> typename std::conditional<
                 ISCONST,
                 decltype(std::get<parent_type::template memberno<FIELD>()>(
                                  *std::declval<POSITION>().stor())
