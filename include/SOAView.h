@@ -9,31 +9,46 @@
 #ifndef SOAVIEW_H
 #define SOAVIEW_H
 
-#include <limits>
-#include <cassert>
-#include <sstream>
-#include <stdexcept>
-#include <algorithm>
-#include <functional>
-#include <initializer_list>
-#include <type_traits>
+#include <stddef.h>            // for size_t
+#include <algorithm>           // for lexicographical_compare
+#include <array>               // for tuple_element, tuple_size
+#include <functional>          // for equal_to, less, not_equal_to
+#include <iterator>            // for reverse_iterator, distance
+#include <sstream>             // for size_t, operator<<, stringstream, basi...
+#include <stdexcept>           // for out_of_range, logic_error
+#include <tuple>               // for tuple, get
+#include <type_traits>         // for enable_if, declval, remove_cv, remove_...
+#include <utility>             // for forward
+#include "c++14_compat.h"      // for make_index_sequence, index_sequence
 
 #include "SOATypelist.h"
 #include "SOATypelistUtils.h"
 #include "SOAObjectProxy.h"
-#include "SOADressedTuple.h"
+#include "SOADressedTuple.h" // IWYU pragma: keep
 #include "SOAIterator.h"
 #include "SOAUtils.h"
 
 #include "SOAIteratorRange.h"
 
+// in some tests a false suggestion
+// IWYU pragma: no_include <vector>
+
+// IWYU pragma: begin_exports
 #include "SOAField.h"
 #include "SOASkin.h"
+// IWYU pragma: end_exports
+
 
 // forward decl.
-template < template <typename...> class CONTAINER,
-         template <typename> class SKIN, typename... FIELDS>
-class _Container;
+// template < template <typename...> class CONTAINER,
+//          template <typename> class SKIN, typename... FIELDS>
+// class _Container;
+namespace SOA {
+    // declared further below
+    template <class STORAGE, template <typename> class SKIN,
+              typename... FIELDS>
+    class _View;
+}
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {

@@ -17,6 +17,8 @@
 #elif __cplusplus >= 201103L
 // C++11 - implement what's needed
 // C++14 Compile-time integer sequences -- this can go once we use C++14...
+#include <cstddef>
+#include <type_traits>
 namespace std {
     template<size_t... indexes>
     struct index_sequence {

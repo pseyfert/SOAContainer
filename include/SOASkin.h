@@ -11,9 +11,13 @@
 #ifndef SOASKIN_H
 #define SOASKIN_H
 
-#include "SOATypelist.h"
-#include "SOAUtils.h"
-#include "PrintableNullSkin.h"
+#include <cstddef>         // for size_t
+#include <type_traits>     // for is_empty, false_type, true_type
+
+#include "SOATypelist.h"   // for typelist
+#include "SOAUtils.h"      // for ANY, ALL
+#include "c++14_compat.h"  // for void_t
+#include "PrintableNullSkin.h" // IWYU pragma: keep
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {

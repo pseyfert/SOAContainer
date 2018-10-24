@@ -12,8 +12,10 @@
 #ifndef ALIGNEDALLOCATOR_H
 #define ALIGNEDALLOCATOR_H
 
-#include <cstddef>
-#include <memory>
+#include <cstddef>      // for size_t, ptrdiff_t
+#include <limits>       // for numeric_limits
+#include <memory>       // for allocator
+#include <type_traits>  // for true_type
 
 namespace SOA {
     /** @brief aligned allocator

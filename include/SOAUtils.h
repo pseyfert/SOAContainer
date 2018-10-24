@@ -9,12 +9,12 @@
 #ifndef SOAUTILS_H
 #define SOAUTILS_H
 
-#include <tuple>
-#include <utility>
-#include <cstdint>
-#include <type_traits>
-
-#include "c++14_compat.h"
+#include <array>           // for tuple_size, tuple_element
+#include <cstddef>         // for size_t
+#include <tuple>           // for get, forward_as_tuple, make_tuple, tuple
+#include <type_traits>     // for declval, enable_if, is_same, decay, result_of
+#include <utility>         // for forward
+#include "c++14_compat.h"  // for make_index_sequence, index_sequence, void_t
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {

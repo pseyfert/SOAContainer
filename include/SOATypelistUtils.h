@@ -9,13 +9,14 @@
 #ifndef SOATYPELISTUTILS_H
 #define SOATYPELISTUTILS_H
 
-#include <tuple>
-#include <deque>
-#include <vector>
+#include <deque>               // for deque
+#include <tuple>               // for tuple
+#include <type_traits>         // for integral_constant<>::value, is_same
+#include <vector>              // for vector
 
-#include "SOATypelist.h"
-#include "AlignedAllocator.h"
-#include "c++14_compat.h"
+#include "AlignedAllocator.h"  // for AlignedAllocator (ptr only), CacheLine...
+#include "SOATypelist.h"       // for typelist
+#include "c++14_compat.h"      // for void_t
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {

@@ -10,6 +10,22 @@
 #define SOACONTAINER_H
 
 #include "SOAView.h"
+#include <cassert> // g++ suggestion
+#include <initializer_list>    // for initializer_list
+#include <iterator>            // for distance
+#include <limits>              // for numeric_limits
+#include <tuple>               // for forward_as_tuple
+#include <type_traits>         // for declval, enable_if, is_constructible
+#include <utility>             // for forward
+#include "SOATypelist.h"       // for typelist
+#include "SOATypelistUtils.h"  // for is_wrapped, to_tuple, unwrap_t
+#include "SOAUtils.h"          // for apply_zip, map, apply, ignore, ALL, foldl
+#include "c++14_compat.h"      // for void_t
+
+// for std::min this may or may not be needed (templates are fun)
+#include <algorithm>           // IWYU pragma: keep
+// in some tests a false suggestion
+// IWYU pragma: no_include <vector>
 
 namespace SOA {
     // implementation details

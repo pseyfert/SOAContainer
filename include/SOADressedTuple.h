@@ -9,9 +9,12 @@
 #ifndef SOADRESSEDTUPLE_H
 #define SOADRESSEDTUPLE_H
 
-#include <tuple>
-#include <type_traits>
-#include "c++14_compat.h"
+#include <array>           // for tuple_size
+#include <cstddef>         // for size_t
+#include <tuple>           // for tuple, forward_as_tuple
+#include <type_traits>     // for declval, enable_if, false_type, is_base_of
+#include <utility>         // for forward
+#include "c++14_compat.h"  // for make_index_sequence, index_sequence
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {

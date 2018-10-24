@@ -11,7 +11,9 @@
 #ifndef SOAFIELD_H
 #define SOAFIELD_H
 
-#include "SOATypelistUtils.h"
+#include <cstddef>             // for size_t
+#include <type_traits>         // for declval
+#include "SOATypelistUtils.h"  // for is_wrapped
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {

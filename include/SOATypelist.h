@@ -14,11 +14,12 @@
 #ifndef SOATYPELIST_H
 #define SOATYPELIST_H
 
-#include <tuple>
-#include <cstdint>
-#include <type_traits>
+#include <array>           // for tuple_element
+#include <cstddef>         // for size_t
+#include <tuple>           // for tuple_element<>::type, tuple
+#include <type_traits>     // for is_same, integral_constant<>::value
 
-#include "c++14_compat.h"
+#include "c++14_compat.h"  // for index_sequence, make_index_sequence
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {

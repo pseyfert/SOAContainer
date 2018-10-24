@@ -13,7 +13,8 @@
 
 #include <utility>
 #include <type_traits>
-#include <cstdint>
+// YCM wants it, IWYU wants it gone
+#include <cstdint>     // IWYU pragma: keep
 
 // play a few tricks so this performs well at low optimisation levels
 #undef alwaysinline

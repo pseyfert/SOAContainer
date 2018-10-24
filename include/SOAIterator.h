@@ -11,14 +11,15 @@
 #ifndef SOAITERATOR_H
 #define SOAITERATOR_H
 
-#include <ostream>
-#include <iterator>
-#include <utility>
+#include <iterator>     // for random_access_iterator_tag
+#include <ostream>      // for operator<<, ostream
+#include <type_traits>  // for declval, enable_if, is_convertible, conditional
+#include <utility>      // for forward
 
 namespace SOA {
-    template < template <typename...> class CONTAINER,
-        template <typename> class SKIN, typename... FIELDS>
-    class _Container;
+    // template < template <typename...> class CONTAINER,
+    //     template <typename> class SKIN, typename... FIELDS>
+    // class _Container;
 
     template <typename POSITION, bool ISCONST>
     class Iterator : protected POSITION {

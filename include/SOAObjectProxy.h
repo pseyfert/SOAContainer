@@ -9,23 +9,20 @@
 #ifndef SOAOBJECTPROXY_H
 #define SOAOBJECTPROXY_H
 
-#include <tuple>
-#include <memory>
+#include <cstddef>         // for size_t
+#include <tuple>           // for get, forward_as_tuple, make_tuple, tuple
+#include <type_traits>     // for declval, is_base_of, enable_if, decay, is_...
+#include <utility>         // for move, forward, swap
 
-#include "SOATypelist.h"
-#include "SOATypelistUtils.h"
-#include "SOAUtils.h"
-#include "c++14_compat.h"
+#include "SOAUtils.h"      // for map, zip
+#include "c++14_compat.h"  // for make_index_sequence, index_sequence
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {
     // forward declarations
-    template <class STORAGE,
-             template <typename> class SKIN, typename... FIELDS>
-                 class _View;
-    template <template <typename...> class CONTAINER,
-             template <typename> class SKIN, typename... FIELDS>
-                 class _Container;
+    // template <template <typename...> class CONTAINER,
+    //          template <typename> class SKIN, typename... FIELDS>
+    //              class _Container;
 
     /** @brief proxy object for the elements stored in the container.
      *

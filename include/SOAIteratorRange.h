@@ -10,10 +10,13 @@
 #ifndef SOA_ITERATOR_RANGE_H
 #define SOA_ITERATOR_RANGE_H
 
-#include <cstddef>
-#include <iterator>
-#include <stdexcept>
-#include <type_traits>
+#include <cstddef>      // for size_t
+#include <iterator>     // for bidirectional_iterator_tag, iterator_traits
+#include <stdexcept>    // for out_of_range
+#include <type_traits>  // for enable_if, is_base_of, is_same, is_constructible
+#include <utility>      // for forward
+// in some tests a false suggestion
+// IWYU pragma: no_include <vector>
 
 #ifndef __GNUC__
 #define __builtin_expect(c, val) ((c))

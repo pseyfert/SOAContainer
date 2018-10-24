@@ -12,6 +12,7 @@
 #define PRINTABLENULLSKIN_H
 
 #include <sstream>
+#include <string>
 
 /// namespace to encapsulate SOA stuff
 namespace SOA {
