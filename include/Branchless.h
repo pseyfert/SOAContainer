@@ -13,6 +13,7 @@
 
 #include <utility>
 #include <type_traits>
+#include <cstdint>
 
 // play a few tricks so this performs well at low optimisation levels
 #undef alwaysinline

@@ -12,6 +12,9 @@
 #ifndef ALIGNEDALLOCATOR_H
 #define ALIGNEDALLOCATOR_H
 
+#include <cstddef>
+#include <memory>
+
 namespace SOA {
     /** @brief aligned allocator
      *

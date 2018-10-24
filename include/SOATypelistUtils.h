@@ -95,6 +95,7 @@ namespace SOA {
             {
                 using _t = std::deque<T, CacheLineAlignedAllocator<T> >;
 #if __cplusplus >= 201402L // be nice an give users a hint
+#ifndef YCM_DIAGS
                 // a deque-like data structure to back the SOA::Container
                 // or SOA::View is not a bad idea in principle, but I haven't
                 // seen good code from current implementations - maybe
@@ -106,6 +107,7 @@ namespace SOA {
                         "out the iterators, and hence does not vectorize")]]
                 constexpr static inline int __bad() { return 0; }
                 enum { _bad = __bad() };
+#endif
 #endif
             };
         }

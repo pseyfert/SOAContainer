@@ -2,6 +2,7 @@
 #include <climits>
 #include <cstdint>
 #include <type_traits>
+#include <new> // for std::bad_alloc
 
 class stack_allocator_base {
 protected:

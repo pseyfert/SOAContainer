@@ -13,6 +13,7 @@
 
 #include <ostream>
 #include <iterator>
+#include <utility>
 
 namespace SOA {
     template < template <typename...> class CONTAINER,
