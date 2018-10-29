@@ -4,6 +4,8 @@
  * @date 2018-04-04
  *
  * unit test for SOA::iterator_range
+ *
+ * For copyright and license information, see the end of the file.
  */
 
 #include <array>
@@ -346,5 +348,21 @@ TEST(SOAIteratorRangeTest, ConversionToConstIterRange) {
         EXPECT_EQ(*it, *kt);
     }
 }
+
+/* Copyright (C) CERN for the benefit of the LHCb collaboration
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 // vim: sw=4:tw=78:ft=cpp:et
