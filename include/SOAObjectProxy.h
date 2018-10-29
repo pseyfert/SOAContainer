@@ -71,6 +71,8 @@ namespace SOA {
 
         using POSITION::stor;
         using POSITION::idx;
+        /// magic constructor to construct from a POSITION
+        using POSITION::POSITION;
 
         /// corresponding _Containers are friends
         template <template <typename...> class CONTAINER,
@@ -78,14 +80,12 @@ namespace SOA {
         friend class _Container;
 
     public:
-        // magic constructor
-        template <typename POS,
-                  typename = typename std::enable_if<
-                          std::is_base_of<POSITION, POS>::value>::type>
-        constexpr explicit ObjectProxy(POS&& pos) noexcept
-                : POSITION(std::forward<POS>(pos))
-        {
-        }
+        /// no default constructor
+        constexpr ObjectProxy() noexcept = delete;
+        /// copy constructor
+        constexpr ObjectProxy(const self_type& other) noexcept = default;
+        /// move constructor
+        constexpr ObjectProxy(self_type&& other) noexcept = default;
 
     private:
         /// little helper to implement conversion to tuple
@@ -219,13 +219,6 @@ namespace SOA {
         };
 
     public:
-        /// default constructor
-        constexpr ObjectProxy() = default;
-        /// copy constructor
-        constexpr ObjectProxy(const self_type& other) = default;
-        /// move constructor
-        constexpr ObjectProxy(self_type&& other) = default;
-
         /// convert to tuple of member contents
         constexpr operator value_type() const
                 noexcept(noexcept(to_tuple_val(std::declval<self_type>())))
@@ -397,11 +390,11 @@ namespace SOA {
         }
 
         /// return pointer to element pointed to be this proxy
-        pointer operator&() noexcept { return pointer{POSITION(*this)}; }
+        pointer operator&() noexcept { return pointer{ stor(), idx() }; }
         /// return const pointer to element pointed to be this proxy
         constexpr const_pointer operator&() const noexcept
         {
-            return const_pointer{POSITION(*this)};
+            return const_pointer{ stor(), idx() };
         }
     };
 

@@ -28,6 +28,8 @@ namespace SOA {
 
         using POSITION::stor;
         using POSITION::idx;
+        // "magic" constructor to be used by SOA container classes only
+        using POSITION::POSITION;
 
     public:
         using parent_type = typename POSITION::parent_type;
@@ -41,27 +43,6 @@ namespace SOA {
         using pointer = Iterator<POSITION, ISCONST>;
         using const_pointer = Iterator<POSITION, true>;
 
-        constexpr Iterator() noexcept = default;
-        constexpr Iterator(const Iterator<POSITION, ISCONST>&) noexcept = default;
-        constexpr Iterator(Iterator<POSITION, ISCONST>&&) noexcept = default;
-        Iterator<POSITION, ISCONST>& operator=(const Iterator<POSITION, ISCONST>&) noexcept = default;
-        Iterator<POSITION, ISCONST>& operator=(Iterator<POSITION, ISCONST>&&) noexcept = default;
-
-        // "magic" constructor to be used by SOA container classes only
-        //
-        // it's "magic" in the sense that it's kind of hard to get at the
-        // POSITION type accidentally, since none of the SOA container classes
-        // expose this type in their public interface, so there is little
-        // danger of inadvertently creating an Iterator compatible with SOA
-        // containers that is in a funky state because the user accidentally
-        // passed funny values to the constructor.
-        template <typename POS>
-        constexpr explicit Iterator(POS&& pos,
-            typename std::enable_if<std::is_base_of<POSITION,
-            POS>::value>::type* = nullptr) noexcept :
-            POSITION(std::forward<POS>(pos))
-        {}
-
         // test for nullness
         constexpr explicit operator bool() const noexcept
         { return stor() && (idx() < std::get<0>(*stor()).size()); }
@@ -71,7 +52,7 @@ namespace SOA {
 
         // deference/index/operator->
         constexpr reference operator*() const noexcept
-        { return reference{ POSITION(*this) }; }
+        { return reference{ stor(), idx() }; }
         reference* operator->() noexcept
         { return reinterpret_cast<reference*>(this); }
         constexpr reference operator[](size_type ofs) const noexcept
@@ -79,7 +60,7 @@ namespace SOA {
 
         // pointers convert to const_pointers, but not vice-versa
         constexpr operator const_pointer() const noexcept
-        { return const_pointer{ POSITION(*this) }; }
+        { return const_pointer{ stor(), idx() }; }
 
         /// pointer arithmetic
         pointer& operator++() noexcept { ++idx(); return *this; }

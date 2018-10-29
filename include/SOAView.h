@@ -537,19 +537,12 @@ namespace SOA {
 
         protected:
             /// magic class for use with iterators and proxies
-            using its_safe_tag = union {};
             class position {
             private:
-                SOAStorage* m_stor;
-                size_type m_idx;
+                SOAStorage* m_stor = nullptr;
+                size_type m_idx = ~size_type(0);
             public:
                 using parent_type = self_type;
-                using safe_tag = its_safe_tag;
-                constexpr position() noexcept : m_stor(nullptr), m_idx(0) {}
-                constexpr position(const position&) noexcept = default;
-                constexpr position(position&&) noexcept = default;
-                position& operator=(const position&) noexcept = default;
-                position& operator=(position&&) noexcept = default;
                 constexpr position(SOAStorage* stor, size_type idx) noexcept :
                     m_stor(stor), m_idx(idx) {}
                 SOAStorage*& stor() noexcept { return m_stor; }
@@ -654,6 +647,7 @@ namespace SOA {
             /// naked proxy type (to be given a "skin" later)
             using naked_proxy = SOA::ObjectProxy<position>;
             friend naked_proxy;
+
             /// corresponding _Containers are friends
             template < template <typename...> class CONTAINER,
                      template <typename> class SKIN2, typename... FIELDS2>
@@ -732,12 +726,12 @@ namespace SOA {
             /// access specified element
             typename std::enable_if<!is_constant, reference>::type
             operator[](size_type idx) noexcept
-            { return reference{ position{ &m_storage, idx } }; }
+            { return reference{ &m_storage, idx }; }
             /// access specified element (read access only)
             constexpr const_reference operator[](size_type idx) const noexcept
             {
-                return const_reference{ position{
-                    &const_cast<SOAStorage&>(m_storage), idx } };
+                return const_reference{
+                    &const_cast<SOAStorage&>(m_storage), idx };
             }
             /// access specified element with out of bounds checking
             typename std::enable_if<!is_constant, reference>::type
@@ -774,23 +768,23 @@ namespace SOA {
             /// iterator pointing to first element
             typename std::enable_if<!is_constant, iterator>::type
             begin() noexcept
-            { return iterator{ position{ &m_storage, 0 } }; }
+            { return iterator{ &m_storage, 0 }; }
             /// iterator pointing one element behind the last element
             typename std::enable_if<!is_constant, iterator>::type
             end() noexcept
-            { return iterator{ position{ &m_storage, size() } }; }
+            { return iterator{ &m_storage, size() }; }
 
             /// const iterator pointing to first element
             constexpr const_iterator begin() const noexcept
             {
-                return const_iterator{ position{
-                    const_cast<SOAStorage*>(&m_storage), 0 } };
+                return const_iterator{
+                    const_cast<SOAStorage*>(&m_storage), 0 };
             }
             /// const iterator pointing one element behind the last element
             constexpr const_iterator end() const noexcept
             {
-                return const_iterator{ position{
-                    const_cast<SOAStorage*>(&m_storage), size() } };
+                return const_iterator{
+                    const_cast<SOAStorage*>(&m_storage), size() };
             }
 
             /// const iterator pointing to first element

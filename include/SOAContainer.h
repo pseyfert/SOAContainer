@@ -261,8 +261,6 @@ namespace SOA {
             /// (naked) tuple type used as const reference
             using naked_const_reference_tuple_type =
                 typename BASE::naked_const_reference_tuple_type;
-            /// use the parent's position (make sure this stays protected)
-            using position = typename BASE::position;
 
         public:
             /// default constructor
@@ -422,7 +420,7 @@ namespace SOA {
                 SOA::Utils::apply_zip(
                         impl::insertHelper<size_type>{pos.idx()},
                         this->m_storage, std::forward<T>(val));
-                return iterator{ position{ pos.stor(), pos.idx() } };
+                return iterator{ pos.stor(), pos.idx() };
             }
 
             /// insert element from related View or Container at pos
@@ -448,7 +446,7 @@ namespace SOA {
                 SOA::Utils::apply_zip(
                         impl::insertHelper2<size_type>{pos.idx(), count},
                         this->m_storage, val);
-                return iterator{ position{ pos.stor(), pos.idx() } };
+                return iterator{ pos.stor(), pos.idx() };
             }
 
             /// insert count copies of element from related View or Container at pos
@@ -473,7 +471,7 @@ namespace SOA {
                 // moreover, if we can determine the distance between first and
                 // last, we should make a hole of the right size to avoid moving
                 // data more than once
-                iterator retVal{ position{ pos.stor(), pos.idx() } };
+                iterator retVal{ pos.stor(), pos.idx() };
                 while (first != last) { insert(pos, *first); ++first; ++pos; }
                 return retVal;
             }
@@ -488,7 +486,7 @@ namespace SOA {
                 SOA::Utils::map(
                         typename SOA::impl::eraseHelper<size_type>{ pos.idx() },
                         this->m_storage);
-                return iterator{ position{ pos.stor(), pos.idx() } };
+                return iterator{ pos.stor(), pos.idx() };
             }
 
             /// erase elements from first to last
@@ -505,7 +503,7 @@ namespace SOA {
                                 first.idx(),
                                 static_cast<size_type>(last - first)},
                             this->m_storage);
-                return iterator{ position{ first.stor(), first.idx() } };
+                return iterator{ first.stor(), first.idx() };
             }
 
             /// assign the vector to contain count copies of val
@@ -601,7 +599,7 @@ namespace SOA {
                         SOA::impl::emplaceHelper<size_type>{ pos.idx() },
                         this->m_storage,
                         std::forward_as_tuple(std::forward<ARGS>(args)...));
-                return iterator{ position{ pos.stor(), pos.idx() } };
+                return iterator{ pos.stor(), pos.idx() };
             }
 
             /// construct a new element at position pos from naked_value_tuple_type
@@ -616,7 +614,7 @@ namespace SOA {
                         SOA::impl::emplaceHelper<size_type>{ pos.idx() },
                         this->m_storage,
                         std::forward<naked_value_tuple_type>(val));
-                return iterator{ position{ pos.stor(), pos.idx() } };
+                return iterator{ pos.stor(), pos.idx() };
             }
 
             /// construct a new element at position pos from value_type
@@ -631,7 +629,7 @@ namespace SOA {
                         SOA::impl::emplaceHelper<size_type>{ pos.idx() },
                         this->m_storage,
                         std::forward<value_type>(val));
-                return iterator{ position{ pos.stor(), pos.idx() } };
+                return iterator{ pos.stor(), pos.idx() };
             }
     };
 
