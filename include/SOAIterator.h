@@ -25,6 +25,7 @@ namespace SOA {
         template < template <typename...> class CONTAINER,
             template <typename> class SKIN, typename... FIELDS>
         friend class _Container;
+        friend class Iterator<POSITION, !ISCONST>;
 
         using POSITION::stor;
         using POSITION::idx;
@@ -79,31 +80,42 @@ namespace SOA {
         constexpr difference_type operator-(const pointer& p) const noexcept
         { return idx() - p.idx(); }
 
-        // pointer equality
-        friend constexpr bool operator==(
-                const pointer& p, const pointer& q) noexcept
-        { return p.idx() == q.idx() && p.stor() == q.stor(); }
-        friend constexpr bool operator!=(
-                const pointer& p, const pointer& q) noexcept
-        { return !(p == q); }
-
-        // pointer comparisons - ordering works only if they point into same
-        // container instance
-        friend constexpr bool operator<(
-                const pointer& p, const pointer& q) noexcept
+        template <bool ISCONST2>
+        constexpr bool operator==(const Iterator<POSITION, ISCONST2>& q) const
+                noexcept
         {
-            return (p.idx() < q.idx()) ||
-                   (!(q.idx() < p.idx()) && (p.stor() < q.stor()));
+            return POSITION::operator==(static_cast<const POSITION&>(q));
         }
-        friend constexpr bool operator>(
-                const pointer& p, const pointer& q) noexcept
-        { return q < p; }
-        friend constexpr bool operator<=(
-                const pointer& p, const pointer& q) noexcept
-        { return !(p > q); }
-        friend constexpr bool operator>=(
-                const pointer& p, const pointer& q) noexcept
-        { return !(p < q); }
+        template <bool ISCONST2>
+        constexpr bool operator!=(const Iterator<POSITION, ISCONST2>& q) const
+                noexcept
+        {
+            return POSITION::operator!=(static_cast<const POSITION&>(q));
+        }
+        template <bool ISCONST2>
+        constexpr bool operator<(const Iterator<POSITION, ISCONST2>& q) const
+                noexcept
+        {
+            return POSITION::operator<(static_cast<const POSITION&>(q));
+        }
+        template <bool ISCONST2>
+        constexpr bool operator>(const Iterator<POSITION, ISCONST2>& q) const
+                noexcept
+        {
+            return POSITION::operator>(static_cast<const POSITION&>(q));
+        }
+        template <bool ISCONST2>
+        constexpr bool operator<=(const Iterator<POSITION, ISCONST2>& q) const
+                noexcept
+        {
+            return POSITION::operator<=(static_cast<const POSITION&>(q));
+        }
+        template <bool ISCONST2>
+        constexpr bool operator>=(const Iterator<POSITION, ISCONST2>& q) const
+                noexcept
+        {
+            return POSITION::operator>=(static_cast<const POSITION&>(q));
+        }
 
         friend std::ostream& operator<<(std::ostream& os, const pointer& p)
         {

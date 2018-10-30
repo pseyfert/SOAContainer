@@ -549,71 +549,109 @@ namespace SOA {
                 constexpr SOAStorage* stor() const noexcept { return m_stor; }
                 size_type& idx() noexcept { return m_idx; }
                 constexpr size_type idx() const noexcept { return m_idx; }
+                constexpr bool operator==(const position& q) const noexcept
+                { return m_idx == q.m_idx && m_stor == q.m_stor; }
+                constexpr bool operator!=(const position& q) const noexcept
+                { return !(*this == q); }
+                constexpr bool operator<(const position& q) const noexcept
+                {
+                    return (m_idx < q.m_idx) ||
+                           (!(q.m_idx < m_idx) && m_stor < q.m_stor);
+                }
+                constexpr bool operator>(const position& q) const noexcept
+                {
+                    return q < *this;
+                }
+                constexpr bool operator<=(const position& q) const noexcept
+                {
+                    return !(q < *this);
+                }
+                constexpr bool operator>=(const position& q) const noexcept
+                {
+                    return !(*this < q);
+                }
             };
 
-            /// implementation details
-            struct impl_detail {
-                /// little helper to check range sizes at construction time
-                struct rangeSizeCheckHelper {
-                    size_type m_sz;
-                    template <typename T>
-                    void operator()(const T& range) const {
-                        if (m_sz != size_type(range.size()))
-                            throw std::logic_error("_View: range sizes must match!");
-                    }
-                };
-                /// little helper for assign(count, val)
-                struct assignHelper {
-                    size_type m_cnt;
-                    template <typename T, typename V>
-                    void operator()(std::tuple<T&, const V&> t) const noexcept(noexcept(
-                            std::get<0>(t).assign(m_cnt, std::get<1>(t))))
-                    { std::get<0>(t).assign(m_cnt, std::get<1>(t)); }
-                };
-                template <typename IT, size_type IDX>
-                struct tuple_element_iterator {
-                    IT m_it;
-                    tuple_element_iterator& operator++() noexcept(
-                            noexcept(++m_it))
-                    { ++m_it; return *this; }
-                    constexpr auto operator*() const noexcept(
-                            noexcept(std::get<IDX>(*m_it))) -> decltype(
-                            std::get<IDX>(*m_it))
-                    { return std::get<IDX>(*m_it); }
-                };
-                template <typename IT, size_type... IDXS>
-                static std::tuple<tuple_element_iterator<IT, IDXS>...>
-                make_tuple_element_iterators(IT it, std::index_sequence<IDXS...>)
-                {
-                    return std::tuple<tuple_element_iterator<IT, IDXS>...>(
-                            tuple_element_iterator<IT, IDXS...>{it});
-                }
-                template <size_type N, typename IT>
-                static auto make_tuple_element_iterators(IT it) -> decltype(
-                        make_tuple_element_iterators(it,
-                            std::make_index_sequence<N>()))
-                {
-                    return make_tuple_element_iterators(it,
-                            std::make_index_sequence<N>());
-                }
-                /// little helper for assign(first, last)
-                struct assignHelper2 {
-                    template <typename R, typename IT>
-                    void operator()(std::tuple<R&, IT>& t) const noexcept(noexcept(
-                                *std::get<0>(t).begin() = *std::get<1>(t)))
-                    {
-                        auto& it = std::get<1>(t), itend = std::get<2>(t);
-                        auto& jt = std::get<0>(t).begin();
-                        while (itend != it) {
-                            *jt = *it;
-                            ++jt, ++it;
+                /// implementation details
+                struct impl_detail {
+                    /// little helper to check range sizes at construction
+                    /// time
+                    struct rangeSizeCheckHelper {
+                        size_type m_sz;
+                        template <typename T>
+                        void operator()(const T& range) const
+                        {
+                            if (m_sz != size_type(range.size()))
+                                throw std::logic_error(
+                                        "_View: range sizes must match!");
                         }
+                    };
+                    /// little helper for assign(count, val)
+                    struct assignHelper {
+                        size_type m_cnt;
+                        template <typename T, typename V>
+                        void operator()(std::tuple<T&, const V&> t) const
+                                noexcept(noexcept(std::get<0>(t).assign(
+                                        m_cnt, std::get<1>(t))))
+                        {
+                            std::get<0>(t).assign(m_cnt, std::get<1>(t));
+                        }
+                    };
+                    template <typename IT, size_type IDX>
+                    struct tuple_element_iterator {
+                        IT m_it;
+                        tuple_element_iterator&
+                        operator++() noexcept(noexcept(++m_it))
+                        {
+                            ++m_it;
+                            return *this;
+                        }
+                        constexpr auto operator*() const
+                                noexcept(noexcept(std::get<IDX>(*m_it)))
+                                        -> decltype(std::get<IDX>(*m_it))
+                        {
+                            return std::get<IDX>(*m_it);
+                        }
+                    };
+                    template <typename IT, size_type... IDXS>
+                    static std::tuple<tuple_element_iterator<IT, IDXS>...>
+                    make_tuple_element_iterators(IT it,
+                                                 std::index_sequence<IDXS...>)
+                    {
+                        return std::tuple<
+                                tuple_element_iterator<IT, IDXS>...>(
+                                tuple_element_iterator<IT, IDXS...>{it});
                     }
-                };
-                /// helper to check contents of fields typelist
-                template <typename FIELD>
-                struct fields_contains : std::integral_constant<bool,
-                    -1 != fields_typelist::template find<FIELD>()> {};
+                    template <size_type N, typename IT>
+                    static auto make_tuple_element_iterators(IT it)
+                            -> decltype(make_tuple_element_iterators(
+                                    it, std::make_index_sequence<N>()))
+                    {
+                        return make_tuple_element_iterators(
+                                it, std::make_index_sequence<N>());
+                    }
+                    /// little helper for assign(first, last)
+                    struct assignHelper2 {
+                        template <typename R, typename IT>
+                        void operator()(std::tuple<R&, IT>& t) const
+                                noexcept(noexcept(*std::get<0>(t).begin() =
+                                                          *std::get<1>(t)))
+                        {
+                            auto &it = std::get<1>(t), itend = std::get<2>(t);
+                            auto& jt = std::get<0>(t).begin();
+                            while (itend != it) {
+                                *jt = *it;
+                                ++jt, ++it;
+                            }
+                        }
+                    };
+                    /// helper to check contents of fields typelist
+                    template <typename FIELD>
+                    struct fields_contains
+                            : std::integral_constant<
+                                      bool,
+                                      -1 != fields_typelist::template find<
+                                                    FIELD>()> {};
             };
 
         protected:
