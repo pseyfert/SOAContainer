@@ -247,7 +247,9 @@ TEST(SOAContainerVector, SimpleSkin)
     // SOA version, so we get a shout from the test suite if the STL or
     // compilers improve
     const std::chrono::duration<double> dt0 = t1 - t0, dt1 = t3 - t2;
+#if !defined(SANITIZE)
     EXPECT_GT(dt0.count(), dt1.count());
+#endif // !SANITIZE
 
     for (unsigned i = 0; i < 1024; ++i) {
         EXPECT_EQ(hits[i].x(), ahits[i].x());

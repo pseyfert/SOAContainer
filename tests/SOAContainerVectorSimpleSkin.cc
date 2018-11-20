@@ -252,7 +252,9 @@ TEST(SOAContainerVector, SimpleSkin)
     const auto t3 = std::chrono::high_resolution_clock::now();
     // make sure the vectorised version is faster
     const std::chrono::duration<double> dt0 = t1 - t0, dt1 = t3 - t2;
+#if !defined(SANITIZE)
     EXPECT_LT(dt0.count(), dt1.count());
+#endif // !SANITIZE
 
     for (unsigned i = 0; i < 1024; ++i) {
         EXPECT_LT(std::abs(hits[i].x() - ahits[i].x()),

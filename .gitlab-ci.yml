@@ -18,7 +18,7 @@ sanitize-address_jessie-gcc48:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -38,7 +38,7 @@ sanitize-address_jessie-gcc49:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -48,7 +48,7 @@ sanitize-undefined_jessie-gcc49:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -58,7 +58,7 @@ sanitize-leak_jessie-gcc49:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-4.9 -DCMAKE_CXX_COMPILER=g++-4.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -78,7 +78,7 @@ sanitize-address_stretch-gcc63:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -88,7 +88,7 @@ sanitize-undefined_stretch-gcc63:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -98,7 +98,7 @@ sanitize-leak_stretch-gcc63:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -118,7 +118,7 @@ sanitize-address_stretch-clang38:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -128,7 +128,7 @@ sanitize-undefined_stretch-clang38:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -138,7 +138,7 @@ sanitize-leak_stretch-clang38:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -148,7 +148,7 @@ sanitize-memory_stretch-clang38:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -168,7 +168,7 @@ sanitize-address_stretch-clang39:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -178,7 +178,7 @@ sanitize-undefined_stretch-clang39:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -188,7 +188,7 @@ sanitize-leak_stretch-clang39:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -198,7 +198,7 @@ sanitize-memory_stretch-clang39:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -222,7 +222,7 @@ sanitize-address_stretch-clang38-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -234,7 +234,7 @@ sanitize-undefined_stretch-clang38-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -246,7 +246,7 @@ sanitize-leak_stretch-clang38-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -258,7 +258,7 @@ sanitize-memory_stretch-clang38-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -282,7 +282,7 @@ sanitize-address_stretch-clang39-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -294,7 +294,7 @@ sanitize-undefined_stretch-clang39-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -306,7 +306,7 @@ sanitize-leak_stretch-clang39-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -318,7 +318,7 @@ sanitize-memory_stretch-clang39-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -341,7 +341,7 @@ build_centos7-clang4:
 #    script:
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -351,7 +351,7 @@ build_centos7-clang4:
 #    script:
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 
@@ -361,7 +361,7 @@ sanitize-undefined_centos7-clang4:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -371,7 +371,7 @@ sanitize-memory_centos7-clang4:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; source /opt/rh/llvm-toolset-7/enable; cmake3 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -394,7 +394,7 @@ build_centos7-gcc72:
 #    script:
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; source /opt/rh/devtoolset-7/enable; cmake3 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; source /opt/rh/devtoolset-7/enable; cmake3 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -404,7 +404,7 @@ build_centos7-gcc72:
 #    script:
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; source /opt/rh/devtoolset-7/enable; cmake3 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; source /opt/rh/devtoolset-7/enable; cmake3 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 
@@ -414,7 +414,7 @@ sanitize-undefined_centos7-gcc72:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; source /opt/rh/devtoolset-7/enable; cmake3 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; source /opt/rh/devtoolset-7/enable; cmake3 -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -515,7 +515,7 @@ build_sid-clang7-libc++:
 #    script:
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -527,7 +527,7 @@ build_sid-clang7-libc++:
 #        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -537,7 +537,7 @@ build_sid-clang7-libc++:
 #    script:
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -549,7 +549,7 @@ build_sid-clang7-libc++:
 #        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -559,7 +559,7 @@ build_sid-clang7-libc++:
 #    script:
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -571,7 +571,7 @@ build_sid-clang7-libc++:
 #        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -581,7 +581,7 @@ build_sid-clang7-libc++:
 #    script:
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -593,7 +593,7 @@ build_sid-clang7-libc++:
 #        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=address" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=address" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -603,7 +603,7 @@ build_sid-clang7-libc++:
 #    script:
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -615,7 +615,7 @@ build_sid-clang7-libc++:
 #        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -625,7 +625,7 @@ build_sid-clang7-libc++:
 #    script:
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -637,7 +637,7 @@ build_sid-clang7-libc++:
 #        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -647,7 +647,7 @@ build_sid-clang7-libc++:
 #    script:
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -659,7 +659,7 @@ build_sid-clang7-libc++:
 #        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -669,7 +669,7 @@ build_sid-clang7-libc++:
 #    script:
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 #
@@ -681,7 +681,7 @@ build_sid-clang7-libc++:
 #        - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
 #        - git submodule update --init
 #        - mkdir builddir
-#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=leak" ..)
+#        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=leak" ..)
 #        - (cd builddir; make)
 #        - (cd builddir; make test)
 
@@ -691,7 +691,7 @@ sanitize-memory_sid-clang40:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -703,7 +703,7 @@ sanitize-memory_sid-clang40-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -713,7 +713,7 @@ sanitize-memory_sid-clang50:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -725,7 +725,7 @@ sanitize-memory_sid-clang50-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -735,7 +735,7 @@ sanitize-memory_sid-clang60:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -747,7 +747,7 @@ sanitize-memory_sid-clang60-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -757,7 +757,7 @@ sanitize-memory_sid-clang7:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -769,7 +769,7 @@ sanitize-memory_sid-clang7-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=memory" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=memory" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -779,7 +779,7 @@ sanitize-undefined_sid-clang40:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -791,7 +791,7 @@ sanitize-undefined_sid-clang40-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -801,7 +801,7 @@ sanitize-undefined_sid-clang50:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -813,7 +813,7 @@ sanitize-undefined_sid-clang50-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -823,7 +823,7 @@ sanitize-undefined_sid-clang60:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -835,7 +835,7 @@ sanitize-undefined_sid-clang60-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-6.0 -DCMAKE_CXX_COMPILER=clang++-6.0 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -845,7 +845,7 @@ sanitize-undefined_sid-clang7:
     script:
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 
@@ -857,7 +857,7 @@ sanitize-undefined_sid-clang7-libc++:
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
         - git submodule update --init
         - mkdir builddir
-        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -fsanitize=undefined" ..)
+        - (cd builddir; cmake -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7 -DCMAKE_C_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer -DSANITIZE=1 -fsanitize=undefined" ..)
         - (cd builddir; make)
         - (cd builddir; make test)
 

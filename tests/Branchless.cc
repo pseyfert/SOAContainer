@@ -71,11 +71,15 @@ TEST(Branchless, SimpleTests) {
     }
     std::chrono::duration<double> dt0 = t1 - t0, dt1 = t3 - t2;
     const double conv = 1e9 / double(size);
+    const double dt0ns = conv * dt0.count();
+    const double dt1ns = conv * dt1.count();
     // make sure the performance doesn't suck too much...
-    EXPECT_LT(conv * dt1.count(), 3 * conv * dt0.count());
+#if !defined(SANITIZE)
+    EXPECT_LT(dt1ns, 3 * dt0ns);
+#endif // !SANITIZE
 #if 0
-    std::printf("branchful loop : %g ns/input value\n", conv * dt0.count());
-    std::printf("branchless loop: %g ns/input value\n", conv * dt1.count());
+    std::printf("branchful loop : %g ns/input value\n", dt0ns);
+    std::printf("branchless loop: %g ns/input value\n", dt1ns);
 #endif
 }
 
