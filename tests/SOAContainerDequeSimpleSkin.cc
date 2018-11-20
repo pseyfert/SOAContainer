@@ -270,6 +270,10 @@ TEST(SOAContainerVector, SimpleSkin)
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * In applying this licence, CERN does not waive the privileges and immunities
+ * granted to it by virtue of its status as an Intergovernmental Organization
+ * or submit itself to any jurisdiction.
  */
 
 // vim: sw=4:tw=78:ft=cpp:et
