@@ -33,7 +33,9 @@ enable_testing()
 add_subdirectory(tests)
 add_subdirectory(examples)
 
-set(SOAContainer_header_destination ${CMAKE_INSTALL_PREFIX}/include CACHE STRING "installation directory for SOAContainer headers")
+if(NOT DEFINED SOAContainer_header_destination)
+  set(SOAContainer_header_destination ${CMAKE_INSTALL_PREFIX}/include CACHE STRING "installation directory for SOAContainer headers")
+endif()
 install(DIRECTORY include/ DESTINATION ${SOAContainer_header_destination})
 
 # CMAKE 3
