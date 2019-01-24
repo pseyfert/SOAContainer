@@ -19,6 +19,9 @@ foreach(test ${tests})
   add_executable(${test} ${test}.cc)
 endforeach()
 
+target_compile_options(SOAContainerDequeSimpleSkin PUBLIC "-Wno-deprecated-declarations")
+target_compile_options(SOAContainerDequeSimple PUBLIC "-Wno-deprecated-declarations")
+
 add_compile_options(-Wno-suggest-override)
 
 add_subdirectory(googletest EXCLUDE_FROM_ALL)

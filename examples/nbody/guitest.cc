@@ -43,7 +43,7 @@ class Animator: public TTimer, NBody<MASSPOINTS>
 	    gPad->SetFillColor(kBlack);
 	}
 
-	Bool_t Notify() {
+	Bool_t Notify() override {
 	    if ((iterationCount & 0x7f) == 0) {
 		std::cout << "time " << (iterationCount * this->dt) << *this <<
 		    std::endl;
