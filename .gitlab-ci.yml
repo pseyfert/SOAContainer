@@ -145,6 +145,8 @@ sanitize-leak_stretch-clang38:
 sanitize-memory_stretch-clang38:
     image: malaschiller/debian-stretch-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - git submodule update --init
         - mkdir builddir
@@ -195,6 +197,8 @@ sanitize-leak_stretch-clang39:
 sanitize-memory_stretch-clang39:
     image: malaschiller/debian-stretch-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - git submodule update --init
         - mkdir builddir
@@ -253,6 +257,8 @@ sanitize-leak_stretch-clang38-libc++:
 sanitize-memory_stretch-clang38-libc++:
     image: malaschiller/debian-stretch-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
@@ -313,6 +319,8 @@ sanitize-leak_stretch-clang39-libc++:
 sanitize-memory_stretch-clang39-libc++:
     image: malaschiller/debian-stretch-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
@@ -368,6 +376,8 @@ sanitize-undefined_centos7-clang4:
 sanitize-memory_centos7-clang4:
     image: malaschiller/centos7-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - git submodule update --init
         - mkdir builddir
@@ -688,6 +698,8 @@ build_sid-clang7-libc++:
 sanitize-memory_sid-clang40:
     image: malaschiller/debian-sid-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - git submodule update --init
         - mkdir builddir
@@ -698,6 +710,8 @@ sanitize-memory_sid-clang40:
 sanitize-memory_sid-clang40-libc++:
     image: malaschiller/debian-sid-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
@@ -710,6 +724,8 @@ sanitize-memory_sid-clang40-libc++:
 sanitize-memory_sid-clang50:
     image: malaschiller/debian-sid-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - git submodule update --init
         - mkdir builddir
@@ -720,6 +736,8 @@ sanitize-memory_sid-clang50:
 sanitize-memory_sid-clang50-libc++:
     image: malaschiller/debian-sid-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
@@ -732,6 +750,8 @@ sanitize-memory_sid-clang50-libc++:
 sanitize-memory_sid-clang60:
     image: malaschiller/debian-sid-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - git submodule update --init
         - mkdir builddir
@@ -742,6 +762,8 @@ sanitize-memory_sid-clang60:
 sanitize-memory_sid-clang60-libc++:
     image: malaschiller/debian-sid-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
@@ -754,6 +776,8 @@ sanitize-memory_sid-clang60-libc++:
 sanitize-memory_sid-clang7:
     image: malaschiller/debian-sid-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - git submodule update --init
         - mkdir builddir
@@ -764,6 +788,8 @@ sanitize-memory_sid-clang7:
 sanitize-memory_sid-clang7-libc++:
     image: malaschiller/debian-sid-dev:latest
     stage: sanitize
+    tags:
+        - docker-privileged
     script:
         - echo 'add_compile_options(-stdlib=libc++)' >> CMakeLists.txt
         - echo 'set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")' >> CMakeLists.txt
