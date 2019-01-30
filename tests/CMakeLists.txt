@@ -30,7 +30,11 @@ include_directories(SYSTEM ${gtest_SOURCE_DIR}/include)
 
 foreach(test ${tests})
   target_link_libraries(${test} gtest gtest_main pthread)
-  add_test(${test} ${test})
+  if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} LESS 3.0)
+    add_test(${test} ${test})
+  else()
+    add_test(NAME ${test} COMMAND ${test})
+  endif()
 endforeach()
 
 # CMAKE 3
