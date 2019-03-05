@@ -29,8 +29,15 @@ if(${CMAKE_GENERATOR} STREQUAL "Ninja")
   add_compile_options(-fdiagnostics-color)
 endif()
 
-enable_testing()
-add_subdirectory(tests)
+if(NOT DEFINED SOAContainer_disable_tests)
+  set(SOAContainer_disable_tests FALSE CACHE BOOL "disable testing")
+endif()
+
+if(NOT SOAContainer_disable_tests)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
+
 add_subdirectory(examples)
 
 if(NOT DEFINED SOAContainer_header_destination)
