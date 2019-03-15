@@ -23,11 +23,7 @@ namespace {
         float z;
     };
 
-    struct track {
-        std::vector<hit> hits;
-    };
-
-    SOAFIELD_TRIVIAL(f_track, track_accessor, track);
+    SOAFIELD_TRIVIAL(f_track, track_accessor, std::vector<hit>);
     SOASKIN_TRIVIAL(track_skin, f_track);
 } // namespace
 
@@ -38,19 +34,20 @@ TEST(SOAZipTest, Paul)
     // fill the container
     c.reserve(4);
     for (unsigned i = 0; i < 4; ++i) {
-        c.emplace_back();
+        std::vector<hit> hits;
+        hits.reserve(8);
         for (unsigned j = 0; j < 8; ++j) {
-            c.back().track_accessor().hits.emplace_back(
-                    hit{rnd(), rnd(), rnd()});
+            hits.emplace_back(hit{rnd(), rnd(), rnd()});
         }
+        c.emplace_back(std::move(hits));
     }
 
     auto v = zip<track_skin>(c);
     EXPECT_EQ(c.size(), v.size());
     for (unsigned i = 0; i < c.size(); ++i) {
-        for (unsigned j = 0; j < c[i].track_accessor().hits.size(); ++j) {
-            EXPECT_FLOAT_EQ(c[i].track_accessor().hits[j].x,
-                            v[i].track_accessor().hits[j].x);
+        for (unsigned j = 0; j < c[i].track_accessor().size(); ++j) {
+            EXPECT_FLOAT_EQ(c[i].track_accessor()[j].x,
+                            v[i].track_accessor()[j].x);
         }
     }
 }
