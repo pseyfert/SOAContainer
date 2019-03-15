@@ -55,56 +55,40 @@ namespace SOA {
 
     /// more _View implementation details
     namespace impl {
-        /// decay T&& into T, leave (const) T(&) unchanged
-        template <typename T>
-        struct remove_rvalue_reference { using type = T; };
-        /// decay T&& into T, leave (const) T(&) unchanged (specialisation)
-        template <typename T>
-        struct remove_rvalue_reference<const T&> { using type = const T&; };
-        /// decay T&& into T, leave (const) T(&) unchanged (specialisation)
-        template <typename T>
-        struct remove_rvalue_reference<T&> { using type = T&; };
-        /// decay T&& into T, leave (const) T(&) unchanged (specialisation)
-        template <typename T>
-        struct remove_rvalue_reference<T&&> { using type = T; };
-
         /// move everything but lvalue references
         template <typename R>
-        SOA::iterator_range<decltype(std::begin(std::declval<const R&>()))>
-        move_if_not_lvalue_reference(const R& r)
+        constexpr SOA::iterator_range<
+                decltype(std::begin(std::declval<R&>()))>
+        move_if_not_lvalue_reference(
+                typename std::remove_reference<R>::type& r)
         {
             return SOA::make_iterator_range(std::begin(r), std::end(r));
         }
         /// move everything but lvalue references
         template <typename R>
-        SOA::iterator_range<decltype(std::begin(std::declval<R&>()))>
-        move_if_not_lvalue_reference(R& r)
+        constexpr R&& move_if_not_lvalue_reference(
+                typename std::remove_reference<R>::type&& r)
         {
-            return SOA::make_iterator_range(std::begin(r), std::end(r));
+            return static_cast<R&&>(r);
         }
-        /// move everything but lvalue references
-        template <typename R>
-        R move_if_not_lvalue_reference(R&& r) { return std::move(r); }
 
         /// move everything but lvalue references
         template <typename T, typename R>
-        SOA::iterator_range<decltype(std::begin(std::declval<const R&>()))>
-        move_if_not_lvalue_reference(const T&, const R& r)
+        constexpr typename std::enable_if<
+                !std::is_rvalue_reference<T>::value,
+                SOA::iterator_range<
+                        decltype(std::begin(std::declval<R&>()))>>::type
+        move_if_not_lvalue_reference(T&&, R& r)
         {
             return SOA::make_iterator_range(std::begin(r), std::end(r));
         }
         /// move everything but lvalue references
         template <typename T, typename R>
-        SOA::iterator_range<decltype(std::begin(std::declval<R&>()))>
-        move_if_not_lvalue_reference(T&, R& r)
+        constexpr typename std::enable_if<std::is_rvalue_reference<T>::value,
+                                          R>::type&&
+        move_if_not_lvalue_reference(T&&, R& r)
         {
-            return SOA::make_iterator_range(std::begin(r), std::end(r));
-        }
-        /// move everything but lvalue references
-        template <typename T, typename R>
-        R move_if_not_lvalue_reference(T&&, R& r)
-        {
-            return std::move(r);
+            return static_cast<R&&>(r);
         }
 
         /// helper to allow flexibility in how fields are supplied
@@ -426,10 +410,10 @@ namespace SOA {
             /// helper for SOA::zip
             template <template <class> class SKIN, typename... FIELDS1,
                       typename VIEW1, typename... FIELDS2, typename VIEW2>
-            auto operator()(SOA::Typelist::typelist<FIELDS1...> /* unused */,
+            static auto zip(SOA::Typelist::typelist<FIELDS1...> /* unused */,
                             VIEW1&& view1,
                             SOA::Typelist::typelist<FIELDS2...> /* unused */,
-                            VIEW2&& view2) const
+                            VIEW2&& view2)
                     -> decltype(make_soaview<SKIN>(
                             impl::move_if_not_lvalue_reference(
                                     std::forward<VIEW1>(view1),
@@ -1464,11 +1448,11 @@ namespace SOA {
                           FIELDS1..., FIELDS2...>::template type>
         auto _zip(SOA::Typelist::typelist<FIELDS1...> tl1, VIEW1&& view1,
                   SOA::Typelist::typelist<FIELDS2...> tl2, VIEW2&& view2)
-                -> decltype(make_view().template operator()<SKIN>(
+                -> decltype(make_view::template zip<SKIN>(
                         tl1, std::forward<VIEW1>(view1), tl2,
                         std::forward<VIEW2>(view2)))
         {
-            return make_view().template operator()<SKIN>(
+            return make_view::template zip<SKIN>(
                     tl1, std::forward<VIEW1>(view1), tl2,
                     std::forward<VIEW2>(view2));
         }
