@@ -70,15 +70,15 @@ namespace SOA {
 
         /// move everything but lvalue references
         template <typename R>
-        auto move_if_not_lvalue_reference(const R& r)
-                -> SOA::iterator_range<decltype(std::begin(r))>
+        SOA::iterator_range<decltype(std::begin(std::declval<const R&>()))>
+        move_if_not_lvalue_reference(const R& r)
         {
             return SOA::make_iterator_range(std::begin(r), std::end(r));
         }
         /// move everything but lvalue references
         template <typename R>
-        auto move_if_not_lvalue_reference(R& r)
-                -> SOA::iterator_range<decltype(std::begin(r))>
+        SOA::iterator_range<decltype(std::begin(std::declval<R&>()))>
+        move_if_not_lvalue_reference(R& r)
         {
             return SOA::make_iterator_range(std::begin(r), std::end(r));
         }
@@ -88,13 +88,24 @@ namespace SOA {
 
         /// move everything but lvalue references
         template <typename T, typename R>
-        const R& move_if_not_lvalue_reference(const T&, const R& r) { return r; }
+        SOA::iterator_range<decltype(std::begin(std::declval<const R&>()))>
+        move_if_not_lvalue_reference(const T&, const R& r)
+        {
+            return SOA::make_iterator_range(std::begin(r), std::end(r));
+        }
         /// move everything but lvalue references
         template <typename T, typename R>
-        R& move_if_not_lvalue_reference(T&, R& r) { return r; }
+        SOA::iterator_range<decltype(std::begin(std::declval<R&>()))>
+        move_if_not_lvalue_reference(T&, R& r)
+        {
+            return SOA::make_iterator_range(std::begin(r), std::end(r));
+        }
         /// move everything but lvalue references
         template <typename T, typename R>
-        R move_if_not_lvalue_reference(T&&, R& r) { return std::move(r); }
+        R move_if_not_lvalue_reference(T&&, R& r)
+        {
+            return std::move(r);
+        }
 
         /// helper to allow flexibility in how fields are supplied
         template <class STORAGE, template <typename> class SKIN,
@@ -360,8 +371,7 @@ namespace SOA {
      */
     template <template <typename> class SKIN, typename... RANGES>
     constexpr auto make_soaview(RANGES&&... ranges)
-            -> View<std::tuple<decltype(impl::move_if_not_lvalue_reference(
-                            std::forward<RANGES>(ranges)))...>,
+            -> View<std::tuple<decltype(impl::move_if_not_lvalue_reference<RANGES>(ranges))...>,
                     SKIN>
     {
         return View<std::tuple<decltype(impl::move_if_not_lvalue_reference<
