@@ -13,6 +13,7 @@
 #include <deque>
 #include <random>
 #include <chrono>
+#include <limits>
 
 #include "gtest/gtest.h"
 #include "SOAContainer.h"
@@ -232,23 +233,30 @@ TEST(SOAContainerVector, SimpleSkin)
     // test shifting the hits, hopefully autovectorised
     // heat up cache
     updateHits_v(hits, 300.f, -0.01f);
-    const auto t0 = std::chrono::high_resolution_clock::now();
-    for (unsigned i = 0; i < 10; ++i)
+    double dt0 = std::numeric_limits<double>::max();
+    for (unsigned i = 0; i < 10; ++i) {
+        const auto t0 = std::chrono::high_resolution_clock::now();
         updateHits_v(hits, 300.f, -0.01f);
-    const auto t1 = std::chrono::high_resolution_clock::now();
+        const auto t1 = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<double> dt = t1 - t0;
+        if (dt.count() < dt0) dt0 = dt.count();
+    }
     // heat up cache
     updateHits_v(ahits, 300.f, -0.01f);
-    const auto t2 = std::chrono::high_resolution_clock::now();
-    for (unsigned i = 0; i < 10; ++i)
+    double dt1 = std::numeric_limits<double>::max();
+    for (unsigned i = 0; i < 10; ++i) {
+        const auto t0 = std::chrono::high_resolution_clock::now();
         updateHits_v(ahits, 300.f, -0.01f);
-    const auto t3 = std::chrono::high_resolution_clock::now();
+        const auto t1 = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<double> dt = t1 - t0;
+        if (dt.count() < dt1) dt1 = dt.count();
+    }
     // deque does not vectorise nicely, since the deque iterators
     // are not optimized away by the compiler - expect a larger time for the
     // SOA version, so we get a shout from the test suite if the STL or
     // compilers improve
-    const std::chrono::duration<double> dt0 = t1 - t0, dt1 = t3 - t2;
 #if !defined(SANITIZE)
-    EXPECT_GT(dt0.count(), dt1.count());
+    EXPECT_GT(dt0, dt1);
 #endif // !SANITIZE
 
     for (unsigned i = 0; i < 1024; ++i) {
