@@ -355,7 +355,8 @@ namespace SOA {
      */
     template <template <typename> class SKIN, typename... RANGES>
     constexpr auto make_soaview(RANGES&&... ranges)
-            -> View<std::tuple<decltype(impl::move_if_not_lvalue_reference<RANGES>(ranges))...>,
+            -> View<std::tuple<decltype(impl::move_if_not_lvalue_reference<
+                                        RANGES>(ranges))...>,
                     SKIN>
     {
         return View<std::tuple<decltype(impl::move_if_not_lvalue_reference<
@@ -370,8 +371,9 @@ namespace SOA {
             /// helper for SOA::view
             template <template <class> class SKIN, typename... FIELDS,
                       typename VIEW, typename IT>
-            auto operator()(SOA::Typelist::typelist<FIELDS...> /* unused */,
-                            const VIEW& view, IT first, IT last) const
+            static constexpr auto
+            view(SOA::Typelist::typelist<FIELDS...> /* unused */,
+                 const VIEW& view, IT first, IT last)
                     -> decltype(make_soaview<SKIN>(
                             view.template range<FIELDS>(first, last)...))
             {
@@ -381,8 +383,9 @@ namespace SOA {
             /// helper for SOA::view
             template <template <class> class SKIN, typename... FIELDS,
                       typename VIEW, typename IT>
-            auto operator()(SOA::Typelist::typelist<FIELDS...> /* unused */,
-                            VIEW& view, IT first, IT last) const
+            static constexpr auto
+            view(SOA::Typelist::typelist<FIELDS...> /* unused */, VIEW& view,
+                 IT first, IT last)
                     -> decltype(make_soaview<SKIN>(
                             view.template range<FIELDS>(first, last)...))
             {
@@ -392,8 +395,8 @@ namespace SOA {
             /// helper for SOA::view
             template <template <class> class SKIN, typename... FIELDS,
                       typename VIEW>
-            auto operator()(SOA::Typelist::typelist<FIELDS...> /* unused */,
-                            VIEW&& view) const
+            static constexpr auto
+            view(SOA::Typelist::typelist<FIELDS...> /* unused */, VIEW&& view)
                     -> decltype(make_soaview<
                                 SKIN>(impl::move_if_not_lvalue_reference(
                             std::forward<VIEW>(view),
@@ -410,10 +413,11 @@ namespace SOA {
             /// helper for SOA::zip
             template <template <class> class SKIN, typename... FIELDS1,
                       typename VIEW1, typename... FIELDS2, typename VIEW2>
-            static auto zip(SOA::Typelist::typelist<FIELDS1...> /* unused */,
-                            VIEW1&& view1,
-                            SOA::Typelist::typelist<FIELDS2...> /* unused */,
-                            VIEW2&& view2)
+            static constexpr auto
+            zip(SOA::Typelist::typelist<FIELDS1...> /* unused */,
+                VIEW1&& view1,
+                SOA::Typelist::typelist<FIELDS2...> /* unused */,
+                VIEW2&& view2)
                     -> decltype(make_soaview<SKIN>(
                             impl::move_if_not_lvalue_reference(
                                     std::forward<VIEW1>(view1),
@@ -475,12 +479,12 @@ namespace SOA {
     template <typename... FIELDS, typename VIEW, typename... ARGS,
               template <class> class SKIN = SOA::impl::SOASkinCreatorSimple<
                       FIELDS...>::template type>
-    auto view(VIEW&& view, ARGS&&... args)
-            -> decltype(impl::make_view().template operator()<SKIN>(
+    constexpr auto view(VIEW&& view, ARGS&&... args)
+            -> decltype(impl::make_view::template view<SKIN>(
                     SOA::Typelist::typelist<FIELDS...>(),
                     std::forward<VIEW>(view), std::forward<ARGS>(args)...))
     {
-        return impl::make_view().template operator()<SKIN>(
+        return impl::make_view::template view<SKIN>(
                 SOA::Typelist::typelist<FIELDS...>(),
                 std::forward<VIEW>(view), std::forward<ARGS>(args)...);
     }
@@ -513,12 +517,12 @@ namespace SOA {
      * @endcode
      */
     template <template <class> class SKIN, typename VIEW, typename... ARGS>
-    auto view(VIEW&& view, ARGS&&... args)
-            -> decltype(impl::make_view().template operator()<SKIN>(
+    constexpr auto view(VIEW&& view, ARGS&&... args)
+            -> decltype(impl::make_view::template view<SKIN>(
                     typename SKIN<impl::dummy>::fields_typelist(),
                     std::forward<VIEW>(view), std::forward<ARGS>(args)...))
     {
-        return impl::make_view().template operator()<SKIN>(
+        return impl::make_view::template view<SKIN>(
                 typename SKIN<impl::dummy>::fields_typelist(),
                 std::forward<VIEW>(view), std::forward<ARGS>(args)...);
     }
@@ -1424,19 +1428,18 @@ namespace SOA {
                 noexcept(!(a < b)))
     { return !(a < b); }
 
-
     namespace impl {
         /// helper for SOA::zip
         template <typename... FIELDS, typename VIEW,
                   template <class> class SKIN = SOA::impl::
                           SOASkinCreatorSimple<FIELDS...>::template type>
-        auto _zip(SOA::Typelist::typelist<FIELDS...> /* unused */,
-                  VIEW&& view)
-                -> decltype(make_view().template operator()<SKIN>(
+        constexpr auto _zip(SOA::Typelist::typelist<FIELDS...> /* unused */,
+                            VIEW&& view)
+                -> decltype(make_view::template view<SKIN>(
                         SOA::Typelist::typelist<FIELDS...>(),
                         std::forward<VIEW>(view)))
         {
-            return make_view().template operator()<SKIN>(
+            return make_view::template view<SKIN>(
                     SOA::Typelist::typelist<FIELDS...>(),
                     std::forward<VIEW>(view));
         }
@@ -1446,8 +1449,9 @@ namespace SOA {
                   template <class>
                   class SKIN = SOA::impl::SOASkinCreatorSimple<
                           FIELDS1..., FIELDS2...>::template type>
-        auto _zip(SOA::Typelist::typelist<FIELDS1...> tl1, VIEW1&& view1,
-                  SOA::Typelist::typelist<FIELDS2...> tl2, VIEW2&& view2)
+        constexpr auto
+        _zip(SOA::Typelist::typelist<FIELDS1...> tl1, VIEW1&& view1,
+             SOA::Typelist::typelist<FIELDS2...> tl2, VIEW2&& view2)
                 -> decltype(make_view::template zip<SKIN>(
                         tl1, std::forward<VIEW1>(view1), tl2,
                         std::forward<VIEW2>(view2)))
@@ -1458,7 +1462,7 @@ namespace SOA {
         }
         /// helper for SOA::zip
         template <typename VIEW>
-        auto zip(VIEW&& view) -> decltype(_zip(
+        constexpr auto zip(VIEW&& view) -> decltype(_zip(
                 typename std::remove_reference<VIEW>::type::fields_typelist(),
                 std::forward<VIEW>(view)))
         {
@@ -1468,7 +1472,7 @@ namespace SOA {
         }
         /// helper for SOA::zip
         template <typename VIEW1, typename VIEW2, typename... VIEWS>
-        auto zip(VIEW1&& view1, VIEW2&& view2, VIEWS&&... views)
+        constexpr auto zip(VIEW1&& view1, VIEW2&& view2, VIEWS&&... views)
                 -> decltype(zip(_zip(typename std::remove_reference<
                                              VIEW1>::type::fields_typelist(),
                                      std::forward<VIEW1>(view1),
@@ -1512,7 +1516,7 @@ namespace SOA {
      * @endcode
      */
     template <typename... VIEWS>
-    auto zip(VIEWS&&... views) -> typename std::enable_if<
+    constexpr auto zip(VIEWS&&... views) -> typename std::enable_if<
             SOA::Utils::ALL(sizeof...(VIEWS) > 0,
                             SOA::Utils::is_view<typename std::remove_cv<
                                     typename std::remove_reference<
@@ -1528,11 +1532,13 @@ namespace SOA {
 // has to live in the global namespace to be found reliably. To avoid
 // trouble, the function is constrained tightly with a suitable enable_if
 template <template <class> class SKIN, typename... VIEWS>
-auto zip(VIEWS&&... views) -> typename std::enable_if<SOA::Utils::ALL(
-        SOA::impl::is_skin<SKIN>(), SOA::Utils::is_view<
-        typename std::remove_cv<typename std::remove_reference<
-        VIEWS>::type>::type>::value...), decltype(
-        SOA::zip(std::forward<VIEWS>(views)...).template view<SKIN>())>::type
+constexpr auto zip(VIEWS&&... views) -> typename std::enable_if<
+        SOA::Utils::ALL(SOA::impl::is_skin<SKIN>(),
+                        SOA::Utils::is_view<typename std::remove_cv<
+                                typename std::remove_reference<VIEWS>::type>::
+                                                    type>::value...),
+        decltype(SOA::zip(std::forward<VIEWS>(views)...)
+                         .template view<SKIN>())>::type
 { return SOA::zip(std::forward<VIEWS>(views)...).template view<SKIN>(); }
 
 #endif // SOAVIEW_H
