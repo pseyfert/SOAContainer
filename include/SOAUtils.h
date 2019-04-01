@@ -284,7 +284,6 @@ namespace SOA {
             return foldl(fun, tup, ini,
                     std::make_index_sequence<std::tuple_size<TUP>::value>());
         }
-
         /// is T a SOA::View?
         template <typename T, typename = void>
         struct is_view : std::false_type {};
@@ -292,12 +291,26 @@ namespace SOA {
         template <typename T>
         struct is_view<T, std::void_t<typename T::view_tag> > : std::true_type {};
 
+        /// is T a SOA::Container?
+        template <typename T, typename = void>
+        struct is_container : std::false_type {};
+        /// is T a SOA::Container?
+        template <typename T>
+        struct is_container<T, std::void_t<typename T::container_tag> > : std::true_type {};
+
+
         namespace test {
             struct no_view {};
             struct a_view { using view_tag = void; };
+            struct a_container : a_view { using container_tag = void; };
             static_assert(!is_view<no_view>::value &&
-                    is_view<a_view>::value,
-                    "Implementation bug in is_view");
+                                  is_view<a_view>::value &&
+                                  is_view<a_container>::value,
+                          "Implementation bug in is_view");
+            static_assert(!is_container<no_view>::value &&
+                                  !is_container<a_view>::value &&
+                                  is_container<a_container>::value,
+                          "Implementation bug in is_container");
         }
 
         /// implementation details for zip

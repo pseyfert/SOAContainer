@@ -47,6 +47,8 @@ TEST (SOAView, Simple) {
     vxx = vx, vyy = vy;
     // construct a View from vx, vy
     auto view = SOA::make_soaview<SOAPoint>(vx, vy);
+    EXPECT_EQ(SOA::Utils::is_view<decltype(view)>::value, true);
+    EXPECT_EQ(SOA::Utils::is_container<decltype(view)>::value, false);
     // data must look the same
     EXPECT_EQ(vx.front(), view.front().x());
     EXPECT_EQ(vy.front(), view.front().y());

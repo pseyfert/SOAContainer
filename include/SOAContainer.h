@@ -245,6 +245,8 @@ namespace SOA {
             using self_type = _Container<CONTAINER, SKIN, FIELDS...>;
             /// typelist with the given fields
             using fields_typelist = typename BASE::fields_typelist;
+            /// tag as a container
+            using container_tag = void;
 
             /// convenience function to return member number given member tag type
             template <typename MEMBER>

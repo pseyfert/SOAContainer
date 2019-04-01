@@ -20,6 +20,8 @@
 TEST(SOAContainerVectorSimple, IteratorsSizeEmpty)
 {
     SOA::Container<std::deque, SOA::PrintableNullSkin, double, int, int> c;
+    EXPECT_EQ(SOA::Utils::is_view<decltype(c)>::value, true);
+    EXPECT_EQ(SOA::Utils::is_container<decltype(c)>::value, true);
     const SOA::Container<std::deque, SOA::PrintableNullSkin, double, int,
                          int>& cc = c;
     // check basic properties
