@@ -536,54 +536,75 @@ namespace SOA {
             }
 
             /// construct new element at end of container (in-place) from args
-            template <typename... ARGS, typename std::enable_if<
-                SOA::Utils::ALL(std::is_convertible<ARGS,
-                        SOA::Typelist::unwrap_t<FIELDS> >::value...)>::type* = nullptr>
-            void emplace_back(ARGS&&... args) noexcept(noexcept(
-                SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, std::declval<SOAStorage&>(),
-                        std::forward_as_tuple(std::forward<ARGS>(args)...))))
+            template <typename... ARGS,
+                      typename std::enable_if<SOA::Utils::ALL(
+                              std::is_convertible<
+                                      ARGS, SOA::Typelist::unwrap_t<FIELDS>>::
+                                      value...)>::type* = nullptr>
+            reference emplace_back(ARGS&&... args) noexcept(
+                    noexcept(SOA::Utils::apply_zip(
+                            SOA::impl::emplace_backHelper{},
+                            std::declval<SOAStorage&>(),
+                            std::forward_as_tuple(
+                                    std::forward<ARGS>(args)...))))
             {
                 static_assert(std::is_constructible<naked_value_tuple_type,
                         ARGS...>::value || std::is_constructible<value_type,
                         ARGS...>::value, "Wrong arguments to emplace_back.");
                 SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, this->m_storage,
                         std::forward_as_tuple(std::forward<ARGS>(args)...));
+                return this->back();
             }
 
             /// construct a new element at the end of container from naked_value_tuple_type
-            void emplace_back(naked_value_tuple_type&& val) noexcept(noexcept(
-                SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, std::declval<SOAStorage&>(),
-                        std::forward<naked_value_tuple_type>(val))))
+            reference emplace_back(naked_value_tuple_type&& val) noexcept(
+                    noexcept(SOA::Utils::apply_zip(
+                            SOA::impl::emplace_backHelper{},
+                            std::declval<SOAStorage&>(),
+                            std::forward<naked_value_tuple_type>(val))))
             {
                 SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, this->m_storage,
                         std::forward<naked_value_tuple_type>(val));
+                return this->back();
             }
 
             /// construct a new element at the end of container from value_type
-            void emplace_back(value_type&& val) noexcept(noexcept(
-                SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, std::declval<SOAStorage&>(),
-                        std::forward<value_type>(val))))
+            reference emplace_back(value_type&& val) noexcept(noexcept(
+                    SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{},
+                                          std::declval<SOAStorage&>(),
+                                          std::forward<value_type>(val))))
             {
                 SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, this->m_storage,
                         std::forward<value_type>(val));
+                return this->back();
             }
 
             /// construct a new element by calling the user-defined constructor of the proxy object
-            template <typename... ARGS, typename std::enable_if<
-                !SOA::Utils::ALL(std::is_convertible<ARGS,
-                        SOA::Typelist::unwrap_t<FIELDS> >::value...)>::type* = nullptr>
-            void emplace_back(ARGS&&... args) noexcept(noexcept(
-                        std::declval<self_type>().push_back(value_type(
-                                std::forward<ARGS>(args)...))))
-            { this->push_back(value_type(std::forward<ARGS>(args)...)); }
+            template <typename... ARGS,
+                      typename std::enable_if<!SOA::Utils::ALL(
+                              std::is_convertible<
+                                      ARGS, SOA::Typelist::unwrap_t<FIELDS>>::
+                                      value...)>::type* = nullptr>
+            reference emplace_back(ARGS&&... args) noexcept(
+                    noexcept(std::declval<self_type>().push_back(
+                            value_type(std::forward<ARGS>(args)...))))
+            {
+                this->push_back(value_type(std::forward<ARGS>(args)...));
+                return this->back();
+            }
 
             /// construct element by calling user-defined constructor of proxy
-            template <typename... ARGS, typename std::enable_if<
-                sizeof...(ARGS) != sizeof...(FIELDS)>::type* = nullptr>
-            void emplace_back(ARGS&&... args) noexcept(noexcept(
-                        std::declval<self_type>().push_back(value_type(
-                                std::forward<ARGS>(args)...))))
-            { this->push_back(value_type(std::forward<ARGS>(args)...)); }
+            template <typename... ARGS,
+                      typename std::enable_if<sizeof...(ARGS) !=
+                                              sizeof...(FIELDS)>::type* =
+                              nullptr>
+            reference emplace_back(ARGS&&... args) noexcept(
+                    noexcept(std::declval<self_type>().push_back(
+                            value_type(std::forward<ARGS>(args)...))))
+            {
+                this->push_back(value_type(std::forward<ARGS>(args)...));
+                return this->back();
+            }
 
             /// construct new element at position pos (in-place) from args
             template <typename... ARGS>

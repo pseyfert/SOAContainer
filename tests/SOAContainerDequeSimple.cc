@@ -319,9 +319,10 @@ TEST(SOAContainerVectorSimple, WithSTLAlgorithms)
     {
         // test emplace, emplace_back, resize
         c.clear();
-        c.emplace_back(2.79, 42, 17);
+        auto ref = c.emplace_back(2.79, 42, 17);
         EXPECT_EQ(1u, c.size());
         EXPECT_EQ(c.front(), std::make_tuple(2.79, 42, 17));
+        EXPECT_EQ(&c.back(), &ref);
         auto it = c.emplace(c.begin(), 2.79, 17, 42);
         EXPECT_EQ(2u, c.size());
         EXPECT_EQ(c.begin(), it);
