@@ -14,7 +14,9 @@ set(tests
   SOAViewSimple
   Branchless
   SOAContainerVectorEmplaceBack
-  SOAIteratorRangeTest)
+  SOAIteratorRangeTest
+  SOATaggedType
+  )
 
 foreach(test ${tests})
   add_executable(${test} ${test}.cc)

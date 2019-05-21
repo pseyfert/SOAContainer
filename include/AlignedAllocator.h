@@ -12,6 +12,8 @@
 #ifndef ALIGNEDALLOCATOR_H
 #define ALIGNEDALLOCATOR_H
 
+#include <limits>
+
 namespace SOA {
     /** @brief aligned allocator
      *
