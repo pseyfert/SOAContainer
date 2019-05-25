@@ -14,10 +14,10 @@
 
 namespace TrivialArithFloatFields {
     SOAFIELD_TRIVIAL(f_x, x, float);
-};
+}
 namespace TrivialArithIntFields {
     SOAFIELD_TRIVIAL(f_x, x, short);
-};
+}
 
 TEST(SOATaggedType, TrivialArithFloatByValue)
 {

@@ -10,10 +10,15 @@
 #ifndef SOA_ITERATOR_RANGE_H
 #define SOA_ITERATOR_RANGE_H
 
+#include <array>
 #include <cstddef>
+#include <initializer_list>
 #include <iterator>
 #include <stdexcept>
 #include <type_traits>
+#include <vector>
+
+#include "c++14_compat.h"
 
 #ifndef __GNUC__
 #define __builtin_expect(c, val) ((c))
@@ -46,6 +51,7 @@ namespace SOA {
     class iterator_range : public SOA::iterator_range_tag {
         private:
             IT m_first, m_last; ///< two iterators
+
         public:
             /// iterator_category
             using iterator_category = typename std::iterator_traits<IT>::iterator_category;
@@ -62,17 +68,41 @@ namespace SOA {
             using iterator = IT;
             using reverse_iterator = std::reverse_iterator<iterator>;
 
+        private:
+            // check if we can figure out if iterator points to contiguous memory
+            template <typename T, std::size_t = 0, bool ISCONT = false>
+            struct is_contiguous_iterator
+                    : std::integral_constant<bool, ISCONT> {};
+#if __cplusplus > 201703L
+            static constexpr bool _is_contiguous() noexcept
+            {
+                return std::is_base_of<std::contiguous_iterator_tag,
+                                       iterator_category>::value;
+            }
+#else // __cplusplus > 201703L
+            static constexpr bool _is_contiguous() noexcept
+            {
+                return std::is_pointer<
+                               typename std::remove_cv<IT>::type>::value;
+            }
+#endif // __cplusplus > 201703L
+
+        public:
+            /// is range a contiguous range?
+            enum { is_contiguous = _is_contiguous() };
+
             /// construct from a pair of iterators
             template <typename ITFWD1, typename ITFWD2,
-                     typename DUMMY1 = ITFWD1, typename DUMMY2 = ITFWD2,
-                     typename = typename std::enable_if<
-                         (std::is_constructible<IT, DUMMY1>::value ||
-                          std::is_convertible<DUMMY1, IT>::value) &&
-                         (std::is_constructible<IT, DUMMY2>::value ||
-                          std::is_convertible<DUMMY2, IT>::value)>::type>
-            constexpr explicit iterator_range(ITFWD1&& first, ITFWD2&& last) :
-                m_first(std::forward<ITFWD1>(first)),
-                m_last(std::forward<ITFWD2>(last)) {}
+                      typename DUMMY1 = ITFWD1, typename DUMMY2 = ITFWD2,
+                      typename = typename std::enable_if<
+                              (std::is_constructible<IT, DUMMY1>::value ||
+                               std::is_convertible<DUMMY1, IT>::value) &&
+                              (std::is_constructible<IT, DUMMY2>::value ||
+                               std::is_convertible<DUMMY2, IT>::value)>::type>
+            constexpr explicit iterator_range(ITFWD1&& first, ITFWD2&& last)
+                    : m_first(std::forward<ITFWD1>(first)),
+                      m_last(std::forward<ITFWD2>(last))
+            {}
 
             /// construct from another range (if iterators are convertible)
             template <typename JT, typename DUMMY = JT, typename = typename
@@ -159,26 +189,211 @@ namespace SOA {
                     iterator_category>::value,
             reference>::type back(SZ = nullptr) const
             { return *(end() - 1); }
+
+            /// access to underlying storage (if contiguous in memory)
+            template <bool ISCONT = is_contiguous>
+            typename std::enable_if<ISCONT, value_type*>::type data() noexcept
+            { return &*begin(); }
+            /// access to underlying storage (if contiguous in memory)
+            template <bool ISCONT = is_contiguous>
+            constexpr typename std::enable_if<ISCONT, const value_type*>::type
+            data() const noexcept
+            { return &*begin(); }
     };
+
+    /// implementation detail
+    namespace impl {
+        /// type trait: is T a range that's contiguous in memory?
+        template <typename T, typename = void>
+        struct is_contiguous_range : std::false_type {};
+        // pointers to or arrays of T are contiguous
+        template <typename T>
+        struct is_contiguous_range<T*, void> : std::true_type {};
+        template <typename T>
+        struct is_contiguous_range<const T*, void> : std::true_type {};
+        template <typename T>
+        struct is_contiguous_range<volatile T*, void> : std::true_type {};
+        template <typename T>
+        struct is_contiguous_range<const volatile T*, void> : std::true_type {
+        };
+        template <typename T, std::size_t N>
+        struct is_contiguous_range<T[N], void> : std::true_type {};
+        template <typename T, std::size_t N>
+        struct is_contiguous_range<const T[N], void> : std::true_type {};
+        template <typename T, std::size_t N>
+        struct is_contiguous_range<volatile T[N], void> : std::true_type {};
+        template <typename T, std::size_t N>
+        struct is_contiguous_range<const volatile T[N], void>
+                : std::true_type {};
+        // anything that has a data() member is contiguous
+        template <typename T>
+        struct is_contiguous_range<
+                T,
+                std::void_t<decltype(std::declval<T&>().data() == nullptr)>>
+                : std::true_type {};
+        template <typename T>
+        struct is_contiguous_range<std::initializer_list<T>, void>
+                : std::true_type {};
+
+        // simple unit test fo is_contiguous_range
+        static_assert(!is_contiguous_range<int>::value,
+                      "bug in is_contiguous_range");
+        static_assert(is_contiguous_range<int*>::value,
+                      "bug in is_contiguous_range");
+        static_assert(is_contiguous_range<const int*>::value,
+                      "bug in is_contiguous_range");
+        static_assert(is_contiguous_range<volatile int*>::value,
+                      "bug in is_contiguous_range");
+        static_assert(is_contiguous_range<const volatile int*>::value,
+                      "bug in is_contiguous_range");
+        static_assert(is_contiguous_range<std::array<int, 3>>::value,
+                      "bug in is_contiguous_range");
+        static_assert(is_contiguous_range<int[3]>::value,
+                      "bug in is_contiguous_range");
+        static_assert(is_contiguous_range<std::array<int, 3>>::value,
+                      "bug in is_contiguous_range");
+        static_assert(is_contiguous_range<std::vector<int>>::value,
+                      "bug in is_contiguous_range");
+        static_assert(is_contiguous_range<std::initializer_list<int>>::value,
+                      "bug in is_contiguous_range");
+
+        constexpr std::false_type _is_contiguous_iterator(...) noexcept;
+        template <typename T>
+        constexpr std::true_type
+        _is_contiguous_iterator(T* /* unused */) noexcept;
+        template <typename T>
+        constexpr std::true_type
+        _is_contiguous_iterator(const T* /* unused */) noexcept;
+        template <typename T>
+        constexpr std::true_type
+        _is_contiguous_iterator(volatile T* /* unused */) noexcept;
+        template <typename T>
+        constexpr std::true_type
+        _is_contiguous_iterator(const volatile T* /* unused */) noexcept;
+        template <typename C>
+        constexpr is_contiguous_range<C> _is_contiguous_iterator(
+                typename C::iterator /* unused */) noexcept;
+        template <typename C>
+        constexpr is_contiguous_range<C> _is_contiguous_iterator(
+                typename C::const_iterator /* unused */) noexcept;
+#if defined(__GLIBCXX__)
+        // GNU's libstdc++'s vector and friends have iterators that are
+        // not member classes of their container types, so extract in a
+        // different manner
+        template <typename P, typename C>
+        constexpr is_contiguous_range<C> _is_contiguous_iterator(
+                __gnu_cxx::__normal_iterator<P, C> /* unused */) noexcept;
+#endif // defined(_GLIBCXX_)
+
+        /// type trait: is T iterator type that refers to contiguous storage
+        template <typename T>
+        struct is_contiguous_iterator
+                : decltype(_is_contiguous_iterator(std::declval<T>())) {};
+
+        static_assert(!is_contiguous_iterator<int>::value,
+                      "bug in is_contiguous_iterator");
+        static_assert(is_contiguous_iterator<int*>::value,
+                      "bug in is_contiguous_iterator");
+        static_assert(is_contiguous_iterator<const int*>::value,
+                      "bug in is_contiguous_iterator");
+        static_assert(is_contiguous_iterator<volatile int*>::value,
+                      "bug in is_contiguous_iterator");
+        static_assert(is_contiguous_iterator<const volatile int*>::value,
+                      "bug in is_contiguous_iterator");
+        static_assert(
+                is_contiguous_iterator<std::array<int, 3>::iterator>::value,
+                "bug in is_contiguous_iterator");
+        static_assert(is_contiguous_iterator<
+                              std::array<int, 3>::const_iterator>::value,
+                      "bug in is_contiguous_iterator");
+        static_assert(
+                is_contiguous_iterator<std::vector<int>::iterator>::value,
+                "bug in is_contiguous_iterator");
+        static_assert(is_contiguous_iterator<
+                              std::vector<int>::const_iterator>::value,
+                      "bug in is_contiguous_iterator");
+        static_assert(is_contiguous_iterator<
+                              std::initializer_list<int>::iterator>::value,
+                      "bug in is_contiguous_iterator");
+        static_assert(
+                is_contiguous_iterator<
+                        std::initializer_list<int>::const_iterator>::value,
+                "bug in is_contiguous_iterator");
+    } // namespace impl
 
     /** @brief build an iterator_range given two iterators
      *
-     * @tparam IT       iterator type (at least forward iterators)
+     * @note make_iterator_range will try to erase they iterator type if the
+     *
+     * storage that underlies the container is contiguous.
+     * @tparam IT               iterator type (at least forward iterators)
+     * @tparam JT               iterator type (at least forward iterators)
+     * @tparam RANGEHINT        optional range type hint (used for guessing
+     *                          if iterator points to a range contiguous in
+     *                          memory)
      *
      * @param first     start of range
      * @param last      one past end of range
      *
      * @returns iterator_range<IT> from [first, last(
+     *
+     * Specialization for non-contiguous storage.
      */
-    template <typename IT, typename JT,
-              typename = typename std::enable_if<std::is_same<
-                      typename std::decay<IT>::type,
-                      typename std::decay<JT>::type>::value>::type>
+    template <typename RANGEHINT = void, typename IT, typename JT,
+              typename = typename std::enable_if<
+                      std::is_same<typename std::remove_cv<
+                                           typename std::remove_reference<
+                                                   IT>::type>::type,
+                                   typename std::remove_cv<
+                                           typename std::remove_reference<
+                                                   JT>::type>::type>::value &&
+                      !((SOA::impl::is_contiguous_iterator<IT>::value &&
+                         SOA::impl::is_contiguous_iterator<JT>::value) ||
+                        SOA::impl::is_contiguous_range<RANGEHINT>::value)>::
+                      type>
     constexpr iterator_range<typename std::remove_reference<IT>::type>
     make_iterator_range(IT&& first, JT&& last)
     {
         return iterator_range<typename std::remove_reference<IT>::type>{
             std::forward<IT>(first), std::forward<JT>(last) };
+    }
+    /** @brief build an iterator_range given two iterators
+     *
+     * @note make_iterator_range will try to erase they iterator type if the
+     *
+     * storage that underlies the container is contiguous.
+     * @tparam IT               iterator type (at least forward iterators)
+     * @tparam JT               iterator type (at least forward iterators)
+     * @tparam RANGEHINT        optional range type hint (used for guessing
+     *                          if iterator points to a range contiguous in
+     *                          memory)
+     *
+     * @param first     start of range
+     * @param last      one past end of range
+     *
+     * @returns iterator_range<IT> from [first, last(
+     *
+     * Specialization for contiguous storage.
+     */
+     template <typename RANGEHINT = void, typename IT, typename JT,
+              typename = typename std::enable_if<
+                      std::is_same<typename std::remove_cv<
+                                           typename std::remove_reference<
+                                                   IT>::type>::type,
+                                   typename std::remove_cv<
+                                           typename std::remove_reference<
+                                                   JT>::type>::type>::value &&
+                      ((SOA::impl::is_contiguous_iterator<IT>::value &&
+                         SOA::impl::is_contiguous_iterator<JT>::value) ||
+                        SOA::impl::is_contiguous_range<RANGEHINT>::value)>::
+                      type>
+    constexpr iterator_range<decltype(
+            &*std::declval<typename std::remove_reference<IT>::type>())>
+    make_iterator_range(IT&& first, JT&& last)
+    {
+        return iterator_range<decltype(
+                &*std::declval<typename std::remove_reference<IT>::type>())>{
+                &*first, &*last};
     }
 } // namespace SOA
 

@@ -9,10 +9,10 @@
 #ifndef SOAUTILS_H
 #define SOAUTILS_H
 
-#include <tuple>
-#include <utility>
 #include <cstdint>
+#include <tuple>
 #include <type_traits>
+#include <utility>
 
 #include "c++14_compat.h"
 
@@ -402,7 +402,6 @@ namespace SOA {
                     decltype(std::forward<F>(f))>{
                     std::forward<F>(f)}, zip(std::forward<Ts>(ts)...));
         }
-
     } // namespace Utils
 } // namespace SOA
 

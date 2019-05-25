@@ -57,12 +57,12 @@ namespace SOA {
     namespace impl {
         /// move everything but lvalue references
         template <typename R>
-        constexpr SOA::iterator_range<
-                decltype(std::begin(std::declval<R&>()))>
-        move_if_not_lvalue_reference(
+        constexpr auto move_if_not_lvalue_reference(
                 typename std::remove_reference<R>::type& r)
+                -> decltype(SOA::make_iterator_range<R>(std::begin(r),
+                                                        std::end(r)))
         {
-            return SOA::make_iterator_range(std::begin(r), std::end(r));
+            return SOA::make_iterator_range<R>(std::begin(r), std::end(r));
         }
         /// move everything but lvalue references
         template <typename R>
@@ -76,11 +76,12 @@ namespace SOA {
         template <typename T, typename R>
         constexpr typename std::enable_if<
                 !std::is_rvalue_reference<T>::value,
-                SOA::iterator_range<
-                        decltype(std::begin(std::declval<R&>()))>>::type
+                decltype(SOA::make_iterator_range<R>(
+                        std::begin(std::declval<R&>()),
+                        std::end(std::declval<R&>())))>::type
         move_if_not_lvalue_reference(T&&, R& r)
         {
-            return SOA::make_iterator_range(std::begin(r), std::end(r));
+            return SOA::make_iterator_range<R>(std::begin(r), std::end(r));
         }
         /// move everything but lvalue references
         template <typename T, typename R>
@@ -603,6 +604,7 @@ namespace SOA {
             /// record if the _View should be a const one
             constexpr static bool is_constant = is_any_field_constant(static_cast<const STORAGE*>(nullptr));
 
+
         public:
             /// type to tag this as a SOA::View
             using view_tag = void;
@@ -1084,83 +1086,119 @@ namespace SOA {
                     std::get<memberno<MEMBER>()>(m_storage).crend())
             { return std::get<memberno<MEMBER>()>(m_storage).crend(); }
 
-            /// return a const reference to the underlying SOA storage range MEMBERNO
+            /// return const reference to underlying SOA storage range
+            /// MEMBERNO
             template <size_type MEMBERNO>
-            constexpr auto range() const noexcept -> decltype(
-                        make_iterator_range(
-                            std::get<MEMBERNO>(m_storage).begin(),
-                            std::get<MEMBERNO>(m_storage).end()))
+            constexpr decltype(
+                    make_iterator_range<typename std::tuple_element<
+                            MEMBERNO, SOAStorage>::type>(
+                            std::begin(std::get<MEMBERNO>(
+                                    std::declval<const SOAStorage&>())),
+                            std::begin(std::get<MEMBERNO>(
+                                    std::declval<const SOAStorage&>()))))
+            range() const noexcept
             {
-                return make_iterator_range(
-                        std::get<MEMBERNO>(m_storage).begin(),
-                        std::get<MEMBERNO>(m_storage).end());
+                return make_iterator_range<decltype(std::get<MEMBERNO>(
+                        m_storage))>(std::get<MEMBERNO>(m_storage).begin(),
+                                     std::get<MEMBERNO>(m_storage).end());
             }
-            /// return a reference to the underlying SOA storage range MEMBERNO
+            /// return reference to underlying SOA storage range MEMBERNO
             template <size_type MEMBERNO>
-            auto range() noexcept -> decltype(
-                        make_iterator_range(
-                            std::get<MEMBERNO>(m_storage).begin(),
-                            std::get<MEMBERNO>(m_storage).end()))
+            decltype(make_iterator_range<
+                     typename std::tuple_element<MEMBERNO, SOAStorage>::type>(
+                    std::begin(
+                            std::get<MEMBERNO>(std::declval<SOAStorage&>())),
+                    std::begin(
+                            std::get<MEMBERNO>(std::declval<SOAStorage&>()))))
+            range() noexcept
             {
-                return make_iterator_range(
-                        std::get<MEMBERNO>(m_storage).begin(),
-                        std::get<MEMBERNO>(m_storage).end());
+                return make_iterator_range<decltype(std::get<MEMBERNO>(
+                        m_storage))>(std::get<MEMBERNO>(m_storage).begin(),
+                                     std::get<MEMBERNO>(m_storage).end());
             }
-            /// return a const reference to the underlying SOA storage range MEMBER
+            /// return const reference to underlying SOA storage range MEMBER
             template <typename MEMBER>
-            constexpr auto range() const noexcept -> decltype(make_iterator_range(
-                            std::get<memberno<MEMBER>()>(m_storage).begin(),
-                            std::get<memberno<MEMBER>()>(m_storage).end()))
+            constexpr decltype(
+                    make_iterator_range<typename std::tuple_element<
+                            memberno<MEMBER>(), SOAStorage>::type>(
+                            std::begin(std::get<memberno<MEMBER>()>(
+                                    std::declval<const SOAStorage&>())),
+                            std::begin(std::get<memberno<MEMBER>()>(
+                                    std::declval<const SOAStorage&>()))))
+            range() const noexcept
             {
-                return make_iterator_range(
-                        std::get<memberno<MEMBER>()>(m_storage).begin(),
-                        std::get<memberno<MEMBER>()>(m_storage).end());
+                return range<memberno<MEMBER>()>();
             }
-            /// return a reference to the underlying SOA storage range MEMBER
+            /// return reference to underlying SOA storage range MEMBER
             template <typename MEMBER>
-            auto range() noexcept -> decltype(make_iterator_range(
-                            std::get<memberno<MEMBER>()>(m_storage).begin(),
-                            std::get<memberno<MEMBER>()>(m_storage).end()))
+            decltype(make_iterator_range<typename std::tuple_element<
+                             memberno<MEMBER>(), SOAStorage>::type>(
+                    std::begin(std::get<memberno<MEMBER>()>(
+                            std::declval<SOAStorage&>())),
+                    std::begin(std::get<memberno<MEMBER>()>(
+                            std::declval<SOAStorage&>()))))
+            range() noexcept
             {
-                return make_iterator_range(
-                        std::get<memberno<MEMBER>()>(m_storage).begin(),
-                        std::get<memberno<MEMBER>()>(m_storage).end());
+                return range<memberno<MEMBER>()>();
             }
-            /// return a reference to the underlying SOA storage range MEMBERNO
+            /// return reference to underlying SOA storage range MEMBERNO
             template <size_type MEMBERNO>
-            auto range(iterator first, iterator last) noexcept ->
-                iterator_range<decltype(std::get<MEMBERNO>(m_storage).begin())>
+            decltype(make_iterator_range<
+                     typename std::tuple_element<MEMBERNO, SOAStorage>::type>(
+                    std::begin(
+                            std::get<MEMBERNO>(std::declval<SOAStorage&>())),
+                    std::begin(
+                            std::get<MEMBERNO>(std::declval<SOAStorage&>()))))
+            range(iterator first, iterator last) noexcept
             {
-                return make_iterator_range(
-                        std::get<MEMBERNO>(m_storage).begin() + (first - begin()),
-                        std::get<MEMBERNO>(m_storage).begin() + (last - begin()));
+                return make_iterator_range<decltype(std::get<MEMBERNO>(
+                        m_storage))>(std::get<MEMBERNO>(m_storage).begin() +
+                                             (first - begin()),
+                                     std::get<MEMBERNO>(m_storage).begin() +
+                                             (last - begin()));
             }
-            /// return a const reference to the underlying SOA storage range MEMBERNO
+            /// return const reference to underlying SOA storage range
+            /// MEMBERNO
             template <size_type MEMBERNO>
-            constexpr auto range(const_iterator first, const_iterator last) const noexcept ->
-                iterator_range<decltype(std::get<MEMBERNO>(m_storage).begin())>
+            constexpr decltype(
+                    make_iterator_range<typename std::tuple_element<
+                            MEMBERNO, SOAStorage>::type>(
+                            std::begin(std::get<MEMBERNO>(
+                                    std::declval<const SOAStorage&>())),
+                            std::begin(std::get<MEMBERNO>(
+                                    std::declval<const SOAStorage&>()))))
+            range(const_iterator first, const_iterator last) const noexcept
             {
-                return make_iterator_range(
-                        std::get<MEMBERNO>(m_storage).begin() + (first - begin()),
-                        std::get<MEMBERNO>(m_storage).begin() + (last - begin()));
+                return make_iterator_range<decltype(std::get<MEMBERNO>(
+                        m_storage))>(std::get<MEMBERNO>(m_storage).begin() +
+                                             (first - begin()),
+                                     std::get<MEMBERNO>(m_storage).begin() +
+                                             (last - begin()));
             }
-            /// return a reference to the underlying SOA storage range MEMBER
+            /// return reference to underlying SOA storage range MEMBER
             template <typename MEMBER>
-            auto range(iterator first, iterator last) noexcept ->
-                iterator_range<decltype(std::get<memberno<MEMBER>()>(m_storage).begin())>
+            decltype(make_iterator_range<typename std::tuple_element<
+                             memberno<MEMBER>(), SOAStorage>::type>(
+                    std::begin(std::get<memberno<MEMBER>()>(
+                            std::declval<SOAStorage&>())),
+                    std::begin(std::get<memberno<MEMBER>()>(
+                            std::declval<SOAStorage&>()))))
+            range(iterator first, iterator last) noexcept
             {
-                return make_iterator_range(
-                        std::get<memberno<MEMBER>()>(m_storage).begin() + (first - begin()),
-                        std::get<memberno<MEMBER>()>(m_storage).begin() + (last - begin()));
+                return range<memberno<MEMBER>()>(first, last);
             }
-            /// return a const reference to the underlying SOA storage range MEMBER
+            /// return const reference to underlying SOA storage range MEMBER
             template <typename MEMBER>
-            constexpr auto range(const_iterator first, const_iterator last) const noexcept ->
-                iterator_range<decltype(std::get<memberno<MEMBER>()>(m_storage).begin())>
+            constexpr decltype(
+                    make_iterator_range<typename std::tuple_element<
+                            memberno<MEMBER>(), SOAStorage>::type>(
+                            std::begin(std::get<memberno<MEMBER>()>(
+                                    std::declval<const SOAStorage&>())),
+                            std::begin(std::get<memberno<MEMBER>()>(
+                                    std::declval<const SOAStorage&>()))))
+            range(const_iterator first, const_iterator last) const noexcept
             {
-                return make_iterator_range(
-                        std::get<memberno<MEMBER>()>(m_storage).begin() + (first - begin()),
-                        std::get<memberno<MEMBER>()>(m_storage).begin() + (last - begin()));
+                return range<memberno<MEMBER>()>(first, last);
             }
 
             /// assign the vector to contain count copies of val

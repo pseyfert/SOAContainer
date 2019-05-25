@@ -272,8 +272,11 @@ TEST(SOAIteratorRangeTest, StdVector) {
     const bool pointer_right = std::is_same<typename C::pointer,
             typename decltype(r)::pointer>::value;
     EXPECT_EQ(true, pointer_right);
-    const bool iterator_right = std::is_same<
-        decltype(std::begin(foo)), typename decltype(r)::iterator>::value;
+    const bool iterator_right =
+            std::is_same<decltype(std::begin(foo)),
+                         typename decltype(r)::iterator>::value ||
+            std::is_same<typename decltype(foo)::pointer,
+                         typename decltype(r)::iterator>::value;
     EXPECT_EQ(true, iterator_right);
     // check class empty, size
     EXPECT_EQ(false, r.empty());
@@ -288,8 +291,8 @@ TEST(SOAIteratorRangeTest, StdVector) {
     for (unsigned i = 1; i < 6; ++i) {
         EXPECT_EQ(foo[i], r[i - 1]);
     }
-    EXPECT_EQ(foo.begin() + 1, r.begin());
-    EXPECT_EQ(foo.begin() + 6, r.end());
+    EXPECT_EQ(&*foo.begin() + 1, &*r.begin());
+    EXPECT_EQ(&*foo.begin() + 6, &*r.end());
     EXPECT_EQ(*(foo.begin() + 1), r.front());
     EXPECT_EQ(*(foo.begin() + 5), r.back());
     EXPECT_EQ(*(foo.begin() + 5), *r.rbegin());
@@ -339,7 +342,7 @@ TEST(SOAIteratorRangeTest, ConversionToConstIterRange) {
     using C = std::vector<int>;
     C v({ 0, 1, 2, 3, 4, 5, 6, 7 });
     auto r = SOA::make_iterator_range(v.begin(), v.end());
-    SOA::iterator_range<typename C::const_iterator> rc(r);
+    SOA::iterator_range<typename C::const_pointer> rc(r);
     auto it = v.begin(), itEnd = v.end();
     auto jt = r.begin();
     auto kt = rc.begin();
