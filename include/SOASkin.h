@@ -12,6 +12,7 @@
 #define SOASKIN_H
 
 #include "SOATypelist.h"
+#include "SOATaggedType.h"
 #include "SOAUtils.h"
 #include "PrintableNullSkin.h"
 
@@ -52,10 +53,13 @@ namespace SOA {
          * @tparam FIELDS       fields to which grant access
          */
         template <typename BASE, class... FIELDS>
-        struct SkinBase :
-            // order important for empty base class optimisation
-            NoDuplicateFieldsVerifier<SkinBase<BASE, FIELDS...>, BASE, FIELDS...>, BASE
+        class SkinBase :
+                // order important for empty base class optimisation
+                public NoDuplicateFieldsVerifier<SkinBase<BASE, FIELDS...>,
+                                                 BASE, FIELDS...>,
+                public BASE
         {
+        public:
             // make sure that no user puts data in a field...
             static_assert(SOA::Utils::ALL(std::is_empty<FIELDS>::value...),
                     "Fields may not contain data or virtual methods!");
@@ -69,9 +73,49 @@ namespace SOA {
             /// typelist listing all fields
             using fields_typelist = SOA::Typelist::typelist<FIELDS...>;
             /// forward to *underlying constructors operators
-            using BASE::BASE;
+            template <typename... ARGS,
+                      typename = typename std::enable_if<
+                              std::is_constructible<BASE, ARGS...>::value &&
+                              SOA::Utils::ALL(!SOA::is_tagged_type<
+                                              typename std::remove_reference<
+                                                      ARGS>::type>::
+                                                      value...)>::type>
+            SkinBase(ARGS&&... args) noexcept(
+                    noexcept(BASE(std::forward<ARGS>(args)...)))
+                    : BASE(std::forward<ARGS>(args)...)
+            {}
             /// forward to *underlying assignment operators
-            using BASE::operator=;
+            template <typename ARG>
+            SkinBase& operator=(ARG&& arg) noexcept(
+                    noexcept(std::declval<BASE&>().operator=(std::forward<ARG>(arg))))
+            {
+                BASE::operator=(std::forward<ARG>(arg));
+                return *this;
+            }
+
+            /** @brief construct from tagged data types
+             */
+            template <typename... FIELDS2, typename = void,
+                      typename = typename std::enable_if<
+                              sizeof...(FIELDS2) == sizeof...(FIELDS) &&
+                              SOA::Utils::ALL(SOA::is_tagged_type<
+                                              typename std::remove_reference<
+                                                      FIELDS2>::type>::
+                                                      value...) &&
+                              SOA::Utils::ALL(
+                                      (-1 !=
+                                       SOA::Typelist::typelist<
+                                               typename std::remove_reference<
+                                                       FIELDS2>::type::
+                                                       field_type...>::
+                                               template find<FIELDS>())...)>::
+                              type>
+            explicit SkinBase(FIELDS2&&... args) noexcept(
+                    noexcept(BASE(SOA::impl::permute_tagged<fields_typelist>(
+                            std::forward<FIELDS2>(args)...))))
+                    : BASE(SOA::impl::permute_tagged<fields_typelist>(
+                              std::forward<FIELDS2>(args)...))
+            {}
         };
 
         /// little helper to detect the base type of a skin (saves typing)

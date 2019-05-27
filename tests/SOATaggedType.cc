@@ -10,10 +10,12 @@
 
 #include "SOATaggedType.h"
 #include "SOAField.h"
+
 #include "gtest/gtest.h"
 
 namespace TrivialArithFloatFields {
     SOAFIELD_TRIVIAL(f_x, x, float);
+    SOAFIELD_TRIVIAL(f_y, y, float);
 }
 namespace TrivialArithIntFields {
     SOAFIELD_TRIVIAL(f_x, x, short);
@@ -205,6 +207,36 @@ TEST(SOATaggedType, TrivialArithIntByCref)
     EXPECT_EQ(f.x(), 41);
 }
 
+#include "SOAContainer.h"
+
+namespace TrivialArithFloatFields {
+    SOASKIN_TRIVIAL(TwoFloats, f_x, f_y);
+}
+
+TEST(SOATaggedType, ConstructFromTaggedFields)
+{
+    using namespace TrivialArithFloatFields;
+    using C = SOA::Container<std::vector, TwoFloats>;
+    C::value_type el(SOA::value<f_y>(1.f), SOA::value<f_x>(0.f));
+    EXPECT_EQ(el.x(), 0.f);
+    EXPECT_EQ(el.y(), 1.f);
+    C c;
+    c.emplace_back(SOA::value<f_x>(0.f), SOA::value<f_y>(1.f));
+    c.emplace_back(SOA::value<f_y>(3.f), SOA::value<f_x>(2.f));
+    EXPECT_EQ(c.front().x(), 0.f);
+    EXPECT_EQ(c.front().y(), 1.f);
+    EXPECT_EQ(c.back().x(), 2.f);
+    EXPECT_EQ(c.back().y(), 3.f);
+    auto it = c.emplace(c.begin(), SOA::value<f_y>(5.f), SOA::value<f_x>(4.f));
+    EXPECT_EQ(c.size(), 3u);
+    EXPECT_EQ(it, c.begin());
+    EXPECT_EQ(c[0].x(), 4.f);
+    EXPECT_EQ(c[0].y(), 5.f);
+    EXPECT_EQ(c[1].x(), 0.f);
+    EXPECT_EQ(c[1].y(), 1.f);
+    EXPECT_EQ(c[2].x(), 2.f);
+    EXPECT_EQ(c[2].y(), 3.f);
+}
 
 /* Copyright (C) CERN for the benefit of the LHCb collaboration
  *

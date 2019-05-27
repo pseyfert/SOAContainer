@@ -535,12 +535,14 @@ namespace SOA {
                 insert(BASE::begin(), first, last);
             }
 
-            /// construct new element at end of container (in-place) from args
+           /// construct new element at end of container (in-place) from args
             template <typename... ARGS,
-                      typename std::enable_if<SOA::Utils::ALL(
-                              std::is_convertible<
-                                      ARGS, SOA::Typelist::unwrap_t<FIELDS>>::
-                                      value...)>::type* = nullptr>
+                      typename std::enable_if<SOA::Utils::ALL((
+                              std::is_convertible<ARGS,
+                                                  SOA::Typelist::unwrap_t<
+                                                          FIELDS>>::value &&
+                              !SOA::is_tagged_type<ARGS>::value)...)>::type* =
+                              nullptr>
             reference emplace_back(ARGS&&... args) noexcept(
                     noexcept(SOA::Utils::apply_zip(
                             SOA::impl::emplace_backHelper{},
@@ -555,6 +557,37 @@ namespace SOA {
                         std::forward_as_tuple(std::forward<ARGS>(args)...));
                 return this->back();
             }
+
+            /// construct element at end (in-place) from tagged args
+            template <typename... ARGS,
+                      typename std::enable_if<
+                              SOA::Utils::ALL((SOA::is_tagged_type<
+                                               typename std::remove_reference<
+                                                       ARGS>::type>::
+                                                       value)...) &&
+                              sizeof...(ARGS) == sizeof...(FIELDS) &&
+                              SOA::Utils::ALL(
+                                      (-1 !=
+                                       SOA::Typelist::typelist<
+                                               typename std::remove_reference<
+                                                       ARGS>::type::
+                                                       field_type...>::
+                                               template find<FIELDS>()) ...)>::
+                              type* = nullptr>
+            reference emplace_back(ARGS&&... args) noexcept(
+                    noexcept(SOA::Utils::apply_zip(
+                            SOA::impl::emplace_backHelper{},
+                            std::declval<SOAStorage&>(),
+                            SOA::impl::permute_tagged<fields_typelist>(
+                                    std::forward<ARGS>(args)...))))
+            {
+                static_assert(
+                        std::is_constructible<value_type, ARGS...>::value,
+                        "Wrong arguments to emplace_back.");
+                SOA::Utils::apply_zip(SOA::impl::emplace_backHelper{}, this->m_storage,
+                        SOA::impl::permute_tagged<fields_typelist>(std::forward<ARGS>(args)...));
+                return this->back();
+            } 
 
             /// construct a new element at the end of container from naked_value_tuple_type
             reference emplace_back(naked_value_tuple_type&& val) noexcept(
@@ -607,12 +640,19 @@ namespace SOA {
             }
 
             /// construct new element at position pos (in-place) from args
-            template <typename... ARGS>
+            template <typename... ARGS,
+                      typename = typename std::enable_if<
+                              SOA::Utils::ALL(std::is_constructible<
+                                              SOA::Typelist::unwrap_t<FIELDS>,
+                                              ARGS>::value...) &&
+                              SOA::Utils::ALL(!SOA::is_tagged_type<
+                                              ARGS>::value...)>::type>
             iterator emplace(const_iterator pos, ARGS&&... args) noexcept(
                     noexcept(SOA::Utils::apply_zip(
-                            SOA::impl::emplaceHelper<size_type>{ pos.idx() },
+                            SOA::impl::emplaceHelper<size_type>{pos.idx()},
                             std::declval<SOAStorage&>(),
-                            std::forward_as_tuple(std::forward<ARGS>(args)...))))
+                            std::forward_as_tuple(
+                                    std::forward<ARGS>(args)...))))
             {
                 static_assert(std::is_constructible<naked_value_tuple_type,
                         ARGS...>::value || std::is_constructible<value_type,
@@ -624,6 +664,42 @@ namespace SOA {
                         std::forward_as_tuple(std::forward<ARGS>(args)...));
                 return iterator{ pos.stor(), pos.idx() };
             }
+
+            /// construct new element at position pos (in-place) from args
+            template <typename... ARGS,
+                      typename std::enable_if<
+                              SOA::Utils::ALL((SOA::is_tagged_type<
+                                               typename std::remove_reference<
+                                                       ARGS>::type>::
+                                                       value)...) &&
+                              sizeof...(ARGS) == sizeof...(FIELDS) &&
+                              SOA::Utils::ALL(
+                                      (-1 !=
+                                       SOA::Typelist::typelist<
+                                               typename std::remove_reference<
+                                                       ARGS>::type::
+                                                       field_type...>::
+                                               template find<FIELDS>())...)>::
+                              type* = nullptr>
+            iterator emplace(const_iterator pos, ARGS&&... args) noexcept(
+                    noexcept(SOA::Utils::apply_zip(
+                            SOA::impl::emplaceHelper<size_type>{pos.idx()},
+                            std::declval<SOAStorage&>(),
+                            SOA::impl::permute_tagged<fields_typelist>(
+                                    std::forward<ARGS>(args)...))))
+            {
+                static_assert(std::is_constructible<naked_value_tuple_type,
+                        ARGS...>::value || std::is_constructible<value_type,
+                        ARGS...>::value, "Wrong arguments to emplace.");
+                assert(&this->m_storage == (*pos).stor());
+                SOA::Utils::apply_zip(
+                        SOA::impl::emplaceHelper<size_type>{pos.idx()},
+                        this->m_storage,
+                        SOA::impl::permute_tagged<fields_typelist>(
+                                std::forward<ARGS>(args)...));
+                return iterator{ pos.stor(), pos.idx() };
+            }
+
 
             /// construct a new element at position pos from naked_value_tuple_type
             iterator emplace(const_iterator pos,

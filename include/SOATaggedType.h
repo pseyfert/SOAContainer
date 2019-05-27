@@ -399,6 +399,67 @@ namespace SOA {
         using tagged_const_reference_tag = void;
     };
 
+    namespace impl {
+        /// equivalent of std::move for tagged types
+        template <typename FIELD>
+        typename SOA::value<FIELD>::const_reference
+        tagged_move(const SOA::value<FIELD>& x) noexcept
+        {
+            return x;
+        }
+        /// equivalent of std::move for tagged types
+        template <typename FIELD>
+        typename SOA::value<FIELD>::value_type&&
+        tagged_move(SOA::value<FIELD>&& x) noexcept
+        {
+            return static_cast<typename SOA::value<FIELD>::value_type&&>(
+                    x.operator typename SOA::value<FIELD>::reference());
+        }
+        /// equivalent of std::move for tagged types
+        template <typename FIELD>
+        typename SOA::ref<FIELD>::reference
+        tagged_move(SOA::ref<FIELD>& x) noexcept
+        {
+            return x;
+        }
+        /// equivalent of std::move for tagged types
+        template <typename FIELD>
+        typename SOA::cref<FIELD>::const_reference
+        tagged_move(const SOA::cref<FIELD>& x) noexcept
+        {
+            return x;
+        }
+
+        template <typename... FIELDS, typename... ARGS,
+                  typename TL = SOA::Typelist::typelist<
+                          typename ARGS::field_type...>>
+        auto _permute_tagged(
+                SOA::Typelist::typelist<FIELDS...> /* unused */,
+                std::tuple<ARGS&&...>
+                        arg) noexcept(noexcept(std::
+                                                       forward_as_tuple((tagged_move(
+                                                               std::get<TL::template find<
+                                                                       FIELDS>()>(
+                                                                       arg)))...)))
+                -> decltype(std::forward_as_tuple((tagged_move(
+                        std::get<TL::template find<FIELDS>()>(arg)))...))
+        {
+            return std::forward_as_tuple((tagged_move(
+                    std::get<TL::template find<FIELDS>()>(arg)))...);
+        }
+
+        template <typename TL, typename... ARGS>
+        auto permute_tagged(ARGS&&... args) noexcept(noexcept(_permute_tagged(
+                TL(), std::forward_as_tuple(std::forward<ARGS>(args)...))))
+                -> decltype(_permute_tagged(
+                        TL(),
+                        std::forward_as_tuple(std::forward<ARGS>(args)...)))
+        {
+            return _permute_tagged(
+                    TL(), std::forward_as_tuple(std::forward<ARGS>(args)...));
+        }
+    } // namespace impl
+
     /// check if T is a tagged type
     template <typename T, typename = void>
     struct is_tagged_type : std::false_type {};
