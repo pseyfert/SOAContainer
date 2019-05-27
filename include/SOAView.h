@@ -638,26 +638,26 @@ namespace SOA {
                 constexpr SOAStorage* stor() const noexcept { return m_stor; }
                 size_type& idx() noexcept { return m_idx; }
                 constexpr size_type idx() const noexcept { return m_idx; }
-                constexpr bool operator==(const position& q) const noexcept
-                { return m_idx == q.m_idx && m_stor == q.m_stor; }
-                constexpr bool operator!=(const position& q) const noexcept
-                { return !(*this == q); }
-                constexpr bool operator<(const position& q) const noexcept
+                constexpr friend bool operator==(const position& lhs, const position& rhs) noexcept
+                { return lhs.m_idx == rhs.m_idx && lhs.m_stor == rhs.m_stor; }
+                constexpr friend bool operator!=(const position& lhs, const position& rhs) noexcept
+                { return !(lhs == rhs); }
+                constexpr friend bool operator<(const position& lhs, const position& rhs) noexcept
                 {
-                    return (m_idx < q.m_idx) ||
-                           (!(q.m_idx < m_idx) && m_stor < q.m_stor);
+                    return (lhs.m_idx < rhs.m_idx) ||
+                           (!(rhs.m_idx < lhs.m_idx) && lhs.m_stor < rhs.m_stor);
                 }
-                constexpr bool operator>(const position& q) const noexcept
+                constexpr friend bool operator>(const position& lhs, const position& rhs) noexcept
                 {
-                    return q < *this;
+                    return rhs < lhs;
                 }
-                constexpr bool operator<=(const position& q) const noexcept
+                constexpr friend bool operator<=(const position& lhs, const position& rhs) noexcept
                 {
-                    return !(q < *this);
+                    return !(rhs < lhs);
                 }
-                constexpr bool operator>=(const position& q) const noexcept
+                constexpr friend bool operator>=(const position& lhs, const position& rhs) noexcept
                 {
-                    return !(*this < q);
+                    return !(lhs < rhs);
                 }
             };
 

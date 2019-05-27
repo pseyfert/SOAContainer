@@ -84,37 +84,37 @@ namespace SOA {
         constexpr bool operator==(const Iterator<POSITION, ISCONST2>& q) const
                 noexcept
         {
-            return POSITION::operator==(static_cast<const POSITION&>(q));
+            return *this == static_cast<const POSITION&>(q);
         }
         template <bool ISCONST2>
         constexpr bool operator!=(const Iterator<POSITION, ISCONST2>& q) const
                 noexcept
         {
-            return POSITION::operator!=(static_cast<const POSITION&>(q));
+            return *this != static_cast<const POSITION&>(q);
         }
         template <bool ISCONST2>
         constexpr bool operator<(const Iterator<POSITION, ISCONST2>& q) const
                 noexcept
         {
-            return POSITION::operator<(static_cast<const POSITION&>(q));
+            return *this < static_cast<const POSITION&>(q);
         }
         template <bool ISCONST2>
         constexpr bool operator>(const Iterator<POSITION, ISCONST2>& q) const
                 noexcept
         {
-            return POSITION::operator>(static_cast<const POSITION&>(q));
+            return *this > static_cast<const POSITION&>(q);
         }
         template <bool ISCONST2>
         constexpr bool operator<=(const Iterator<POSITION, ISCONST2>& q) const
                 noexcept
         {
-            return POSITION::operator<=(static_cast<const POSITION&>(q));
+            return *this <=static_cast<const POSITION&>(q);
         }
         template <bool ISCONST2>
         constexpr bool operator>=(const Iterator<POSITION, ISCONST2>& q) const
                 noexcept
         {
-            return POSITION::operator>=(static_cast<const POSITION&>(q));
+            return *this >= static_cast<const POSITION&>(q);
         }
 
         friend std::ostream& operator<<(std::ostream& os, const pointer& p)
