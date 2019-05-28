@@ -72,6 +72,16 @@ namespace SOA {
             using base_type = SkinBase;
             /// typelist listing all fields
             using fields_typelist = SOA::Typelist::typelist<FIELDS...>;
+
+            // make compiler provide the whole set of usual constructors and
+            // assignment operators (this is ugly like hell, but old compiler
+            // versions get confused in complicated code if they're not there)
+            SkinBase() = default;
+            SkinBase(const SkinBase&) = default;
+            SkinBase(SkinBase&&) = default;
+            SkinBase& operator=(const SkinBase&) = default;
+            SkinBase& operator=(SkinBase&&) = default;
+
             /// forward to *underlying constructors operators
             template <typename... ARGS,
                       typename = typename std::enable_if<
@@ -84,6 +94,7 @@ namespace SOA {
                     noexcept(BASE(std::forward<ARGS>(args)...)))
                     : BASE(std::forward<ARGS>(args)...)
             {}
+
             /// forward to *underlying assignment operators
             template <typename ARG>
             SkinBase& operator=(ARG&& arg) noexcept(
@@ -103,7 +114,7 @@ namespace SOA {
                                                       FIELDS2>::type>::
                                                       value...) &&
                               SOA::Utils::ALL(
-                                      (-1 !=
+                                      (-std::size_t(1) !=
                                        SOA::Typelist::typelist<
                                                typename std::remove_reference<
                                                        FIELDS2>::type::

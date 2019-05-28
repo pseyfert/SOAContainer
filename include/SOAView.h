@@ -46,12 +46,19 @@ namespace SOA {
     template <typename NAKEDPROXY>
     struct NullSkin : NAKEDPROXY
     {
+        // make compiler provide the whole set of usual constructors and
+        // assignment operators (this is ugly like hell, but old compiler
+        // versions get confused in complicated code if they're not there)
+        NullSkin() = default;
+        NullSkin(const NullSkin&) = default;
+        NullSkin(NullSkin&&) = default;
+        NullSkin& operator=(const NullSkin&) = default;
+        NullSkin& operator=(NullSkin&&) = default;
         /// constructor(s) - forward to underlying proxy
         using NAKEDPROXY::NAKEDPROXY;
         /// assignment operator - forward to underlying proxy
         using NAKEDPROXY::operator=;
     };
-
 
     /// more _View implementation details
     namespace impl {
@@ -632,6 +639,16 @@ namespace SOA {
                 size_type m_idx = ~size_type(0);
             public:
                 using parent_type = self_type;
+                // make compiler provide the whole set of usual constructors
+                // and assignment operators (this is ugly like hell, but old
+                // compiler versions get confused in complicated code if
+                // they're not there)
+                constexpr position() noexcept = default;
+                constexpr position(const position&) noexcept = default;
+                constexpr position(position&&) noexcept = default;
+                position& operator=(const position&) noexcept = default;
+                position& operator=(position&&) noexcept = default;
+                // the one "non-trivial" constructor
                 constexpr position(SOAStorage* stor, size_type idx) noexcept :
                     m_stor(stor), m_idx(idx) {}
                 SOAStorage*& stor() noexcept { return m_stor; }

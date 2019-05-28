@@ -567,12 +567,12 @@ namespace SOA {
                                                        value)...) &&
                               sizeof...(ARGS) == sizeof...(FIELDS) &&
                               SOA::Utils::ALL(
-                                      (-1 !=
+                                      (-std::size_t(1) !=
                                        SOA::Typelist::typelist<
                                                typename std::remove_reference<
                                                        ARGS>::type::
                                                        field_type...>::
-                                               template find<FIELDS>()) ...)>::
+                                               template find<FIELDS>())...)>::
                               type* = nullptr>
             reference emplace_back(ARGS&&... args) noexcept(
                     noexcept(SOA::Utils::apply_zip(
@@ -674,7 +674,7 @@ namespace SOA {
                                                        value)...) &&
                               sizeof...(ARGS) == sizeof...(FIELDS) &&
                               SOA::Utils::ALL(
-                                      (-1 !=
+                                      (-std::size_t(1) !=
                                        SOA::Typelist::typelist<
                                                typename std::remove_reference<
                                                        ARGS>::type::

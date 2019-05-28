@@ -51,6 +51,14 @@ namespace SOA {
     template <typename T>
     struct PrintableNullSkin : T
     {
+        // make compiler provide the whole set of usual constructors and
+        // assignment operators (this is ugly like hell, but old compiler
+        // versions get confused in complicated code if they're not there)
+        PrintableNullSkin() = default;
+        PrintableNullSkin(const PrintableNullSkin&) = default;
+        PrintableNullSkin(PrintableNullSkin&&) = default;
+        PrintableNullSkin& operator=(const PrintableNullSkin&) = default;
+        PrintableNullSkin& operator=(PrintableNullSkin&&) = default;
         /// constructor - forward to underlying proxy
         using T::T;
         /// assignment operator - forward to underlying proxy
