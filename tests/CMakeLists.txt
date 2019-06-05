@@ -16,6 +16,7 @@ set(tests
   SOAContainerVectorEmplaceBack
   SOAIteratorRangeTest
   SOATaggedType
+  SOAAlgorithms
   )
 
 foreach(test ${tests})

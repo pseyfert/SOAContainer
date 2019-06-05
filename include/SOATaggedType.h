@@ -16,6 +16,37 @@
 #include "c++14_compat.h"
 
 namespace SOA {
+    /// check if T is a tagged type
+    template <typename T, typename = void>
+    struct is_tagged_type : std::false_type {};
+    template <typename T>
+    struct is_tagged_type<T, std::void_t<typename T::tagged_type_tag>>
+            : std::true_type {};
+
+    /// check if T is a tagged value
+    template <typename T, typename = void>
+    struct is_tagged_value : std::false_type {};
+    template <typename T>
+    struct is_tagged_value<T, std::void_t<typename T::tagged_value_tag>>
+            : std::true_type {};
+
+    /// check if T is a tagged reference
+    template <typename T, typename = void>
+    struct is_tagged_reference : std::false_type {};
+    template <typename T>
+    struct is_tagged_reference<T,
+                               std::void_t<typename T::tagged_reference_tag>>
+            : std::true_type {};
+
+    /// check if T is a tagged const reference
+    template <typename T, typename = void>
+    struct is_tagged_const_reference : std::false_type {};
+    template <typename T>
+    struct is_tagged_const_reference<
+            T, std::void_t<typename T::tagged_const_reference_tag>>
+            : std::true_type {};
+
+
     /// implementation details
     namespace detail {
         /// little class wrapping the data type specified in a field
@@ -45,21 +76,25 @@ namespace SOA {
             /// helper to enable/disable the right overloads
             template <typename S>
             using is_arith = typename std::conditional<
-                            std::is_arithmetic<value_type>::value &&
+                    std::is_arithmetic<value_type>::value &&
                             !is_const<T>::value &&
-                            std::is_arithmetic<S>::value &&
-                            std::is_convertible<S, value_type>::value,
+                            std::is_arithmetic<typename std::remove_reference<
+                                    S>::type>::value &&
+                            std::is_convertible<
+                                    typename std::remove_reference<S>::type,
+                                    value_type>::value,
                     std::true_type, std::false_type>::type;
             /// helper to enable/disable the right overloads
             template <typename S>
             using is_iarith = typename std::conditional<
-                    is_arith<S>::value &&
+                    is_arith<
+                            typename std::remove_reference<S>::type>::value &&
                             std::is_integral<value_type>::value &&
-                            std::is_integral<S>::value,
+                            std::is_integral<typename std::remove_reference<
+                                    S>::type>::value,
                     std::true_type, std::false_type>::type;
 
         public:
-
             /// make the field accessors happy
             template <std::size_t N, typename S = T>
             typename std::enable_if<!is_const<S>::value, reference>::type get() noexcept
@@ -274,6 +309,17 @@ namespace SOA {
                                 T, FIELD2>::value_type>::value,
                 RESULT>;
 
+        /// helper for binary operators of a payload and a scalar
+        template <typename S, typename T, typename FIELD1,
+                  typename RESULT = typename std::common_type<
+                          typename payload<S, FIELD1>::value_type, T>::type>
+        using retval_if_is_arith2 = typename std::enable_if<
+                std::is_arithmetic<
+                        typename payload<S, FIELD1>::value_type>::value &&
+                        std::is_arithmetic<T>::value &&
+                        !SOA::is_tagged_type<T>::value,
+                RESULT>;
+
         /// helper for binary operators of two payloads
         template <typename S, typename T, typename FIELD1, typename FIELD2,
                   typename RESULT = typename std::common_type<
@@ -290,6 +336,19 @@ namespace SOA {
                                 T, FIELD2>::value_type>::value,
                 RESULT>;
 
+        /// helper for binary operators of a payload and a scalar
+        template <typename S, typename T, typename FIELD1,
+                  typename RESULT = typename std::common_type<
+                          typename payload<S, FIELD1>::value_type, T>::type>
+        using retval_if_is_iarith2 = typename std::enable_if<
+                std::is_arithmetic<
+                        typename payload<S, FIELD1>::value_type>::value &&
+                        std::is_arithmetic<T>::value &&
+                        std::is_integral<typename payload<
+                                S, FIELD1>::value_type>::value &&
+                        std::is_integral<T>::value,
+                RESULT>;
+
         template <typename S, typename T, typename FIELD1, typename FIELD2>
         typename retval_if_is_arith<S, T, FIELD1, FIELD2>::type
         operator+(const payload<S, FIELD1>& a, const payload<T, FIELD2>& b)
@@ -297,6 +356,21 @@ namespace SOA {
             return a.operator typename payload<S, FIELD1>::const_reference() +
                    b.operator typename payload<T, FIELD2>::const_reference();
         }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_arith2<S, T, FIELD1>::type
+        operator+(const payload<S, FIELD1>& a, const T& b)
+        {
+            return a.operator typename payload<S, FIELD1>::const_reference() +
+                   b;
+        }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_arith2<S, T, FIELD1>::type
+        operator+(const T& a, const payload<S, FIELD1>& b)
+        {
+            return a +
+                   b.operator typename payload<S, FIELD1>::const_reference();
+        }
+
         template <typename S, typename T, typename FIELD1, typename FIELD2>
         typename retval_if_is_arith<S, T, FIELD1, FIELD2>::type
         operator-(const payload<S, FIELD1>& a, const payload<T, FIELD2>& b)
@@ -304,6 +378,21 @@ namespace SOA {
             return a.operator typename payload<S, FIELD1>::const_reference() -
                    b.operator typename payload<T, FIELD2>::const_reference();
         }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_arith2<S, T, FIELD1>::type
+        operator-(const payload<S, FIELD1>& a, const T& b)
+        {
+            return a.operator typename payload<S, FIELD1>::const_reference() -
+                   b;
+        }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_arith2<S, T, FIELD1>::type
+        operator-(const T& a, const payload<S, FIELD1>& b)
+        {
+            return a -
+                   b.operator typename payload<S, FIELD1>::const_reference();
+        }
+
         template <typename S, typename T, typename FIELD1, typename FIELD2>
         typename retval_if_is_arith<S, T, FIELD1, FIELD2>::type
         operator*(const payload<S, FIELD1>& a, const payload<T, FIELD2>& b)
@@ -311,6 +400,21 @@ namespace SOA {
             return a.operator typename payload<S, FIELD1>::const_reference() *
                    b.operator typename payload<T, FIELD2>::const_reference();
         }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_arith2<S, T, FIELD1>::type
+        operator*(const payload<S, FIELD1>& a, const T& b)
+        {
+            return a.operator typename payload<S, FIELD1>::const_reference() *
+                   b;
+        }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_arith2<S, T, FIELD1>::type
+        operator*(const T& a, const payload<S, FIELD1>& b)
+        {
+            return a *
+                   b.operator typename payload<S, FIELD1>::const_reference();
+        }
+
         template <typename S, typename T, typename FIELD1, typename FIELD2>
         typename retval_if_is_arith<S, T, FIELD1, FIELD2>::type
         operator/(const payload<S, FIELD1>& a, const payload<T, FIELD2>& b)
@@ -318,6 +422,21 @@ namespace SOA {
             return a.operator typename payload<S, FIELD1>::const_reference() /
                    b.operator typename payload<T, FIELD2>::const_reference();
         }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_arith2<S, T, FIELD1>::type
+        operator/(const payload<S, FIELD1>& a, const T& b)
+        {
+            return a.operator typename payload<S, FIELD1>::const_reference() /
+                   b;
+        }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_arith2<S, T, FIELD1>::type
+        operator/(const T& a, const payload<S, FIELD1>& b)
+        {
+            return a /
+                   b.operator typename payload<S, FIELD1>::const_reference();
+        }
+
         template <typename S, typename T, typename FIELD1, typename FIELD2>
         typename retval_if_is_iarith<S, T, FIELD1, FIELD2>::type
         operator%(const payload<S, FIELD1>& a, const payload<T, FIELD2>& b)
@@ -325,6 +444,21 @@ namespace SOA {
             return a.operator typename payload<S, FIELD1>::const_reference() %
                    b.operator typename payload<T, FIELD2>::const_reference();
         }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_iarith2<S, T, FIELD1>::type
+        operator%(const payload<S, FIELD1>& a, const T& b)
+        {
+            return a.operator typename payload<S, FIELD1>::const_reference() %
+                   b;
+        }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_iarith2<S, T, FIELD1>::type
+        operator%(const T& a, const payload<S, FIELD1>& b)
+        {
+            return a %
+                   b.operator typename payload<S, FIELD1>::const_reference();
+        }
+
         template <typename S, typename T, typename FIELD1, typename FIELD2>
         typename retval_if_is_iarith<S, T, FIELD1, FIELD2>::type
         operator>>(const payload<S, FIELD1>& a, const payload<T, FIELD2>& b)
@@ -333,6 +467,21 @@ namespace SOA {
                    operator typename payload<S, FIELD1>::const_reference() >>
                    b.operator typename payload<T, FIELD2>::const_reference();
         }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_iarith2<S, T, FIELD1>::type
+        operator>>(const payload<S, FIELD1>& a, const T& b)
+        {
+            return a.operator typename payload<S, FIELD1>::const_reference() >>
+                   b;
+        }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_iarith2<S, T, FIELD1>::type
+        operator>>(const T& a, const payload<S, FIELD1>& b)
+        {
+            return a >>
+                   b.operator typename payload<S, FIELD1>::const_reference();
+        }
+
         template <typename S, typename T, typename FIELD1, typename FIELD2>
         typename retval_if_is_iarith<S, T, FIELD1, FIELD2>::type
         operator<<(const payload<S, FIELD1>& a, const payload<T, FIELD2>& b)
@@ -341,6 +490,21 @@ namespace SOA {
                    << b.
                       operator typename payload<T, FIELD2>::const_reference();
         }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_iarith2<S, T, FIELD1>::type
+        operator<<(const payload<S, FIELD1>& a, const T& b)
+        {
+            return a.operator typename payload<S, FIELD1>::const_reference() <<
+                   b;
+        }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_iarith2<S, T, FIELD1>::type
+        operator<<(const T& a, const payload<S, FIELD1>& b)
+        {
+            return a <<
+                   b.operator typename payload<S, FIELD1>::const_reference();
+        }
+
         template <typename S, typename T, typename FIELD1, typename FIELD2>
         typename retval_if_is_iarith<S, T, FIELD1, FIELD2>::type
         operator&(const payload<S, FIELD1>& a, const payload<T, FIELD2>& b)
@@ -348,6 +512,21 @@ namespace SOA {
             return a.operator typename payload<S, FIELD1>::const_reference() &
                    b.operator typename payload<T, FIELD2>::const_reference();
         }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_iarith2<S, T, FIELD1>::type
+        operator&(const payload<S, FIELD1>& a, const T& b)
+        {
+            return a.operator typename payload<S, FIELD1>::const_reference() &
+                   b;
+        }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_iarith2<S, T, FIELD1>::type
+        operator&(const T& a, const payload<S, FIELD1>& b)
+        {
+            return a &
+                   b.operator typename payload<S, FIELD1>::const_reference();
+        }
+
         template <typename S, typename T, typename FIELD1, typename FIELD2>
         typename retval_if_is_iarith<S, T, FIELD1, FIELD2>::type
         operator|(const payload<S, FIELD1>& a, const payload<T, FIELD2>& b)
@@ -355,6 +534,21 @@ namespace SOA {
             return a.operator typename payload<S, FIELD1>::const_reference() |
                    b.operator typename payload<T, FIELD2>::const_reference();
         }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_iarith2<S, T, FIELD1>::type
+        operator|(const payload<S, FIELD1>& a, const T& b)
+        {
+            return a.operator typename payload<S, FIELD1>::const_reference() |
+                   b;
+        }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_iarith2<S, T, FIELD1>::type
+        operator|(const T& a, const payload<S, FIELD1>& b)
+        {
+            return a |
+                   b.operator typename payload<S, FIELD1>::const_reference();
+        }
+
         template <typename S, typename T, typename FIELD1, typename FIELD2>
         typename retval_if_is_iarith<S, T, FIELD1, FIELD2>::type
         operator^(const payload<S, FIELD1>& a, const payload<T, FIELD2>& b)
@@ -362,6 +556,21 @@ namespace SOA {
             return a.operator typename payload<S, FIELD1>::const_reference() ^
                    b.operator typename payload<T, FIELD2>::const_reference();
         }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_iarith2<S, T, FIELD1>::type
+        operator^(const payload<S, FIELD1>& a, const T& b)
+        {
+            return a.operator typename payload<S, FIELD1>::const_reference() ^
+                   b;
+        }
+        template <typename S, typename T, typename FIELD1>
+        typename retval_if_is_iarith2<S, T, FIELD1>::type
+        operator^(const T& a, const payload<S, FIELD1>& b)
+        {
+            return a ^
+                   b.operator typename payload<S, FIELD1>::const_reference();
+        }
+
     } // namespace detail
 
     /// encapsulate a value to type specified in field
@@ -459,36 +668,6 @@ namespace SOA {
                     TL(), std::forward_as_tuple(std::forward<ARGS>(args)...));
         }
     } // namespace impl
-
-    /// check if T is a tagged type
-    template <typename T, typename = void>
-    struct is_tagged_type : std::false_type {};
-    template <typename T>
-    struct is_tagged_type<T, std::void_t<typename T::tagged_type_tag>>
-            : std::true_type {};
-
-    /// check if T is a tagged value
-    template <typename T, typename = void>
-    struct is_tagged_value : std::false_type {};
-    template <typename T>
-    struct is_tagged_value<T, std::void_t<typename T::tagged_value_tag>>
-            : std::true_type {};
-
-    /// check if T is a tagged reference
-    template <typename T, typename = void>
-    struct is_tagged_reference : std::false_type {};
-    template <typename T>
-    struct is_tagged_reference<T,
-                               std::void_t<typename T::tagged_reference_tag>>
-            : std::true_type {};
-
-    /// check if T is a tagged const reference
-    template <typename T, typename = void>
-    struct is_tagged_const_reference : std::false_type {};
-    template <typename T>
-    struct is_tagged_const_reference<
-            T, std::void_t<typename T::tagged_const_reference_tag>>
-            : std::true_type {};
 
 } // namespace SOA
 
