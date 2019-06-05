@@ -1,4 +1,4 @@
-### Navigation: [<< (previous)](intro-1.3.md), [(up)](tutorial.md), [(next) >>](viewzip-2.1.md)
+### Navigation: [<< (previous)](intro-1.3.md), [(up)](tutorial.md), [(next) >>](intro-1.5.md)
 
 ![SOA Container logo](../doc/SOAContainer.svg)
 # Non-trivial fields, fields of type `bool`
@@ -60,4 +60,4 @@ SOASKIN(SOAPointSkin, PointFields::x, PointFields::y, PointFields::flags) {
 };
 ```
 
-### Navigation: [<< (previous)](intro-1.3.md), [(up)](tutorial.md), [(next) >>](viewzip-2.1.md)
+### Navigation: [<< (previous)](intro-1.3.md), [(up)](tutorial.md), [(next) >>](intro-1.5.md)

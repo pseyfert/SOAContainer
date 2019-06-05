@@ -15,6 +15,8 @@
 
 ### 1.4 [Non-trivial fields, fields of type `bool`](intro-1.4.md)
 
+### 1.5 [Tagged types in constructors and `emplace_back`](intro-1.5.md)
+
 ## 2. Views and Zips
 
 ### [2.1 Views](viewzip-2.1.md)

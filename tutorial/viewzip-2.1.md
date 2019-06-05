@@ -1,4 +1,4 @@
-### Navigation: [<< (previous)](intro-1.4.md), [(up)](tutorial.md), [(next) >>](viewzip-2.2.md)
+### Navigation: [<< (previous)](intro-1.5.md), [(up)](tutorial.md), [(next) >>](viewzip-2.2.md)
 
 ![SOA Container logo](../doc/SOAContainer.svg)
 # Views
@@ -67,4 +67,4 @@ in ```view<skin, fields...>```.
 In the next section, we'll zip views together to form new views, in our
 case, a point in 3D given in cylindrical coordinates.
 
-### Navigation: [<< (previous)](intro-1.4.md), [(up)](tutorial.md), [(next) >>](viewzip-2.2.md)
+### Navigation: [<< (previous)](intro-1.5.md), [(up)](tutorial.md), [(next) >>](viewzip-2.2.md)
