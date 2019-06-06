@@ -357,6 +357,84 @@ namespace SOA {
                 result_typelist(), std::forward<VIEW>(view),
                 std::forward<FUNC>(func));
     }
+
+    namespace impl_algs {
+        /// helper for for_each
+        template <typename VIEW, typename FUNC, std::size_t... IDXS,
+                  typename... ARGS>
+        void _for_each(std::index_sequence<IDXS...> /* unused */,
+                        SOA::Typelist::typelist<ARGS...> /* unused */,
+                        VIEW&& view, FUNC&& func)
+        {
+            auto its = std::make_tuple(
+                    view.template begin<find_idx<
+                            typename std::remove_reference<
+                                    VIEW>::type::fields_typelist,
+                            typename std::remove_cv<
+                                    typename std::remove_reference<
+                                            ARGS>::type>::type>::value>()...);
+            const auto itEnd = std::get<0>(std::make_tuple(
+                    view.template end<find_idx<
+                            typename std::remove_reference<
+                                    VIEW>::type::fields_typelist,
+                            typename std::remove_cv<
+                                    typename std::remove_reference<ARGS>::
+                                            type>::type>::value>()...));
+            for (; itEnd != std::get<0>(its);
+                 nop((++std::get<IDXS>(its), 0)...)) {
+                std::forward<FUNC>(func)(ARGS(*std::get<IDXS>(its))...);
+            }
+        }
+    }
+
+    /** @brief apply a function to each element of a (SOA) View
+     *
+     * @param view          view to apply function to
+     * @param func          function/functor to apply
+     *                      transformation
+     *
+     * Example:
+     * @code
+     * auto view = get_some_view();
+     * auto c = for_each(view, [] (SOA::ref<field1> x, SOA::ref<field2> y) {
+     *         field1::type tmp = x; // auto will deduce SOA::ref<field1>,
+     *                               // which is not what we want - we need
+     *                               // a copy
+     *         x = 2 * y;
+     *         y = tmp;
+     *     });
+     * // c is modified in place
+     * @endcode
+     *
+     * Tagged values in the argument list of the functor/function can be
+     * omitted if "naked" data type used in its place is sufficient to
+     * uniquely identify which field of the view is meant. For example, if the
+     * view contains only one integer field, it's sufficient to only put "int
+     * i" in the argument list. If the types of the arguments of the functor
+     * are not sufficient to uniquely identify the fields of the view that are
+     * required, a compiler error is produced (with a suitable diagnostic
+     * message).
+     */
+    template <typename VIEW, typename FUNC>
+    void for_each(VIEW&& view, FUNC&& func)
+    {
+        using arg_typelist =
+                typename SOA::impl_algs::callable_info<FUNC>::arg_typelist;
+        static_assert(
+                decltype(SOA::impl_algs::canFindArgs(
+                        std::declval<const VIEW&>(), arg_typelist()))::value,
+                "some function arguments not found in view");
+        static_assert(
+                decltype(SOA::impl_algs::uniqueArgs(
+                        std::declval<const VIEW&>(), arg_typelist()))::value,
+                "unable to uniquely match all arguments "
+                "- try using tagged types as argunents");
+
+        SOA::impl_algs::_for_each(
+                std::make_index_sequence<arg_typelist::size()>(),
+                arg_typelist(), std::forward<VIEW>(view),
+                std::forward<FUNC>(func));
+    }
 } // namespace SOA
 
 /* Copyright (C) CERN for the benefit of the LHCb collaboration

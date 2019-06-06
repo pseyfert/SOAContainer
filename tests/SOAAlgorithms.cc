@@ -82,6 +82,38 @@ TEST(SOAAlgorithms, TransformNonUniqueFieldsMultipleReturn) {
     EXPECT_EQ(5.f, c2[3].y());
 }
 
+TEST(SOAAlgorithms, ForeachBasicTest) {
+    using namespace Fields;
+    SOA::Container<std::vector, SkinUnique> c1;
+    c1.emplace_back(0.f, 3);
+    c1.emplace_back(1.f, 2);
+    c1.emplace_back(2.f, 1);
+    c1.emplace_back(3.f, 0);
+    for_each(c1, [](SOA::ref<f_n> n, SOA::ref<f_x> x) {
+        f_n::type tmp = n;
+        n = 2 * x;
+        x = tmp;
+    });
+    EXPECT_EQ(4, c1.size());
+    EXPECT_EQ(0, c1[0].n());
+    EXPECT_EQ(3, c1[0].x());
+    EXPECT_EQ(2, c1[1].n());
+    EXPECT_EQ(2, c1[1].x());
+    EXPECT_EQ(4, c1[2].n());
+    EXPECT_EQ(1, c1[2].x());
+    EXPECT_EQ(6, c1[3].n());
+    EXPECT_EQ(0, c1[3].x());
+    for_each(c1, [](int n, float& x) { x = n; });
+    EXPECT_EQ(4, c1.size());
+    EXPECT_EQ(0, c1[0].n());
+    EXPECT_EQ(2, c1[1].n());
+    EXPECT_EQ(4, c1[2].n());
+    EXPECT_EQ(6, c1[3].n());
+    EXPECT_EQ(c1[0].n(), c1[0].x());
+    EXPECT_EQ(c1[1].n(), c1[1].x());
+    EXPECT_EQ(c1[2].n(), c1[2].x());
+    EXPECT_EQ(c1[3].n(), c1[3].x());
+}
 
 /* Copyright (C) CERN for the benefit of the LHCb collaboration
  *
