@@ -51,4 +51,42 @@ If there are two fields which have type LHCb::State, the code will print an
 error message, and refuse to compile. The tagged type mechanism from above will
 work to break the ambiguity in such a case.
 
+## `transform`
+
+`transform` is much like `for_each`, except that a new container is created
+from the value(s) returned from the function of functor. The discussion about
+the functor's argument list to select which fields are passed from `for_each`
+above applies here as well.
+
+The return type of the functor must be a tagged data type, or a tuple of tagged
+data types. For the return type, tagged data types must be used since
+`transform` uses it to extract the list of fields that the returned container
+needs to have.
+
+Here's a simple example:
+
+``` c++
+auto view = /* from somewhere */;
+
+auto xztrackparam = transform(view, [] (cref<f_x1> x1, cref<f_z1> z1,
+					cref<f_x2> x2, cref<f_z2> z2) {
+	return std::make_tuple(value<f_x0>(0.5f * (x1 + x2),
+			       value<f_z0>(0.5f * (z1 + z2)),
+			       value<f_tx>((x2 - x1)/(z2 - z1)));
+    });
+// xztrackparam is a SOA container with three fields: f_x0, f_z0, f_tx
+// which are set to the parameters of the line that goes through the
+// input points (x1, z1) and (x2, z2)
+```
+
+If you just need to return a single field, you do not have to wrap it in a std::tuple:
+
+``` c++
+auto view = /* from somewhere */;
+auto radii = transform(view, [] (cref<f_x> x, cref<f_y> y, cref<f_z> z) {
+	return value<f_r>(std::sqrt(x * x + y * y + z * z));
+    });
+// radii is now a SOA container with a single field: f_r
+```
+
 ### Navigation: [<< (previous)](viewzip-2.2.md), [(up)](tutorial.md), [(next) >>](future-3.md)
