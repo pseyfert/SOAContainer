@@ -17,11 +17,13 @@
 
 ### 1.5 [Tagged types in constructors and `emplace_back`](intro-1.5.md)
 
-## 2. Views and Zips
+## 2. Views, Zips, and Algorithms
 
 ### [2.1 Views](viewzip-2.1.md)
 
 ### [2.2 Zips of Views](viewzip-2.2.md)
+
+### [2.3 Algorithms](viewzip-2.3.md)
 
 ## [3. Missing bits, Plans for the Future](future-3.md)
 

@@ -1,4 +1,4 @@
-### Navigation: [<< (previous)](viewzip-2.2.md), [(up)](tutorial.md), [(next) >>](faq-4.md)
+### Navigation: [<< (previous)](viewzip-2.3.md), [(up)](tutorial.md), [(next) >>](faq-4.md)
 
 ![SOA Container logo](../doc/SOAContainer.svg)
 # 3. Missing Bits, Plans for the Future
@@ -14,4 +14,4 @@ Here, you'll find a mixed bag of missing bits and plans for the future:
 - plans:
   - hmmm, let's see...
 
-### Navigation: [<< (previous)](viewzip-2.2.md), [(up)](tutorial.md), [(next) >>](faq-4.md)
+### Navigation: [<< (previous)](viewzip-2.3.md), [(up)](tutorial.md), [(next) >>](faq-4.md)

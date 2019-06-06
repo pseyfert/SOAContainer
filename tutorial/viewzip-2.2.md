@@ -1,4 +1,4 @@
-### Navigation: [<< (previous)](viewzip-2.1.md), [(up)](tutorial.md), [(next) >>](future-3.md)
+### Navigation: [<< (previous)](viewzip-2.1.md), [(up)](tutorial.md), [(next) >>](viewzip-2.3.md)
 
 ![SOA Container logo](../doc/SOAContainer.svg)
 # Zips
@@ -78,4 +78,4 @@ maintaining a one-to-one correspondence between elements. Finally, the
 ```zip``` operation allows to zip together these separate bits to form
 a new joint view.
 
-### Navigation: [<< (previous)](viewzip-2.1.md), [(up)](tutorial.md), [(next) >>](future-3.md)
+### Navigation: [<< (previous)](viewzip-2.1.md), [(up)](tutorial.md), [(next) >>](viewzip-2.3.md)
