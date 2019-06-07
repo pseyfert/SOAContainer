@@ -114,6 +114,33 @@ TEST(SOAContainerVector, ConvenientContainers) {
     }
 }
 
+TEST(SOAContainerVector, TypeErasedViews)
+{
+    using namespace ConvenientContainersTest_Fields;
+    SOA::Container<std::vector, Skin> c;
+    const auto& ccr = c;
+    auto vf = c.view<f_x, f_y, f_flags>();
+    const bool b1 = std::is_same<
+            decltype(vf),
+            SOA::contiguous_view_from_fields_t<f_x, f_y, f_flags>>::value;
+    EXPECT_EQ(b1, true);
+    auto cvf = ccr.view<f_x, f_y, f_flags>();
+    const bool b2 = std::is_same<decltype(cvf),
+                                 SOA::contiguous_const_view_from_fields_t<
+                                         f_x, f_y, f_flags>>::value;
+    EXPECT_EQ(b2, true);
+    auto vs = c.view<Skin>();
+    const bool b3 =
+            std::is_same<decltype(vs),
+                         SOA::contiguous_view_from_skin_t<Skin>>::value;
+    EXPECT_EQ(b3, true);
+    auto cvs = ccr.view<Skin>();
+    const bool b4 =
+            std::is_same<decltype(cvs),
+                         SOA::contiguous_const_view_from_skin_t<Skin>>::value;
+    EXPECT_EQ(b4, true);
+}
+
 /* Copyright (C) CERN for the benefit of the LHCb collaboration
  *
  * This program is free software: you can redistribute it and/or modify

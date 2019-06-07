@@ -1580,6 +1580,45 @@ namespace SOA {
     {
         return SOA::impl::zip(std::forward<VIEWS>(views)...);
     }
+
+    namespace impl {
+        /// helper for contiguous_view_from_(skin|fields)_t
+        template <template <class> class SKIN, typename... FIELDS>
+        SOA::View<std::tuple<SOA::iterator_range<typename FIELDS::type*>...>,
+                  SKIN>
+                _make_contiguous_view(SOA::Typelist::typelist<
+                                      FIELDS...> /* unused */) noexcept;
+        /// helper for contiguous_const_view_from_(skin|fields)_t
+        template <template <class> class SKIN, typename... FIELDS>
+        SOA::View<std::tuple<SOA::iterator_range<
+                          const typename FIELDS::type*>...>,
+                  SKIN>
+                _make_contiguous_const_view(SOA::Typelist::typelist<
+                                            FIELDS...> /* unused */) noexcept;
+    } // namespace impl
+
+    /// type of contiguous view based on skin
+    template <template <class> class SKIN>
+    using contiguous_view_from_skin_t =
+            decltype(SOA::impl::_make_contiguous_view<SKIN>(
+                    typename SKIN<SOA::impl::dummy>::fields_typelist()));
+    /// type of contiguous view based on fields (with default skin)
+    template <typename... FIELDS>
+    using contiguous_view_from_fields_t = decltype(
+            SOA::impl::_make_contiguous_view<SOA::impl::SOASkinCreatorSimple<
+                    FIELDS...>::template type>(
+                    SOA::Typelist::typelist<FIELDS...>()));
+    /// type of contiguous const view based on skin
+    template <template <class> class SKIN>
+    using contiguous_const_view_from_skin_t =
+            decltype(SOA::impl::_make_contiguous_const_view<SKIN>(
+                    typename SKIN<SOA::impl::dummy>::fields_typelist()));
+    /// type of contiguous const view based on fields (with default skin)
+    template <typename... FIELDS>
+    using contiguous_const_view_from_fields_t = decltype(
+            SOA::impl::_make_contiguous_const_view<SOA::impl::SOASkinCreatorSimple<
+                    FIELDS...>::template type>(
+                    SOA::Typelist::typelist<FIELDS...>()));
 } // namespace SOA
 
 // [FIXME]: document
