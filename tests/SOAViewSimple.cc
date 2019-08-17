@@ -37,6 +37,10 @@ class SOAPoint : public NAKEDPROXY {
 
 TEST (SOAView, Simple) {
     std::vector<float> vx, vy, vxx, vyy;
+    {
+        auto emptyview = SOA::make_soaview<SOAPoint>(vx, vy);
+        EXPECT_EQ(emptyview.empty(), true);
+    }
     // fill vx, vy somehow - same number of elements
     const auto rnd = [] () { return double(random()) / double(RAND_MAX); };
     vx.reserve(1024), vy.reserve(1024);
