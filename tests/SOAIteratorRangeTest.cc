@@ -249,6 +249,11 @@ TEST(SOAIteratorRangeTest, StdVector) {
     using namespace SOA;
     using T = int;
     using C = std::vector<T>;
+    {
+        C emptyc;
+        auto emptyr = make_iterator_range(emptyc.begin(), emptyc.end());
+        EXPECT_EQ(emptyr.empty(), true);
+    }
     C foo{{ 0, 1, 2, 3, 4, 5, 6, 7 }};
     auto r = make_iterator_range(foo.begin() + 1, foo.begin() + 6);
     
