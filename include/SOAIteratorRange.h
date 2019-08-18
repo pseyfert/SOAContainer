@@ -391,9 +391,13 @@ namespace SOA {
             &*std::declval<typename std::remove_reference<IT>::type>())>
     make_iterator_range(IT&& first, JT&& last)
     {
-        return iterator_range<decltype(
+        return (first != last) ?
+            iterator_range<decltype(
                 &*std::declval<typename std::remove_reference<IT>::type>())>{
-                &*first, &*last};
+                &*first, &*last} :
+            iterator_range<decltype(
+                &*std::declval<typename std::remove_reference<IT>::type>())>{
+                nullptr, nullptr };
     }
 } // namespace SOA
 
