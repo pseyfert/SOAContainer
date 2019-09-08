@@ -26,7 +26,9 @@ endforeach()
 target_compile_options(SOAContainerDequeSimpleSkin PUBLIC "-Wno-deprecated-declarations")
 target_compile_options(SOAContainerDequeSimple PUBLIC "-Wno-deprecated-declarations")
 
-add_compile_options(-Wno-suggest-override)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  add_compile_options(-Wno-suggest-override)
+endif()
 
 add_subdirectory(googletest EXCLUDE_FROM_ALL)
 
