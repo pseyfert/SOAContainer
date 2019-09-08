@@ -14,10 +14,12 @@
 #if __cplusplus > 201103L // well, g++ and icpc have strange values here in c++14 mode
 // C++14 - use the standard's facilities
 #include <utility>
+#undef HAVE_INDEX_SEQUENCE
+#define HAVE_INDEX_SEQUENCE 1
 #elif __cplusplus >= 201103L
 // C++11 - implement what's needed
 // C++14 Compile-time integer sequences -- this can go once we use C++14...
-namespace std {
+namespace cpp14compat {
     template<size_t... indexes>
     struct index_sequence {
         static constexpr size_t size() { return sizeof...(indexes); }
@@ -41,7 +43,16 @@ namespace std {
     template<size_t N>
     constexpr typename __mk_idx_seq<N>::type make_index_sequence() noexcept
     { return {}; }
-}
+} // namespace cpp14compat
+
+#if !defined(HAVE_INDEX_SEQUENCE)
+namespace std {
+    using cpp14compat::index_sequence;
+    using cpp14compat::make_index_sequence;
+} // namespace std
+#undef HAVE_INDEX_SEQUENCE
+#define HAVE_INDEX_SEQUENCE 1
+#endif // !defined(HAVE_INDEX_SEQUENCE)
 #else // __cplusplus
 // not even C++11 support
 #error "Your C++ compiler must support at least C++11."
@@ -50,13 +61,23 @@ namespace std {
 // FIXME: what is the defined value of compliant C++17 compilers?
 #if __cplusplus > 201402L
 #include <type_traits>
+#undef HAVE_VOID_T
+#define HAVE_VOID_T 1
 #else
-namespace std {
+namespace cpp17compat {
     /// little helper for the SFINAE idiom we'll use (not required in C++17)
     template<typename... Ts> struct make_void { using type = void;};
     /// little helper for the SFINAE idiom we'll use (not required in C++17)
     template<typename... Ts> using void_t = typename make_void<Ts...>::type;
-}
+} // namespace cpp17compat
+
+#if !defined(HAVE_VOID_T)
+namespace std {
+    using cpp17compat::void_t;
+} // namespace std
+#undef HAVE_VOID_T
+#define HAVE_VOID_T 1
+#endif // !defined(HAVE_VOID_T)
 #endif // __cplusplus
 
 #endif // CPP14_COMPAT_H
