@@ -91,6 +91,10 @@ namespace SOA {
             using self_type = DressedTuple<TUPLE, CONTAINER>;
             using TUPLE::TUPLE;
             using TUPLE::operator=;
+            DressedTuple(const DressedTuple& /* unused */) = default;
+            DressedTuple(DressedTuple&& /* unused */) = default;
+            DressedTuple& operator=(const DressedTuple& /* unused */) = default;
+            DressedTuple& operator=(DressedTuple&& /* unused */) = default;
 
         private:
             /// helper for fallback constructors
