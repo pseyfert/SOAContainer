@@ -283,7 +283,12 @@ namespace SOA {
         template <typename P, typename C>
         constexpr is_contiguous_range<C> _is_contiguous_iterator(
                 __gnu_cxx::__normal_iterator<P, C> /* unused */) noexcept;
-#endif // defined(_GLIBCXX_)
+#endif // defined(__GLIBCXX__)
+#if defined(_LIBCPP_VERSION)
+        template <typename IT>
+        constexpr is_contiguous_range<IT> _is_contiguous_iterator(
+               std::__wrap_iter<IT> /* unused */) noexcept;
+#endif
 
         /// type trait: is T iterator type that refers to contiguous storage
         template <typename T>
