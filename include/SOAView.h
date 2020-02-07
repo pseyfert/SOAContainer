@@ -1222,7 +1222,7 @@ namespace SOA {
             void assign(size_type count, const value_type& val)
             {
                 if (size() >= count) {
-                    std::stringstream str;
+                    std::ostringstream str;
                     str << "In " << __func__ << " (" << __FILE__ << ", line " <<
                         __LINE__ << "): count must not exceed length of range.";
                     throw std::out_of_range(str.str());
@@ -1237,7 +1237,7 @@ namespace SOA {
             void assign(IT first, IT last)
             {
                 if (size() >= std::distance(first, last)) {
-                    std::stringstream str;
+                    std::ostringstream str;
                     str << "In " << __func__ << " (" << __FILE__ << ", line " <<
                         __LINE__ << "): supplied range too large.";
                     throw std::out_of_range(str.str());
