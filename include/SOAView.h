@@ -1222,7 +1222,10 @@ namespace SOA {
             void assign(size_type count, const value_type& val)
             {
                 if (size() >= count) {
-                    throw std::out_of_range("In SOA::_View::assign: count must not exceed length of range.");
+                    std::stringstream str;
+                    str << "In " << __func__ << " (" << __FILE__ << ", line " <<
+                        __LINE__ << "): count must not exceed length of range.";
+                    throw std::out_of_range(str.str());
                 }
                 SOA::Utils::map(typename impl_detail::assignHelper{count},
                         SOA::Utils::zip(m_storage, val),
@@ -1234,7 +1237,10 @@ namespace SOA {
             void assign(IT first, IT last)
             {
                 if (size() >= std::distance(first, last)) {
-                    throw std::out_of_range("In SOA::_View::assign: supplied range too large.");
+                    std::stringstream str;
+                    str << "In " << __func__ << " (" << __FILE__ << ", line " <<
+                        __LINE__ << "): supplied range too large.";
+                    throw std::out_of_range(str.str());
                 }
                 SOA::Utils::map(typename impl_detail::assignHelper2(),
                         SOA::Utils::zip(m_storage,
