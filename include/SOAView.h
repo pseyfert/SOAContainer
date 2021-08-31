@@ -1271,7 +1271,7 @@ namespace SOA {
              *     SOAFIELD_TRIVIAL(z, z, float);
              *     SOASKIN_TRIVIAL(Skin, x, y, z);
              * }
-             * // fill container somehow
+             * // fill container somehow
              * SOA::Container<std::vector, XYZPoint::Skin> c = getPoints();
              * // create a view with x and y fields
              * auto viewxy = c.view<XYZPoint::x, XYZPoint::y>();
@@ -1320,7 +1320,7 @@ namespace SOA {
              *     SOAFIELD_TRIVIAL(z, z, float);
              *     SOASKIN_TRIVIAL(Skin, x, y, z);
              * }
-             * // fill container somehow
+             * // fill container somehow
              * SOA::Container<std::vector, XYZPoint::Skin> c = getPoints();
              * // create a view with x and y fields
              * auto viewxy = c.view<XYZPoint::x, XYZPoint::y>();
