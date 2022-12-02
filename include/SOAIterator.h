@@ -128,16 +128,16 @@ namespace SOA {
         constexpr auto
         for_field() const noexcept -> typename std::conditional<
                 ISCONST,
-                decltype(std::get<parent_type::template memberno<FIELD>()>(
+                decltype(std::get<(parent_type::template memberno<FIELD>())>(
                                  *std::declval<POSITION>().stor())
                                  .cbegin() +
                          std::declval<POSITION>().idx()),
-                decltype(std::get<parent_type::template memberno<FIELD>()>(
+                decltype(std::get<(parent_type::template memberno<FIELD>())>(
                                  *std::declval<POSITION>().stor())
                                  .begin() +
                          std::declval<POSITION>().idx())>::type
         {
-            return std::get<parent_type::template memberno<FIELD>()>(*stor())
+            return std::get<(parent_type::template memberno<FIELD>())>(*stor())
                            .begin() +
                    idx();
         }

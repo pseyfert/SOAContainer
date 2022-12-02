@@ -647,11 +647,11 @@ namespace SOA {
                 std::tuple<ARGS&&...>
                         arg) noexcept(noexcept(std::
                                                        forward_as_tuple((tagged_move(
-                                                               std::get<TL::template find<
-                                                                       FIELDS>()>(
+                                                               std::get<(TL::template find<
+                                                                       FIELDS>())>(
                                                                        arg)))...)))
                 -> decltype(std::forward_as_tuple((tagged_move(
-                        std::get<TL::template find<FIELDS>()>(arg)))...))
+                        std::get<(TL::template find<FIELDS>())>(arg)))...))
         {
             return std::forward_as_tuple((tagged_move(
                     std::get<TL::template find<FIELDS>()>(arg)))...);

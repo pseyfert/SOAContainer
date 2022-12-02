@@ -408,8 +408,8 @@ namespace SOA {
                     -> decltype(make_soaview<
                                 SKIN>(impl::move_if_not_lvalue_reference(
                             std::forward<VIEW>(view),
-                            std::get<std::remove_reference<
-                                    VIEW>::type::template memberno<FIELDS>()>(
+                            std::get<(std::remove_reference<
+                                    VIEW>::type::template memberno<FIELDS>())>(
                                     view.m_storage))...))
             {
                 return make_soaview<SKIN>(impl::move_if_not_lvalue_reference(
@@ -429,15 +429,15 @@ namespace SOA {
                     -> decltype(make_soaview<SKIN>(
                             impl::move_if_not_lvalue_reference(
                                     std::forward<VIEW1>(view1),
-                                    std::get<std::remove_reference<VIEW1>::
+                                    std::get<(std::remove_reference<VIEW1>::
                                                      type::template memberno<
-                                                             FIELDS1>()>(
+                                                             FIELDS1>())>(
                                             view1.m_storage))...,
                             impl::move_if_not_lvalue_reference(
                                     std::forward<VIEW2>(view2),
-                                    std::get<std::remove_reference<VIEW2>::
+                                    std::get<(std::remove_reference<VIEW2>::
                                                      type::template memberno<
-                                                             FIELDS2>()>(
+                                                             FIELDS2>())>(
                                             view2.m_storage))...))
             {
                 return make_soaview<SKIN>(
