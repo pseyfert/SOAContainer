@@ -309,6 +309,9 @@ namespace SOA {
                             std::declval<SOAStorage&>())))
             { SOA::Utils::apply(impl::clearHelper(), this->m_storage); }
 
+            // Paul's hacking around.
+            auto& data() { return this->m_storage; }
+
             /// pop the last element off the container
             void pop_back() noexcept(noexcept(
                         SOA::Utils::apply(impl::pop_backHelper(),
