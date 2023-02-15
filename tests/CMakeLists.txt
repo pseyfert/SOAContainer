@@ -10,6 +10,7 @@ set(tests
   SOAContainerVectorConvenientSkin
   SOAContainerVectorZipViews
   SOAZipTestPaul
+  SOAZipTestOlli
   SOAContainerVectorFieldExtraction
   SOAViewSimple
   Branchless
