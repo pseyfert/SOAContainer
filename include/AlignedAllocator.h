@@ -90,7 +90,11 @@ namespace SOA {
 
         pointer allocate(size_type n, const void* hint = nullptr)
         {
+#if __cplusplus < 201703L
             char* p = alloc.allocate(n * sizeof(T) + ALIGN, hint);
+#else // __cplusplus >= 201703L
+            char* p = alloc.allocate(n * sizeof(T) + ALIGN);
+#endif // __cplusplus
             p += ALIGN;
             auto adj = std::ptrdiff_t(p) & (ALIGN - 1);
             p -= adj;
