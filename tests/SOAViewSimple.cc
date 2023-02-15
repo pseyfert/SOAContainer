@@ -15,8 +15,8 @@
 #include "gtest/gtest.h"
 #include "SOAView.h"
 
-typedef struct : SOA::Typelist::wrap_type<float> {} field_x;
-typedef struct : SOA::Typelist::wrap_type<float> {} field_y;
+typedef struct field_x : SOA::Typelist::wrap_type<float> {} field_x;
+typedef struct field_y : SOA::Typelist::wrap_type<float> {} field_y;
 template <typename NAKEDPROXY>
 class SOAPoint : public NAKEDPROXY {
     public:

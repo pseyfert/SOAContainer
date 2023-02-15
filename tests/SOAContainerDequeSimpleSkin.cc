@@ -20,13 +20,13 @@
 
 namespace HitNamespace {
     namespace Fields {
-        typedef struct : public SOA::Typelist::wrap_type<float> {} xAtYEq0;
-        typedef struct : public SOA::Typelist::wrap_type<float> {} zAtYEq0;
-        typedef struct : public SOA::Typelist::wrap_type<float> {} dxdy;
-        typedef struct : public SOA::Typelist::wrap_type<float> {} dzdy;
-        typedef struct : public SOA::Typelist::wrap_type<float> {} x;
-        typedef struct : public SOA::Typelist::wrap_type<float> {} z;
-        typedef struct : public SOA::Typelist::wrap_type<float> {} y;
+        typedef struct xAtYEq0 : public SOA::Typelist::wrap_type<float> {} xAtYEq0;
+        typedef struct zAtYEq0 : public SOA::Typelist::wrap_type<float> {} zAtYEq0;
+        typedef struct dxdy : public SOA::Typelist::wrap_type<float> {} dxdy;
+        typedef struct dzdy : public SOA::Typelist::wrap_type<float> {} dzdy;
+        typedef struct x : public SOA::Typelist::wrap_type<float> {} x;
+        typedef struct z : public SOA::Typelist::wrap_type<float> {} z;
+        typedef struct y : public SOA::Typelist::wrap_type<float> {} y;
     }
 
     template <typename NAKEDPROXY>
