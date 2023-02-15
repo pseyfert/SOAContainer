@@ -48,11 +48,11 @@ namespace SOA {
 
         // compile-time test wrapping and interaction with typelists
         namespace __impl_compile_time_tests {
-            using xAtYEq0 = struct : public wrap_type<double> {};
-            using zAtYEq0 = struct : public wrap_type<double> {};
-            using y = struct : public wrap_type<double> {};
-            using dxdy = struct : public wrap_type<double> {};
-            using dzdy = struct : public wrap_type<double> {};
+            using xAtYEq0 = struct xAtYEq0 : public wrap_type<double> {};
+            using zAtYEq0 = struct zAtYEq0 : public wrap_type<double> {};
+            using y = struct y : public wrap_type<double> {};
+            using dxdy = struct dxdy : public wrap_type<double> {};
+            using dzdy = struct dzdy : public wrap_type<double> {};
 
             using hitfields = typelist<xAtYEq0, zAtYEq0, y, dxdy, dzdy>;
             static_assert(0 == hitfields::find<xAtYEq0>(),
