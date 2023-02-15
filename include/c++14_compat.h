@@ -17,21 +17,22 @@
 #undef HAVE_INDEX_SEQUENCE
 #define HAVE_INDEX_SEQUENCE 1
 #elif __cplusplus >= 201103L
+#include <cstddef> // for std::size_t
 // C++11 - implement what's needed
 // C++14 Compile-time integer sequences -- this can go once we use C++14...
 namespace cpp14compat {
-    template<size_t... indexes>
+    template<std::size_t... indexes>
     struct index_sequence {
-        static constexpr size_t size() { return sizeof...(indexes); }
+        static constexpr std::size_t size() { return sizeof...(indexes); }
     };
 
-    template <size_t... idxs1, size_t... idxs2>
+    template <std::size_t... idxs1, std::size_t... idxs2>
     constexpr static inline
     index_sequence<idxs1..., (sizeof...(idxs1) + idxs2)...>
     __cat_idx_seq(index_sequence<idxs1...>, index_sequence<idxs2...>) noexcept
     { return {}; }
 
-    template <size_t N>
+    template <std::size_t N>
     struct __mk_idx_seq { using type = decltype(__cat_idx_seq(
                 std::declval<typename __mk_idx_seq<N - N / 2>::type>(),
                 std::declval<typename __mk_idx_seq<N / 2>::type>())); };
@@ -40,7 +41,7 @@ namespace cpp14compat {
     template <>
     struct __mk_idx_seq<1> { using type = index_sequence<0>; };
 
-    template<size_t N>
+    template<std::size_t N>
     constexpr typename __mk_idx_seq<N>::type make_index_sequence() noexcept
     { return {}; }
 } // namespace cpp14compat
